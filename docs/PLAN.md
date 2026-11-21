@@ -254,6 +254,10 @@ Work happens in sequential local Claude Code sessions. A new session has no memo
 5. Run `npm run verify`. It must be green before any new work.
 6. Load the skills relevant to the phase.
 
+### Before implementing a commit
+
+Explain the commit to the author — goal, files, decisions, open questions — without editing files. Implement only after the author approves.
+
 ### At every commit boundary
 
 1. `npm run verify` passes.
@@ -279,8 +283,9 @@ Work happens in sequential local Claude Code sessions. A new session has no memo
 
 ```text
 Continue building Chirp. Read CLAUDE.md and docs/PLAN.md (Status, Changelog, Session protocol) first.
-Determine the next planned commit from git log, prepare the environment, confirm `npm run verify` is green,
-then implement that commit and stop at its boundary with the report described in the session protocol.
+Determine the next planned commit from git log, prepare the environment and confirm `npm run verify` is green.
+Then explain that commit and wait for my approval before implementing it; stop at its boundary with the
+report described in the session protocol.
 ```
 
 ## 7. Risks and scope cuts
@@ -325,3 +330,4 @@ then implement that commit and stop at its boundary with the report described in
 | Date | Change | Reason |
 |---|---|---|
 | 2026-11-20 | Initial plan | — |
+| 2026-11-20 | Session protocol: the agent explains each commit and waits for approval before implementing | The author reviews the approach before any code is written, not only the resulting diff |
