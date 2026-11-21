@@ -16,7 +16,7 @@ Chirp is a Twitter/X clone: Fastify + Prisma + PostgreSQL API (`apps/api`), Reac
 
 Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 
-1. **Explain** the next commit to the author: goal, files, decisions, open questions. Do not edit files or run commands yet.
+1. **Explain** the next commit to the author: goal, files, decisions, open questions, and **which agent skills apply** — load them first and state what is adopted from each and what is not (and why). Do not edit files or run commands yet.
 2. **Wait for approval.**
 3. **Implement** only that commit's scope, with its tests.
 4. **Verify:** `npm run verify` must pass.
@@ -68,6 +68,8 @@ Detail and examples: ARCHITECTURE.md §3.
 
 **Web (`apps/web`)**
 - Features live in `src/features/<feature>/`: `api.ts`, `hooks.ts`, `components/`, `pages/`, tests next to them. Generic UI goes in `src/components/ui/`.
+- No barrel files (`index.ts` that re-exports) inside `apps/web`: import from the source file. The only barrel is `@chirp/shared`'s entry point, the package's public API.
+- Route pages are code-split with React Router's route `lazy`, so each screen loads on demand.
 - Server data lives in TanStack Query only (keys from `src/lib/query-keys.ts`), including the current session. **Never copy server data into Zustand**; Zustand is for UI state (modals, toasts, drafts).
 - Forms: `react-hook-form` + `zodResolver(<schema from @chirp/shared>)`.
 - Mobile-first: base classes target mobile; scale up with `sm:` (640px) and `lg:` (1024px).
