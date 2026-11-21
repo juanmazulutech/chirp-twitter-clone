@@ -5,6 +5,7 @@ import {
   EMAIL_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  RESERVED_USERNAMES,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
   USERNAME_PATTERN,
@@ -31,7 +32,8 @@ export const usernameSchema = z
   .regex(
     USERNAME_PATTERN,
     `Use ${USERNAME_MIN_LENGTH}–${USERNAME_MAX_LENGTH} letters, numbers or underscores`,
-  );
+  )
+  .refine((value) => !RESERVED_USERNAMES.includes(value), 'This username is not available');
 
 export const displayNameSchema = z
   .string()

@@ -160,6 +160,16 @@ describe('auth routes', () => {
       expect(await app.prisma.user.count()).toBe(0);
     });
 
+    it('rejects a username that collides with a web route', async () => {
+      const response = await register({ ...registration, username: 'Home' });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({
+        error: { details: { fieldErrors: { username: ['This username is not available'] } } },
+      });
+      expect(await app.prisma.user.count()).toBe(0);
+    });
+
     it('replaces the session it was called with', async () => {
       const existing = await createUser(app.prisma);
       const oldCookie = await loginAs(app, existing);

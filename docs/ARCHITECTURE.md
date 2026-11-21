@@ -341,6 +341,9 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `/:username` | profile + tweets | signed in |
 | `/:username/followers`, `/:username/following` | follow lists | signed in |
 | `/:username/status/:tweetId` | tweet detail (optional) | signed in |
+| `*` (any other path) | not found, inside the shell | signed in |
+
+Every page is code-split with the route's `lazy`. Static segments outrank `/:username`, so their names are reserved usernames (ADR-18).
 
 ### 6.2 Responsive layout
 

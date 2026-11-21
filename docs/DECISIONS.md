@@ -215,6 +215,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 
 - **Decision:** `username` (`^[a-z0-9_]{3,15}$`) and `email` are stored lowercase, so a plain unique index enforces case-insensitive uniqueness. `displayName` keeps casing and emoji (1–50 characters).
 - **Alternatives:** `citext` or a shadow `username_lower` column — more complexity for a cosmetic benefit.
+- **Reserved names (C17):** profiles live at `/:username`, and static routes (`/home`, `/search`, `/login`…) plus the `/api` and `/assets` prefixes always win over that segment. `RESERVED_USERNAMES` in `@chirp/shared` lists them and `usernameSchema` rejects them ("This username is not available"), so no account can have an unreachable profile. A new top-level route adds its name to the list.
 
 ## ADR-19 · Integration tests against a real database
 

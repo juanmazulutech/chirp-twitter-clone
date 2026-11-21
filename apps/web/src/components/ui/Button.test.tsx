@@ -85,6 +85,12 @@ describe('buttonClasses', () => {
     expect(buttonClasses({ variant: 'danger' })).not.toContain('bg-airmail-red');
   });
 
+  it('has an icon-only size without horizontal padding', () => {
+    const classes = buttonClasses({ size: 'icon' });
+    expect(classes).toContain('size-12');
+    expect(classes).not.toMatch(/\bpx-/);
+  });
+
   it('has a small size', () => {
     expect(buttonClasses({ size: 'sm' })).toContain('h-9');
   });

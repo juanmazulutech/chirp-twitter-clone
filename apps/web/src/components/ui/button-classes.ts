@@ -5,7 +5,11 @@
  * - danger: confirming something destructive (Delete chirp).
  */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'md' | 'sm';
+/**
+ * - md / sm: labelled buttons.
+ * - icon: a 48px round button holding only an icon (give it an aria-label).
+ */
+export type ButtonSize = 'md' | 'sm' | 'icon';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-airmail-red text-on-airmail-red hover:brightness-95 active:brightness-90',
@@ -18,6 +22,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 const sizeClasses: Record<ButtonSize, string> = {
   md: 'h-11 px-5 text-base',
   sm: 'h-9 px-4 text-sm',
+  icon: 'size-12',
 };
 
 export interface ButtonStyleOptions {

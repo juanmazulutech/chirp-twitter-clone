@@ -91,6 +91,9 @@ spacing:
   row-y: "12px"
   gap: "12px"
   header: "56px"
+  bottom-nav: "64px"
+  rail: "15rem"
+  side-panel: "20rem"
 components:
   button-primary:
     backgroundColor: "{colors.airmail-red}"
@@ -113,6 +116,11 @@ components:
   button-secondary-hover:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
+  button-primary-icon:
+    backgroundColor: "{colors.airmail-red}"
+    textColor: "{colors.on-airmail-red}"
+    rounded: "{rounded.full}"
+    size: "48px"
   button-ghost:
     textColor: "{colors.ink-muted}"
     rounded: "{rounded.full}"
@@ -180,6 +188,40 @@ components:
     typography: "{typography.wordmark}"
     height: "56px"
     padding: "0 16px"
+  feed-column:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    width: "600px"
+  rail-item:
+    textColor: "{colors.ink}"
+    rounded: "{rounded.full}"
+    size: "48px"
+  rail-item-hover:
+    backgroundColor: "{colors.paper}"
+  rail-item-current:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.airmail-blue}"
+  bottom-nav:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink-muted}"
+    typography: "{typography.caption}"
+    height: "64px"
+  bottom-nav-current:
+    textColor: "{colors.airmail-blue}"
+  bottom-nav-indicator:
+    backgroundColor: "{colors.paper}"
+    rounded: "{rounded.full}"
+    width: "56px"
+    height: "32px"
+  side-panel:
+    backgroundColor: "{colors.sheet}"
+    rounded: "{rounded.card}"
+    padding: "16px"
+  skip-link:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.airmail-blue}"
+    rounded: "{rounded.full}"
+    padding: "8px 16px"
 ---
 
 # Design System: Chirp
@@ -215,7 +257,7 @@ A two-accent airmail palette over cool paper and navy ink; every token is a `lig
 
 ### Neutral
 - **Airmail Paper** (`paper` / `paper-night`): the page ground, a blue-tinted white by day and a navy envelope by night. Also the hover wash of secondary and ghost buttons and of the modal's close button.
-- **Sheet** (`sheet` / `sheet-night`): raised surfaces: header, chirp rows, panels, fields, modals, toasts.
+- **Sheet** (`sheet` / `sheet-night`): raised surfaces: the feed column with its header and chirp rows, the bottom navigation, panels, fields, modals, toasts.
 - **Navy Ink** (`ink` / `ink-night`): body text. 14.2:1 on paper by day, 16.0:1 by night.
 - **Faded Ink** (`ink-muted` / `ink-muted-night`): handles, meta, counts, captions, hints, placeholders, inactive icons. 6.6:1 on the sheet by day, 7.7:1 by night.
 - **Hairline** (`hairline` / `hairline-night`): the one divider system; also the resting border of secondary buttons, modals and toasts, and the scrollbar thumb.
@@ -247,12 +289,12 @@ Six fixed mid-dark hues (`avatar-1` … `avatar-6`: green, rust, violet, steel b
 **Character:** One grotesque family doing every job: slightly wide and sturdy, like the sans of a stamped form, tightened at the top of the hierarchy and opened up only in the postmark.
 
 ### Hierarchy
-- **Headline** (700, 1.5rem, 2rem, -0.02em): page titles ("Home").
+- **Headline** (700, 1.5rem, 2rem, -0.02em): page titles ("Home", "Search", "Page not found").
 - **Wordmark** (700, 1.25rem, 1.75rem, -0.02em): the "Chirp" wordmark in the header.
-- **Title** (600, 1.125rem, 1.75rem): section headings, modal titles, empty-state titles.
+- **Title** (600, 1.125rem, 1.75rem): section headings, modal titles, empty-state titles, the route-error heading; also the size of the rail's navigation labels (500, 700 for the current page).
 - **Body** (400, 0.9375rem, 1.25rem): chirp text, modal body, toast messages; display names sit at 600 in the meta size. Long prose is capped at 65ch.
 - **Meta** (400, 0.875rem, 1.25rem, tabular): handles, counts ("12 likes") in faded ink; field labels at 600 in ink, hints in faded ink, small buttons at 600.
-- **Caption** (400, 0.75rem, 1rem): secondary labels in faded ink; the character counter (tabular).
+- **Caption** (400, 0.75rem, 1rem): secondary labels in faded ink; the character counter (tabular); the bottom navigation's labels (500, 700 for the current page).
 - **Postmark** (600, 0.5625rem / 0.6875rem with the time line at 0.75rem / 1rem, +0.04em, uppercase, tabular): only inside the postmark ring.
 
 Buttons set their label at 600: 1rem in the default size, 0.875rem in the small one.
@@ -266,13 +308,17 @@ Buttons set their label at 600: 1rem in the default size, 0.875rem in the small 
 
 Mobile-first and familiar. The base layout targets a 390px phone and must remain fully usable at 320px; it scales up at 640px (`sm`) and 1024px (`lg`).
 
-- **Phone:** a 56px header on the sheet (avatar, wordmark) with the chevron hairline beneath it; the timeline as full-bleed rows on the sheet; the red "Chirp" button bottom right, above a 64px bottom navigation.
-- **Desktop:** a labelled left rail, a 600px feed column, a right search panel.
+The shell is three columns centred on the paper ground: the left rail, the feed column, the side panel. Only the feed column is on the sheet.
+
+- **Phone (base):** the feed column fills the width on the sheet. Its 56px sticky header (the wordmark) carries the chevron beneath it. A fixed 64px bottom navigation sits on the sheet with a hairline above it and pads itself for the home indicator (`safe-area-inset-bottom`); the main content pads its bottom by the same amount so nothing hides under it. The round red compose button floats 16px from the right edge and 16px above the bottom navigation.
+- **Tablet (640px, `sm`):** the bottom navigation and floating compose button go away. An icon-only left rail appears (12px side padding, 64px from the top), and the feed column caps at 600px (`max-w-150`) with hairlines on both sides; the paper ground shows around it.
+- **Desktop (1024px, `lg`):** the rail widens to a labelled 15rem column, and a 20rem side panel (24px side padding, 64px from the top) holds the people search.
+- **Header:** lives inside the feed column at every width and sticks to the top as the column scrolls; the rail and side panel are sticky full-height columns of their own.
 - **Rhythm:** 16px side gutter, 12px vertical row padding, 12px gap between avatar and content. A chirp row reserves 64px on the right of its text column so the postmark never collides with the text.
 - **Overlays:** modals centre in the viewport at up to 32rem wide, keeping 1rem clear on each side of a phone. Toasts stack bottom centre, lifted 80px on phones to clear the 64px bottom navigation.
 - **Scroll:** the page always reserves its scrollbar gutter (`scrollbar-gutter: stable`), so locking scroll behind a modal never shifts the layout sideways.
 
-**Planned, not built:** the phone and desktop shells (bottom navigation, left rail, search panel, the floating compose button) arrive with the app-shell commit. Built so far: the header, the chevron, the chirp row and the UI primitives below, all rendered at `/styleguide`.
+The shell lives in `apps/web/src/app/layout/`; the primitives and the chirp row are also rendered at `/styleguide`.
 
 ### Named Rules
 **The Full Bleed Feed Rule.** Feed rows run edge to edge on the sheet and are separated by hairlines. They are never cards, and never cards inside cards.
@@ -281,19 +327,19 @@ Mobile-first and familiar. The base layout targets a 390px phone and must remain
 
 Flat by default. Depth is tonal: chirps, header and panels sit on the sheet, which sits on the paper ground, and 1px hairlines divide rows. Focus is shown with an outline (2px airmail blue, 2px offset), never a glow.
 
-Two things leave the page. Toasts float, and carry the one shadow in the system. Modals do not cast a shadow: the scrim dims the page behind them, and they keep the sheet, a hairline border and the card radius.
+Three things leave the page. Toasts and the phone's floating compose button float, and carry the one shadow in the system. Modals do not cast a shadow: the scrim dims the page behind them, and they keep the sheet, a hairline border and the card radius.
 
 ### Shadow Vocabulary
-- **Float** (`shadow-float`: `box-shadow: 0 6px 16px var(--float-shadow)`, where `--float-shadow` is navy ink at 18% by day and black at 50% by night): toasts now; the floating compose button when the app shell is built.
+- **Float** (`shadow-float`: `box-shadow: 0 6px 16px var(--float-shadow)`, where `--float-shadow` is navy ink at 18% by day and black at 50% by night): toasts and the phone's floating compose button.
 
 ### Named Rules
-**The Hairline Rule.** Structure comes from hairlines and the paper/sheet step. The only shadow is `shadow-float`, and it belongs only to things that float above the page (toasts now, the compose button later); a modal is set apart by the scrim instead. No other shadow exists in this world: not on cards, rows, buttons, fields or menus at rest.
+**The Hairline Rule.** Structure comes from hairlines and the paper/sheet step. The only shadow is `shadow-float`, and it belongs only to things that float above the page (toasts and the phone's compose button); a modal is set apart by the scrim instead. No other shadow exists in this world: not on cards, rows, buttons, fields or menus at rest.
 
 ## Shapes
 
 Three radii do all the work: the circle, the softly rounded card and the gently rounded field.
 
-- **Circles** (`rounded.full`): avatars (32, 44 and 80px), the postmark ring (56px), every button (a pill at 44px or 36px tall) and the modal's 36px close button.
+- **Circles** (`rounded.full`): avatars (32, 44 and 80px), the postmark ring (56px), every button (a pill at 44px or 36px tall, or a 48px circle when it holds only an icon), the modal's 36px close button, the rail's navigation items and the bottom navigation's 56×32px current-page pill.
 - **Cards** (`rounded.card`, 0.875rem): panels, modals and toasts: containers that are not feed rows. Cards stay in the 12–16px range; pills are reserved for controls.
 - **Fields** (`rounded.field`, 0.5rem): text inputs and textareas, a tighter corner than the card so a form reads as writing space, not as another panel.
 - **The chevron edge:** a 4px band of repeating 135° stripes (10px red, 6px sheet, 10px blue, 6px sheet), the airmail envelope border.
@@ -303,11 +349,11 @@ Three radii do all the work: the circle, the softly rounded card and the gently 
 
 ## Components
 
-Screens are built from the primitives in `apps/web/src/components/ui/`; nothing re-creates a button, field or dialog by hand. The app shell and its compose button arrive in a later commit and will be recorded here as they land.
+Screens are built from the primitives in `apps/web/src/components/ui/`; nothing re-creates a button, field or dialog by hand. The app shell built from them lives in `apps/web/src/app/layout/`.
 
 ### Buttons
 Pills that say what they do; one red one per screen.
-- **Shape:** a full pill (`rounded.full`). Two sizes: default 44px tall with 20px horizontal padding and a 1rem label; small 36px tall with 16px padding and a 0.875rem label. Labels at 600, icon and text 8px apart.
+- **Shape:** a full pill (`rounded.full`). Three sizes: default 44px tall with 20px horizontal padding and a 1rem label; small 36px tall with 16px padding and a 0.875rem label; icon, a 48px circle with no padding that holds only an icon and must carry an `aria-label`. Labels at 600, icon and text 8px apart.
 - **Primary:** airmail red with on-airmail-red text. The one main action on a screen ("Chirp", "Sign in"). Hover darkens it slightly (95% brightness), pressed a step more (90%).
 - **Secondary:** the sheet with a hairline border and ink text, for every other action ("Follow", "Cancel"). Hover takes the paper wash.
 - **Ghost:** no fill or border, faded ink text; hover takes the paper wash and ink text. For quiet actions in toolbars, menus and modal cancels.
@@ -367,7 +413,32 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Decorative by default** (`aria-hidden`, empty alt): beside a visible name, the name carries the identity and is not read twice. An avatar that stands alone takes an opt-in label and is then announced as an image with that name.
 
 ### Header
-- 56px on the sheet with the wordmark, followed by the chevron edge.
+- 56px on the sheet with the wordmark (16px side padding) linking home, followed by the chevron edge. Sticky at the top of the feed column at every width; never spans the rail or the side panel.
+
+### Navigation
+Two renderings of one list of destinations (Home, Search; Profile joins with the session, Notifications with its feature), both labelled "Primary", so phone and desktop always offer the same places.
+- **Current page:** marked four ways, never by colour alone: `aria-current="page"`, a bolder label (700 against 500), a paper-tinted pill, and airmail blue. Icons are 24px.
+- **Left rail (from 640px):** on tablets, 48px circles holding only the icon (named by `aria-label`), 4px apart, ink at rest with the paper wash on hover. From 1024px each item becomes a 48px-tall full-width pill with 16px padding, the icon and a title-size label 16px apart. The compose button sits 16px below the list.
+- **Bottom navigation (phone):** a fixed 64px bar on the sheet with a hairline top, one equal-width item per destination: the icon in a 56×32px pill (paper when current) over a caption-size label, 4px apart; faded ink at rest. Its focus ring is drawn 4px inside the item, because the bar sits on the screen edge where an outer ring would be clipped.
+- **Skip link:** "Skip to content" is the first focusable element. It is parked above the viewport and slides in at the top left on focus as a sheet pill with a hairline border, 8px × 16px padding and airmail blue text at 600; it moves focus to the main content.
+
+### Compose button
+The one red action of the shell; every compose button opens the "New chirp" modal.
+- **Phone:** a 48px red circle (icon size) with a 24px pen icon and `shadow-float`, fixed 16px from the right and 16px above the bottom navigation.
+- **Rail:** on tablets the same 48px red circle with a 20px pen icon; on desktop it spans the rail's width as a labelled "Chirp" pill (48px tall, 20px padding). Both are named "New chirp".
+
+### Side panel and search field
+- **Panel (from 1024px):** one sheet card (hairline border, card radius, 16px padding) in the 20rem column. It holds only the people search for now.
+- **Search field:** a field labelled "Search people" with a 20px search icon in faded ink 12px inside the left edge (the text starts 40px in), placeholder "Name or @username". Submitting goes to the search page; every copy of the field shows the query from the address (`?q=`), so they always agree.
+
+### Page heading
+- Each route opens with its headline (`h1`) on the sheet, 12px × 16px padding and a hairline below, then an optional toolbar (the phone search field), then the page content or its empty state.
+- Every route names the browser tab "<Page> · Chirp".
+
+### Route states
+- **Loading (first visit):** a 32px spinner in faded ink, centred in the viewport, while the opening screen's code arrives.
+- **Not found:** centred like an empty state (48px × 24px padding, 12px gaps): a headline, a description in faded ink capped at 40ch, and a secondary "Go to your timeline" button link.
+- **Route error:** the same centred layout, announced as an alert: a 32px alert icon in danger, a title-size heading, words that say what to do, and a secondary "Reload" button. Inside the shell, so navigation stays usable.
 
 ### Postmark (signature)
 Every chirp is stamped with the moment it was sent.
@@ -394,10 +465,11 @@ Every chirp is stamped with the moment it was sent.
 - **Do** confirm destructive actions with the outlined danger button.
 - **Do** keep a busy button at full colour with its spinner; fade only buttons that are genuinely disabled.
 - **Do** draw icons from Lucide at a 1.75 stroke.
+- **Do** mark the current page with `aria-current`, a bolder label and the paper pill as well as airmail blue.
 
 ### Don't:
 - **Don't** add a second chevron edge or use the chevron as a frame; there is exactly one, under the header.
-- **Don't** use decorative shadows; depth is paper, sheet and hairline, and `shadow-float` is reserved for things that float (toasts, the compose button).
+- **Don't** use decorative shadows; depth is paper, sheet and hairline, and `shadow-float` is reserved for things that float (toasts, the phone's compose button).
 - **Don't** wrap feed rows in cards, or nest cards inside cards.
 - **Don't** fill buttons with airmail blue or use red for anything but the primary action and the liked state.
 - **Don't** fill the danger button at rest; it is outlined so it never competes with the primary action.

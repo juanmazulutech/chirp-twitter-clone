@@ -4,6 +4,7 @@
   "private": true,
   "description": "Contracts shared by the Chirp API and web app: Zod schemas, inferred types and constants.",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },

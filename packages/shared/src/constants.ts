@@ -6,6 +6,24 @@ export const USERNAME_PATTERN = /^[a-z0-9_]{3,15}$/;
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 15;
 
+/**
+ * Usernames that would collide with a top-level web path: profiles live at `/:username`,
+ * and static routes (and the `/api` and `/assets` prefixes) always win over that segment,
+ * so a user with one of these names would have an unreachable profile.
+ */
+export const RESERVED_USERNAMES: readonly string[] = [
+  'api',
+  'assets',
+  'home',
+  'login',
+  'logout',
+  'notifications',
+  'register',
+  'search',
+  'settings',
+  'styleguide',
+];
+
 export const DISPLAY_NAME_MAX_LENGTH = 50;
 export const EMAIL_MAX_LENGTH = 254;
 

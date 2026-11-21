@@ -38,6 +38,17 @@ describe('usernameSchema', () => {
       expect(usernameSchema.safeParse(value).success).toBe(false);
     },
   );
+
+  it.each(['home', 'Search', ' API '])('rejects the reserved route name "%s"', (value) => {
+    const result = usernameSchema.safeParse(value);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('This username is not available');
+  });
+
+  it('accepts names that only contain a reserved word', () => {
+    expect(usernameSchema.safeParse('home_cook').success).toBe(true);
+  });
 });
 
 describe('displayNameSchema', () => {

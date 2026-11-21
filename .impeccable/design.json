@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-21T09:36:06+00:00",
+  "generatedAt": "2026-11-21T23:25:41+00:00",
   "title": "Design System: Chirp",
   "extensions": {
     "colorMeta": {
@@ -40,7 +40,7 @@
         "role": "neutral",
         "displayName": "Sheet (day)",
         "canonical": "light-dark(#ffffff, #121f40)",
-        "purpose": "Raised surfaces: header, chirp rows, panels, fields, modals, toasts.",
+        "purpose": "Raised surfaces: the feed column with its header and chirp rows, the bottom navigation, panels, fields, modals, toasts.",
         "tonalRamp": [
           "oklch(15% 0.000 90)",
           "oklch(26% 0.000 90)",
@@ -56,7 +56,7 @@
         "role": "neutral",
         "displayName": "Sheet (night)",
         "canonical": "light-dark(#ffffff, #121f40)",
-        "purpose": "Raised surfaces: header, chirp rows, panels, fields, modals, toasts.",
+        "purpose": "Raised surfaces: the feed column with its header and chirp rows, the bottom navigation, panels, fields, modals, toasts.",
         "tonalRamp": [
           "oklch(15% 0.025 266)",
           "oklch(26% 0.036 266)",
@@ -557,7 +557,7 @@
         "token": "shadow-float",
         "value": "0 6px 16px var(--float-shadow)",
         "color": "--float-shadow: light-dark(rgb(20 37 74 / 0.18), rgb(0 0 0 / 0.5))",
-        "purpose": "The only elevation: things that float above the page. Toasts now; the floating compose button when the app shell is built. Modals use the scrim instead, no shadow."
+        "purpose": "The only elevation: things that float above the page. Toasts and the phone's floating compose button. Modals use the scrim instead, no shadow."
       }
     ],
     "focus": {
@@ -636,16 +636,17 @@
     "breakpoints": [
       {
         "name": "sm",
-        "value": "640px"
+        "value": "640px",
+        "purpose": "Bottom navigation and floating compose button give way to an icon-only left rail; the feed column caps at 600px with hairline sides on the paper ground."
       },
       {
         "name": "lg",
-        "value": "1024px"
+        "value": "1024px",
+        "purpose": "The rail gains labels (15rem) and the 20rem side panel with people search appears."
       }
     ],
     "planned": [
-      "Postmark stamp landing motion",
-      "App shell: bottom nav, left rail, search panel, floating compose button (C17)"
+      "Postmark stamp landing motion"
     ],
     "rounded": {
       "field": {
@@ -658,7 +659,7 @@
       },
       "full": {
         "value": "9999px",
-        "purpose": "Avatars, postmark, buttons, close button."
+        "purpose": "Avatars, postmark, buttons (pills, and 48px icon circles), close button, rail items, bottom-nav current-page pill."
       }
     },
     "scroll": {
@@ -669,6 +670,14 @@
       "set": "lucide-react",
       "strokeWidth": 1.75,
       "purpose": "Line icons, aria-hidden, in the current text colour; never emoji or Unicode glyphs."
+    },
+    "layout": {
+      "feedColumn": "max-width 600px (max-w-150) on the sheet, hairline left and right from 640px; full width on phones",
+      "rail": "from 640px: sticky, full height, 12px side padding, 64px from the top; 15rem wide from 1024px",
+      "sidePanel": "from 1024px: sticky, 20rem wide, 24px side padding, 64px from the top",
+      "bottomNav": "phone only: fixed, 64px plus safe-area-inset-bottom; main content pads by the same amount",
+      "header": "56px, sticky, inside the feed column at every width",
+      "pageTitle": "\"<Page> · Chirp\" on every route"
     }
   },
   "components": [
@@ -708,9 +717,9 @@
       "name": "Text field",
       "kind": "input",
       "refersTo": "field-input",
-      "description": "Labelled 44px input, 8px radius, hairline border (faded ink on hover, danger when invalid); hint in faded ink; error is an alert icon plus text in danger.",
+      "description": "Labelled 44px input, 8px radius, field-border outline (ink on hover, danger when invalid); hint in faded ink; error is an alert icon plus text in danger.",
       "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-email\">Email</label><input class=\"ds-field-input\" id=\"ds-email\" type=\"email\" value=\"ana@chirp.dev\" aria-invalid=\"true\" aria-describedby=\"ds-email-error\"><p class=\"ds-field-error\" id=\"ds-email-error\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/></svg>This email is already registered</p></div><div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-user\">Username</label><input class=\"ds-field-input\" id=\"ds-user\" value=\"ana_codes\" aria-describedby=\"ds-user-hint\"><p class=\"ds-field-hint\" id=\"ds-user-hint\">3–15 letters, numbers or underscores.</p></div>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;color:var(--ink);} .ds-field-label{font-size:.875rem;line-height:1.25rem;font-weight:600;} .ds-field-input{height:44px;padding:0 12px;border:1px solid var(--hairline);border-radius:8px;background:var(--sheet);color:var(--ink);font:400 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;transition:border-color .15s;} .ds-field-input::placeholder{color:var(--ink-muted);} .ds-field-input:hover{border-color:var(--ink-muted);} .ds-field-input:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-field-input[aria-invalid=true]{border-color:var(--danger);} .ds-field-hint{margin:0;font-size:.875rem;line-height:1.25rem;color:var(--ink-muted);} .ds-field-error{display:flex;align-items:center;gap:6px;margin:0;font-size:.875rem;line-height:1.25rem;font-weight:500;color:var(--danger);} .ds-field-error svg{flex-shrink:0;}"
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--field-border:light-dark(#7d8aab,#6576a0);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;color:var(--ink);} .ds-field-label{font-size:.875rem;line-height:1.25rem;font-weight:600;} .ds-field-input{height:44px;padding:0 12px;border:1px solid var(--field-border);border-radius:8px;background:var(--sheet);color:var(--ink);font:400 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;transition:border-color .15s;} .ds-field-input::placeholder{color:var(--ink-muted);} .ds-field-input:hover{border-color:var(--ink);} .ds-field-input:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-field-input[aria-invalid=true]{border-color:var(--danger);} .ds-field-hint{margin:0;font-size:.875rem;line-height:1.25rem;color:var(--ink-muted);} .ds-field-error{display:flex;align-items:center;gap:6px;margin:0;font-size:.875rem;line-height:1.25rem;font-weight:500;color:var(--danger);} .ds-field-error svg{flex-shrink:0;}"
     },
     {
       "name": "Modal",
@@ -740,9 +749,49 @@
       "name": "Header with chevron edge",
       "kind": "nav",
       "refersTo": "header",
-      "description": "56px sheet header with the wordmark and the page's one airmail chevron hairline beneath it.",
+      "description": "56px sticky sheet header with the wordmark, inside the feed column at every width, and the page's one airmail chevron hairline beneath it.",
       "html": "<header class=\"ds-header\"><div class=\"ds-header-bar\"><span class=\"ds-wordmark\">Chirp</span></div><div class=\"ds-airmail-edge\"></div></header>",
       "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-header{background:var(--sheet);color:var(--ink);} .ds-header-bar{display:flex;align-items:center;height:56px;padding:0 16px;} .ds-wordmark{font-size:1.25rem;line-height:1.75rem;font-weight:700;letter-spacing:-0.02em;} .ds-airmail-edge{height:4px;background:repeating-linear-gradient(135deg,var(--airmail-red) 0 10px,var(--sheet) 10px 16px,var(--airmail-blue) 16px 26px,var(--sheet) 26px 32px);}"
+    },
+    {
+      "name": "Left rail navigation",
+      "kind": "nav",
+      "refersTo": "rail-item",
+      "description": "From 1024px: 48px-tall full-width pills with a 24px icon and a title-size label; current page is aria-current, 700, paper pill and airmail blue. From 640px the same items are 48px icon-only circles.",
+      "html": "<nav class=\"ds-rail\" aria-label=\"Primary\"><a class=\"ds-rail-item\" href=\"#\" aria-current=\"page\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg><span>Home</span></a><a class=\"ds-rail-item\" href=\"#\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>Search</span></a></nav>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--field-border:light-dark(#7d8aab,#6576a0);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-rail{display:flex;flex-direction:column;gap:4px;width:15rem;padding:0 12px;} .ds-rail-item{display:flex;align-items:center;gap:16px;height:48px;padding:0 16px;border-radius:9999px;color:var(--ink);font-size:1.125rem;line-height:1.75rem;font-weight:500;text-decoration:none;transition:background-color .15s;} .ds-rail-item:hover{background:var(--paper);} .ds-rail-item[aria-current=page]{background:var(--paper);color:var(--airmail-blue);font-weight:700;} .ds-rail-item:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-rail-item svg{flex-shrink:0;}"
+    },
+    {
+      "name": "Bottom navigation",
+      "kind": "nav",
+      "refersTo": "bottom-nav",
+      "description": "Phone only: fixed 64px sheet bar with a hairline top; icon in a 56x32 pill (paper when current) over a 12px label; inset focus ring because it sits on the screen edge.",
+      "html": "<nav class=\"ds-bottom-nav\" aria-label=\"Primary\"><a class=\"ds-bottom-item\" href=\"#\" aria-current=\"page\"><span class=\"ds-bottom-pill\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg></span>Home</a><a class=\"ds-bottom-item\" href=\"#\"><span class=\"ds-bottom-pill\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg></span>Search</a></nav>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--field-border:light-dark(#7d8aab,#6576a0);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-bottom-nav{display:flex;height:64px;background:var(--sheet);border-top:1px solid var(--hairline);} .ds-bottom-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:.75rem;line-height:1rem;font-weight:500;color:var(--ink-muted);text-decoration:none;} .ds-bottom-item[aria-current=page]{color:var(--airmail-blue);font-weight:700;} .ds-bottom-item:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:-4px;} .ds-bottom-pill{display:grid;place-items:center;width:56px;height:32px;border-radius:9999px;transition:background-color .15s;} .ds-bottom-item[aria-current=page] .ds-bottom-pill{background:var(--paper);}"
+    },
+    {
+      "name": "Compose button",
+      "kind": "button",
+      "refersTo": "button-primary-icon",
+      "description": "Phone only: 48px round airmail red icon button with a pen icon and shadow-float, fixed 16px from the right and 16px above the bottom navigation. Named \"New chirp\"; opens the composer modal.",
+      "html": "<button class=\"ds-fab\" type=\"button\" aria-label=\"New chirp\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13 21h8\"/><path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"/></svg></button>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--field-border:light-dark(#7d8aab,#6576a0);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-fab{display:inline-grid;place-items:center;width:48px;height:48px;padding:0;border:none;border-radius:9999px;background:var(--airmail-red);color:var(--on-airmail-red);box-shadow:0 6px 16px var(--float-shadow);cursor:pointer;transition:filter .15s;} .ds-fab:hover{filter:brightness(.95);} .ds-fab:active{filter:brightness(.9);} .ds-fab:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;}"
+    },
+    {
+      "name": "People search field",
+      "kind": "input",
+      "refersTo": "field-input",
+      "description": "Labelled \"Search people\", 20px search icon in faded ink inside the left edge, placeholder \"Name or @username\"; sits in the desktop side panel (a sheet card) and reflects ?q= from the address.",
+      "html": "<div class=\"ds-panel\"><form class=\"ds-search\" role=\"search\" aria-label=\"Search people\"><label class=\"ds-search-label\" for=\"ds-q\">Search people</label><div class=\"ds-search-wrap\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-search-input\" id=\"ds-q\" type=\"search\" placeholder=\"Name or @username\"></div></form></div>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--field-border:light-dark(#7d8aab,#6576a0);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-panel{width:20rem;padding:16px;background:var(--sheet);border:1px solid var(--hairline);border-radius:.875rem;color:var(--ink);} .ds-search{display:flex;flex-direction:column;gap:6px;margin:0;} .ds-search-label{font-size:.875rem;line-height:1.25rem;font-weight:600;} .ds-search-wrap{position:relative;} .ds-search-wrap svg{position:absolute;top:50%;left:12px;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none;} .ds-search-input{box-sizing:border-box;width:100%;height:44px;padding:0 12px 0 40px;border:1px solid var(--field-border);border-radius:8px;background:var(--sheet);color:var(--ink);font:400 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;transition:border-color .15s;} .ds-search-input::placeholder{color:var(--ink-muted);} .ds-search-input:hover{border-color:var(--ink);} .ds-search-input:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;}"
+    },
+    {
+      "name": "Skip link",
+      "kind": "custom",
+      "refersTo": "skip-link",
+      "description": "\"Skip to content\": parked above the viewport, slides in at the top left on focus as a sheet pill with a hairline border and airmail blue text.",
+      "html": "<a class=\"ds-skip\" href=\"#main\">Skip to content</a>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--field-border:light-dark(#7d8aab,#6576a0);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-skip{display:inline-block;padding:8px 16px;border:1px solid var(--hairline);border-radius:9999px;background:var(--sheet);color:var(--airmail-blue);font-weight:600;text-decoration:none;} .ds-skip:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;}"
     },
     {
       "name": "Postmark",
@@ -811,7 +860,7 @@
       },
       {
         "name": "The Hairline Rule",
-        "body": "Structure comes from hairlines and the paper/sheet step. The only shadow is `shadow-float`, and it belongs only to things that float above the page (toasts now, the compose button later); a modal is set apart by the scrim instead. No other shadow exists in this world: not on cards, rows, buttons, fields or menus at rest."
+        "body": "Structure comes from hairlines and the paper/sheet step. The only shadow is `shadow-float`, and it belongs only to things that float above the page (toasts and the phone's compose button); a modal is set apart by the scrim instead. No other shadow exists in this world: not on cards, rows, buttons, fields or menus at rest."
       },
       {
         "name": "The One Chevron Rule",
@@ -830,11 +879,12 @@
       "**Do** build screens from the primitives (Button, ButtonLink, Avatar, Field, Modal, Spinner, EmptyState) and show toasts only through `notify`, after any open modal has closed.",
       "**Do** confirm destructive actions with the outlined danger button.",
       "**Do** keep a busy button at full colour with its spinner; fade only buttons that are genuinely disabled.",
-      "**Do** draw icons from Lucide at a 1.75 stroke."
+      "**Do** draw icons from Lucide at a 1.75 stroke.",
+      "**Do** mark the current page with `aria-current`, a bolder label and the paper pill as well as airmail blue."
     ],
     "donts": [
       "**Don't** add a second chevron edge or use the chevron as a frame; there is exactly one, under the header.",
-      "**Don't** use decorative shadows; depth is paper, sheet and hairline, and `shadow-float` is reserved for things that float (toasts, the compose button).",
+      "**Don't** use decorative shadows; depth is paper, sheet and hairline, and `shadow-float` is reserved for things that float (toasts, the phone's compose button).",
       "**Don't** wrap feed rows in cards, or nest cards inside cards.",
       "**Don't** fill buttons with airmail blue or use red for anything but the primary action and the liked state.",
       "**Don't** fill the danger button at rest; it is outlined so it never competes with the primary action.",
