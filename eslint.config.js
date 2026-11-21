@@ -48,6 +48,8 @@ export default defineConfig(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/no-floating-promises': 'error',
+      // Fastify plugins and handlers are async by contract even when they do not await.
+      '@typescript-eslint/require-await': 'off',
       eqeqeq: ['error', 'always'],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },

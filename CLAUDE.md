@@ -37,7 +37,7 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 | `npm run format` / `npm run format:check` | Prettier (Markdown is excluded) | C02 |
 | `npm run typecheck` | TypeScript across workspaces | C05 |
 | `npm test` / `npm run test:coverage` | Vitest across workspaces | C05 |
-| `npm run verify` | lint + typecheck + tests with coverage — required before every report | C06 |
+| `npm run verify` | lint + format check + typecheck + tests with coverage — required before every report | C06 |
 | `docker compose up -d db minio minio-init` | local PostgreSQL (port 5433) and MinIO | C07 |
 | `npm run dev` | API + web in watch mode | C15 |
 | `npm run db:migrate` / `db:seed` / `db:reset` | Prisma migrations and seed | C09 / C13 |
@@ -50,7 +50,7 @@ A pre-commit hook (husky + lint-staged) runs ESLint and Prettier on staged files
 Detail and examples: ARCHITECTURE.md §3.
 
 **API (`apps/api`)**
-- One folder per feature in `src/modules/<feature>/`: `routes.ts`, `service.ts`, tests next to them. Modules are auto-loaded; there is no central route registry.
+- One folder per feature in `src/modules/<feature>/`: `routes.ts`, `service.ts`, tests next to them. Each module is registered explicitly in `src/modules/index.ts` (one line per feature).
 - `routes.ts` handles HTTP only (schemas, status codes, `preHandler: app.requireAuth`). No business rules, no Prisma queries.
 - `service.ts` holds business rules with injected dependencies (`prisma`, `storage`) and throws domain errors (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`). It never touches `request`/`reply`.
 - Rows become DTOs only through `src/lib/serializers.ts`. Never return Prisma rows directly.

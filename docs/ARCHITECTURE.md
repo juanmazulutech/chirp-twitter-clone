@@ -142,7 +142,7 @@ Forms use `react-hook-form` with `zodResolver(<shared schema>)`.
 ### 3.3 Error format
 
 ```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "Invalid request", "details": { "fieldErrors": { "content": ["Too long"] } } } }
+{ "error": { "code": "VALIDATION_ERROR", "message": "Invalid request", "details": { "fieldErrors": { "content": ["Too long"] }, "formErrors": [] } } }
 ```
 
 | HTTP | `code` | When |
@@ -292,7 +292,8 @@ Page<T>      = { items: T[], nextCursor: string | null }
 
 | Method | Path | Auth | Input | Response | Notes |
 |---|---|---|---|---|---|
-| GET | `/health` | — | — | `200 { status: 'ok' }` | checks the database |
+| GET | `/health` | — | — | `200 { status: 'ok' }` | liveness: no dependency checks |
+| GET | `/health/ready` | — | — | `200 { status: 'ok', checks }` or `503` | readiness: checks the database (added in C09) |
 | POST | `/auth/register` | — | `{ email, username, displayName, password }` | `201 { user: UserSummary }` + cookie | 409 on taken email/username; password 8–72 chars; rate limited |
 | POST | `/auth/login` | — | `{ email, password }` | `200 { user: UserSummary }` + cookie | generic 401; rate limited |
 | POST | `/auth/logout` | 🔒 | — | `204` | deletes session, clears cookie |
@@ -386,9 +387,10 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 
 | Variable | Example | Description |
 |---|---|---|
-| `NODE_ENV` | `development` | runtime environment |
 | `API_PORT` | `3000` | API port |
 | `API_HOST` | `0.0.0.0` | API bind address |
+| `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
+| `LOG_PRETTY` | `true` | human-readable logs (`false` emits JSON for log aggregation) |
 | `DATABASE_URL` | `postgresql://chirp:chirp@localhost:5433/chirp` | main database |
 | `TEST_DATABASE_URL` | `postgresql://chirp:chirp@localhost:5433/chirp_test` | test and E2E database |
 | `WEB_ORIGIN` | `http://localhost:5173` | allowed `Origin` for state-changing requests |
@@ -418,7 +420,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `test` | shared, API and web tests |
 | `test:coverage` | the same, enforcing coverage thresholds |
 | `test:e2e` | Playwright |
-| `verify` | `lint` + `typecheck` + `test:coverage` |
+| `verify` | `lint` + `format:check` + `typecheck` + `test:coverage` |
 
 ## 9. Seed data
 

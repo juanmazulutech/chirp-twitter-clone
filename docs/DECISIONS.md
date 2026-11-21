@@ -50,10 +50,11 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 
 ## ADR-03 · Backend: Fastify + TypeScript
 
-- **Decision:** Fastify with `fastify-type-provider-zod`. Feature modules under `src/modules/<feature>/` (`routes.ts`, `service.ts`, tests), loaded with `@fastify/autoload`.
+- **Decision:** Fastify with `fastify-type-provider-zod`. Feature modules under `src/modules/<feature>/` (`routes.ts`, `service.ts`, tests), each registered explicitly in `src/modules/index.ts` under the `/api` prefix.
 - **Context:** Node + TypeScript is the team's stack. Fastify provides `app.inject()` (integration tests without opening a port), encapsulated plugins, schema-driven validation/serialization and strong performance.
 - **Alternatives:** Express (no schema typing, no native inject, more boilerplate); NestJS (heavier ceremony and DI than this scope needs); Next.js route handlers (blurs the backend boundary we want to test and measure independently).
-- **Why autoload:** each module is self-contained — adding a feature means adding a folder, with no central route registry to edit.
+- **Why explicit registration (not `@fastify/autoload`):** autoload discovers modules by scanning folders at runtime, which breaks once tsup bundles the API into a single file and depends on how each runtime (tsx, Vitest) loads `.ts` files. An explicit list is type-checked, works identically in development, tests and the production bundle, and costs one line per feature. *(Amended in C06; autoload was the initial choice.)*
+- **Skill review:** the Fastify skill's guidance was adopted for graceful shutdown (`close-with-grace`), liveness vs readiness health checks, log redaction, plugin metadata and request-id propagation; its TypeBox, `@fastify/error`/`@fastify/sensible`, JWT and `node:test` recommendations were not, because they conflict with ADR-02, ADR-09 and ADR-20 or would put HTTP decisions in services.
 - **Revisit when:** background work appears (emails, media processing) → a separate `apps/worker` process, not more work inside request handlers.
 
 ## ADR-04 · ORM: Prisma
@@ -210,7 +211,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 ## ADR-20 · Automated quality gates
 
 - **Decision:** TypeScript `strict`; ESLint (typescript-eslint, react-hooks, import order); Prettier; coverage thresholds enforced in `vitest.config` (API ≥ 85% lines/functions/statements and ≥ 80% branches; web ≥ 70%); GitHub Actions on every push.
-- **`npm run verify`** runs lint, type check and tests with coverage. It must pass before every commit.
+- **`npm run verify`** runs lint, format check, type check and tests with coverage. It must pass before every commit.
 
 ## ADR-21 · Evolutionary schema: one migration per feature
 
