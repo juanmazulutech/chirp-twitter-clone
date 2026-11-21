@@ -102,6 +102,8 @@ Decisions are appended or amended as the project evolves; superseded decisions a
   - Logout deletes the row and clears the cookie: **revocation is immediate**.
   - CSRF: `SameSite=Lax` + `Origin` check on state-changing methods + JSON-only bodies.
   - Rate limiting on `/auth/login` and `/auth/register`; generic "invalid credentials" errors on login.
+  - Login takes the same time whether or not the email exists: an unknown email still runs one argon2 verification against a precomputed dummy hash, so response timing cannot be used to enumerate accounts.
+  - argon2id parameters are OWASP's minimum (m=19 MiB, t=2, p=1), set explicitly; they are encoded in each hash, so they can be raised later without invalidating existing hashes.
 - **Context:** there is a single backend. Sessions give real revocation, keep the token unreadable by JavaScript (immune to theft via XSS), and a database leak exposes no usable tokens.
 - **Alternatives:**
   - *Stateless JWT:* cannot be revoked before expiry without a denylist, which reintroduces server state; logout does not truly log out.

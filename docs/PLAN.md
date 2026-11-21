@@ -321,7 +321,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
