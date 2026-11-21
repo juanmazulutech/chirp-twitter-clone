@@ -42,7 +42,7 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 | `npm run dev` | API + web in watch mode | C15 |
 | `npm run db:migrate` | create and apply a migration to the development database (`prisma migrate dev`) | C09 |
 | `npm run db:generate` | regenerate the Prisma client (also runs on every `npm install`) | C09 |
-| `npm run db:seed` / `db:reset` | seed / reset the development database | C13 |
+| `npm run db:seed` | **replace** all development data with the demo data set (idempotent; `--if-empty` variant used by Docker) | C13 |
 | `npm run test:e2e` | Playwright | C47 |
 
 A pre-commit hook (husky + lint-staged) runs ESLint and Prettier on staged files.

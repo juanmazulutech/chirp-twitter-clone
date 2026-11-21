@@ -94,7 +94,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 | C10 | `feat(auth): add password hashing and session token utilities` | `lib/password.ts` (argon2id), `lib/tokens.ts` (random token + SHA-256); unit tests |
 | C11 | `feat(auth): add register, login, logout and me endpoints` | auth contracts in shared, auth module, session plugin (cookie, lookup, sliding renewal, `requireAuth`), `loginAs` helper; integration tests (201/200/204/401/409, validation) |
 | C12 | `feat(auth): add origin check, security headers and rate limiting` | `Origin` verification on state-changing requests, helmet, rate limiting on auth routes; tests |
-| C13 | `feat(db): add seed with demo users` | `seed.ts` with 12 personas and the demo account |
+| C13 | `feat(db): add seed with demo users` | `seed.ts` (reset / `--if-empty` modes, testable CLI) with 12 hand-written personas and the demo account |
 
 **Done when:** a seeded user can sign in with `curl` and call `GET /api/auth/me`; API coverage ≥ 85%.
 
@@ -310,8 +310,8 @@ report described in the session protocol.
 | Phase | Commits | Status |
 |---|---|---|
 | 0 · Foundation | C01–C08 | ✅ Done |
-| 1 · Authentication API | C09–C13 | 🚧 In progress (C11) |
-| 2 · Web foundation and auth UI | C14–C20 | ⏳ |
+| 1 · Authentication API | C09–C13 | ✅ Done |
+| 2 · Web foundation and auth UI | C14–C20 | ⏳ Next |
 | 3 · Tweets and timeline | C21–C26 | ⏳ |
 | 4 · Likes | C27–C29 | ⏳ |
 | 5 · Profiles and social graph | C30–C34 | ⏳ |
@@ -340,3 +340,4 @@ report described in the session protocol.
 | 2026-11-20 | Fix after C09: `testDatabaseUrl()` takes the whole environment object; its fallback test passes `{}` | CI failed: passing `undefined` triggers the parameter default (`process.env`), so the test only passed locally because `.env` matched the fallback. Local CI simulations now use a URL that differs from the fallback |
 | 2026-11-20 | C11: `requireAuth` moved from C12 into C11 (C12 renamed); `/auth/me` returns `SessionUser` instead of `UserProfile`; logout is idempotent and needs no session | `/auth/me` and logout need the session guard; follower/tweet counts do not exist yet and the private email must never appear in a public profile; signing out must work even with an expired session |
 | 2026-11-20 | C12: `WEB_ORIGIN` became `WEB_ORIGINS` (list); added `TRUST_PROXY`, `RATE_LIMIT_GLOBAL_MAX`, `RATE_LIMIT_AUTH_MAX`; sign-in rate limit keyed by IP + email in `preHandler` | Dev (5173) and Docker (8080) origins differ; limits are tunable per environment and relaxed in tests; the Fastify skill's per-email example keys on an unparsed body (ADR-09) |
+| 2026-11-20 | C13: hand-written seed personas instead of Faker; `db:reset` dropped; seed has reset and `--if-empty` modes | Twelve coherent personas read better than random data and need no dependency; the seed's reset mode already restores demo data, while schema resets stay a deliberate human action; Docker must not wipe data on restart |

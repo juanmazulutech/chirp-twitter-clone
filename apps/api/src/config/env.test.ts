@@ -56,7 +56,7 @@ describe('loadEnv', () => {
   });
 
   it('requires a database URL', () => {
-    expect(() => loadEnv({})).toThrow(/DATABASE_URL/);
+    expect(() => loadEnv({})).toThrow(/DATABASE_URL: Required/);
   });
 
   it('rejects a database URL that is not PostgreSQL', () => {

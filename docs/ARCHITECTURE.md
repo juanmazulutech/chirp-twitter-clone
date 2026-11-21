@@ -429,7 +429,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `db:migrate` | `prisma migrate dev` |
 | `db:generate` | `prisma generate` (also runs on `postinstall`) |
 | `db:seed` | `prisma db seed` |
-| `db:reset` | reset the database and seed |
+| `db:seed` | `prisma db seed` → `prisma/seed.ts`: replaces application data with the demo data set |
 | `lint` / `typecheck` | across all workspaces |
 | `test` | shared, API and web tests |
 | `test:coverage` | the same, enforcing coverage thresholds |
@@ -440,12 +440,13 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 
 Target state once every feature is in place; each phase extends the seed with the data its feature needs.
 
-- Deterministic: Faker with a fixed seed, so every run yields the same data.
+- Deterministic and hand-written (`prisma/seed-data/`): every persona has a coherent name, username and bio, and later stages (tweets, follows, likes) build on those themes. Fixed join dates keep runs identical. No random data generator is needed at this size.
 - **12 users** with coherent personas (developer, designer, photographer, runner, chef…), matching bios and DiceBear avatars.
 - **Demo account:** `demo@chirp.dev` / `Password123!` (username `demo`). Every seed user shares the password `Password123!`; their emails are listed in the README.
 - 8–15 tweets per user, written to match the persona, spread over the last 30 days.
 - Follow graph: `demo` follows 8 users; every user follows 4–9 others; no self-follows.
 - Cross-likes: each user likes 10–30 tweets from people they follow.
 - Notifications consistent with the generated follows and likes (never self-notifications), with some unread for `demo`.
-- Idempotent: `db:seed` clears the tables before inserting; the Docker entrypoint only seeds an empty database.
+- Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
+- Every account gets its own argon2 hash; a test signs in with the documented demo credentials so documentation and data cannot drift.
 - Requires the storage service (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.

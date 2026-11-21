@@ -1,7 +1,7 @@
-import { PrismaPg } from '@prisma/adapter-pg';
 import fp from 'fastify-plugin';
 
-import { PrismaClient } from '../generated/prisma/client';
+import type { PrismaClient } from '../generated/prisma/client';
+import { createPrismaClient } from '../lib/prisma-client';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -13,13 +13,10 @@ export interface PrismaPluginOptions {
   databaseUrl: string;
 }
 
-/**
- * Exposes a Prisma client as `app.prisma` and disconnects it when the app closes.
- * Prisma 7 requires a driver adapter; connections are opened lazily on first query.
- */
+/** Exposes a Prisma client as `app.prisma` and disconnects it when the app closes. */
 export default fp<PrismaPluginOptions>(
   async (app, { databaseUrl }) => {
-    const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+    const prisma = createPrismaClient(databaseUrl);
 
     app.decorate('prisma', prisma);
     app.addHook('onClose', async () => {

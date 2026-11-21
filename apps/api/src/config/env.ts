@@ -22,7 +22,10 @@ export const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   LOG_PRETTY: booleanString.default(false),
-  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, error: 'Must be a postgresql:// URL' }),
+  DATABASE_URL: z.url({
+    protocol: /^postgres(ql)?$/,
+    error: (issue) => (issue.input === undefined ? 'Required' : 'Must be a postgresql:// URL'),
+  }),
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   // Set to true behind HTTPS so the session cookie is never sent over plain HTTP.
   COOKIE_SECURE: booleanString.default(false),
