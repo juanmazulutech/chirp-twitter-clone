@@ -7,6 +7,9 @@ test-results/
 package-lock.json
 skills-lock.json
 
+# Generated Prisma client
+apps/api/src/generated/
+
 # Third-party agent skills are vendored as-is
 .claude/
 

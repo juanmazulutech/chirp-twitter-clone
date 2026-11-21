@@ -12,6 +12,7 @@ import type { Env } from './config/env';
 import { buildLoggerOptions } from './config/logger';
 import modules from './modules';
 import errorsPlugin from './plugins/errors';
+import prismaPlugin from './plugins/prisma';
 
 export type AppConfig = Env;
 
@@ -51,6 +52,7 @@ export async function buildApp(config: AppConfig) {
   });
 
   await app.register(errorsPlugin);
+  await app.register(prismaPlugin, { databaseUrl: config.DATABASE_URL });
   await app.register(modules, { prefix: '/api' });
 
   return app;

@@ -39,6 +39,7 @@ chirp/
 ├── .github/workflows/ci.yml
 ├── apps/
 │   ├── api/
+│   │   ├── prisma.config.ts        Prisma 7 config: schema, migrations, datasource URL
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma
 │   │   │   ├── migrations/
@@ -52,6 +53,7 @@ chirp/
 │   │   │   ├── config/env.ts       environment parsed with Zod; fails fast
 │   │   │   ├── plugins/            prisma · session/auth · storage · errors · security
 │   │   │   ├── lib/                cursor · password · tokens · serializers · errors
+│   │   │   ├── generated/prisma/   Prisma client (generated on install, not committed)
 │   │   │   └── modules/
 │   │   │       ├── auth/           routes.ts · service.ts · *.test.ts
 │   │   │       ├── users/
@@ -62,7 +64,7 @@ chirp/
 │   │   │       ├── search/
 │   │   │       ├── uploads/
 │   │   │       └── notifications/
-│   │   ├── test/                   setup (database), factories, helpers
+│   │   ├── test/                   global-setup (migrations) · env (_test guard) · database (reset) · app · factories/
 │   │   ├── Dockerfile
 │   │   └── docker-entrypoint.sh    migrate deploy → seed if empty → start
 │   └── web/
@@ -421,6 +423,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `dev` | API (`tsx watch`) and web (`vite`) concurrently |
 | `build` | shared → api → web |
 | `db:migrate` | `prisma migrate dev` |
+| `db:generate` | `prisma generate` (also runs on `postinstall`) |
 | `db:seed` | `prisma db seed` |
 | `db:reset` | reset the database and seed |
 | `lint` / `typecheck` | across all workspaces |

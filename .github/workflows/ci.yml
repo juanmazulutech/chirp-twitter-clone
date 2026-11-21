@@ -19,6 +19,22 @@ jobs:
     timeout-minutes: 15
     env:
       HUSKY: '0'
+      TEST_DATABASE_URL: postgresql://chirp:chirp@localhost:5432/chirp_test
+    services:
+      postgres:
+        # Same image as docker-compose.yml.
+        image: postgres:16.16-alpine
+        env:
+          POSTGRES_USER: chirp
+          POSTGRES_PASSWORD: chirp
+          POSTGRES_DB: chirp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chirp -d chirp_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

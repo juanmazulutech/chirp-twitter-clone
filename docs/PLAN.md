@@ -310,7 +310,7 @@ report described in the session protocol.
 | Phase | Commits | Status |
 |---|---|---|
 | 0 · Foundation | C01–C08 | ✅ Done |
-| 1 · Authentication API | C09–C13 | ⏳ Next |
+| 1 · Authentication API | C09–C13 | 🚧 In progress (C09) |
 | 2 · Web foundation and auth UI | C14–C20 | ⏳ |
 | 3 · Tweets and timeline | C21–C26 | ⏳ |
 | 4 · Likes | C27–C29 | ⏳ |
@@ -321,7 +321,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -336,3 +336,4 @@ report described in the session protocol.
 | 2026-11-20 | C06: health split into liveness (`/api/health`) and readiness (`/api/health/ready`, C09); logging driven by `LOG_LEVEL`/`LOG_PRETTY` instead of `NODE_ENV` | Adopted from the Fastify skill review (ADR-03) |
 | 2026-11-20 | C07: local object storage is RustFS (bucket setup with `amazon/aws-cli`) instead of MinIO; services renamed `storage` / `storage-init` | MinIO no longer publishes pullable images; four alternatives were tested against Chirp's storage flow. ADR-14 amended, including two AWS SDK presigning pitfalls to apply in C37–C38 |
 | 2026-11-20 | C08: the CI PostgreSQL service moves to C09; lint fails on any warning (`--max-warnings 0`) | Configuration lands with the first code that exercises it; warnings should not accumulate silently |
+| 2026-11-20 | C09: readiness endpoint `GET /api/health/ready`; npm `overrides` pins `effect@3.22.5` | Readiness was split out in C06; the Prisma CLI's transitive `effect` dependency has a high-severity advisory (ADR-04) |

@@ -40,7 +40,9 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 | `npm run verify` | lint + format check + typecheck + tests with coverage — required before every report | C06 |
 | `npm run services:up` / `services:down` | local PostgreSQL (port 5433) and S3-compatible storage (RustFS, port 9000) | C07 |
 | `npm run dev` | API + web in watch mode | C15 |
-| `npm run db:migrate` / `db:seed` / `db:reset` | Prisma migrations and seed | C09 / C13 |
+| `npm run db:migrate` | create and apply a migration to the development database (`prisma migrate dev`) | C09 |
+| `npm run db:generate` | regenerate the Prisma client (also runs on every `npm install`) | C09 |
+| `npm run db:seed` / `db:reset` | seed / reset the development database | C13 |
 | `npm run test:e2e` | Playwright | C47 |
 
 A pre-commit hook (husky + lint-staged) runs ESLint and Prettier on staged files.
@@ -55,7 +57,7 @@ Detail and examples: ARCHITECTURE.md §3.
 - `service.ts` holds business rules with injected dependencies (`prisma`, `storage`) and throws domain errors (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`). It never touches `request`/`reply`.
 - Rows become DTOs only through `src/lib/serializers.ts`. Never return Prisma rows directly.
 - All lists use the keyset cursor from `src/lib/cursor.ts` on `(createdAt, id)` and return `{ items, nextCursor }`. Never offset pagination, never Prisma's `cursor: { id }`.
-- Configuration comes only from `src/config/env.ts`. Never read `process.env` elsewhere.
+- Configuration comes only from `src/config/env.ts`. Never read `process.env` elsewhere in `src/` (tooling configs and `test/env.ts` are the only exceptions).
 - Storage goes through the `StorageService` interface; tests use `MemoryStorage`.
 
 **Shared (`packages/shared`)**
@@ -72,6 +74,8 @@ Detail and examples: ARCHITECTURE.md §3.
 **Database**
 - Schema changes only through new Prisma migrations. Never edit a migration that has been committed.
 - SQL Prisma cannot express (CHECK constraints, trigram indexes) goes into migrations created with `--create-only`.
+- Prisma 7: the client is generated into `apps/api/src/generated/prisma/` (not committed) and imported from `../generated/prisma/client`; it needs the `PrismaPg` driver adapter. Run `npm run db:generate` after editing `schema.prisma`.
+- Destructive commands (`prisma migrate reset`, `db push --force-reset`, `--accept-data-loss`) require the author's explicit consent, every time.
 
 ## Testing rules
 
@@ -80,6 +84,8 @@ Detail: ARCHITECTURE.md §7.
 - Tests ship in the same commit as the code they verify.
 - Cover the failure paths, not just the happy path: 400, 401, 403, 404, 409, idempotency, pagination boundaries.
 - API integration tests use `app.inject()` against the real `chirp_test` database. Never mock Prisma.
+- The API suite needs PostgreSQL running (`npm run services:up`); `globalSetup` migrates the test database and refuses any database whose name does not end in `_test`.
+- Tests that touch the database call `resetDatabase(app.prisma)` in `beforeEach` and build data with the factories in `apps/api/test/factories/`.
 - Web tests use React Testing Library + MSW. Mock the network, never hooks or modules of our own.
 - Query by role and accessible name (`getByRole('button', { name: /like/i })`), not by test ids or class names.
 - Coverage thresholds (API 85% lines/functions/statements, 80% branches; web 70%) are never lowered to make a run pass.

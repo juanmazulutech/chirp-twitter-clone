@@ -3,6 +3,9 @@ node_modules/
 
 # Build output
 dist/
+
+# Generated Prisma client (prisma generate runs on install)
+apps/api/src/generated/
 *.tsbuildinfo
 
 # Test output
