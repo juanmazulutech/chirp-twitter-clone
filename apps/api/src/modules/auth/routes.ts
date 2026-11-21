@@ -11,6 +11,8 @@ import { toSessionUser, toUserSummary } from '../../lib/serializers';
 import { currentUser } from '../../plugins/session';
 
 const authRoutes: FastifyPluginAsyncZod = async (app) => {
+  const authRateLimit = { max: app.config.RATE_LIMIT_AUTH_MAX, timeWindow: '1 minute' };
+
   /** Signing in or up while already signed in replaces the current session. */
   async function endCurrentSession(request: FastifyRequest): Promise<void> {
     if (request.sessionToken) await app.auth.endSession(request.sessionToken);
@@ -18,7 +20,10 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/auth/register',
-    { schema: { body: registerBodySchema, response: { 201: authResponseSchema } } },
+    {
+      config: { rateLimit: authRateLimit },
+      schema: { body: registerBodySchema, response: { 201: authResponseSchema } },
+    },
     async (request, reply) => {
       const { user, token, expiresAt } = await app.auth.register(request.body);
       await endCurrentSession(request);
@@ -29,7 +34,19 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/auth/login',
-    { schema: { body: loginBodySchema, response: { 200: authResponseSchema } } },
+    {
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          // Keyed by IP + email: slows guessing against one account without locking out
+          // other people behind the same IP. Runs after parsing so the body is available.
+          hook: 'preHandler',
+          keyGenerator: (request: FastifyRequest) =>
+            `${request.ip}:${(request.body as { email?: string } | undefined)?.email ?? ''}`,
+        },
+      },
+      schema: { body: loginBodySchema, response: { 200: authResponseSchema } },
+    },
     async (request, reply) => {
       const { user, token, expiresAt } = await app.auth.login(request.body);
       await endCurrentSession(request);

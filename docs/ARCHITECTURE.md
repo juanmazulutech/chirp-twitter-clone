@@ -397,9 +397,12 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `LOG_PRETTY` | `true` | human-readable logs (`false` emits JSON for log aggregation) |
 | `DATABASE_URL` | `postgresql://chirp:chirp@localhost:5433/chirp` | main database |
 | `TEST_DATABASE_URL` | `postgresql://chirp:chirp@localhost:5433/chirp_test` | test and E2E database |
-| `WEB_ORIGIN` | `http://localhost:5173` | allowed `Origin` for state-changing requests |
+| `WEB_ORIGINS` | `http://localhost:5173` | comma-separated browser origins allowed to make state-changing requests (CSRF defense) |
+| `TRUST_PROXY` | `false` | `true` only behind a reverse proxy: the client IP for rate limiting comes from `X-Forwarded-For` |
+| `RATE_LIMIT_GLOBAL_MAX` | `300` | requests per minute per IP, on every route |
+| `RATE_LIMIT_AUTH_MAX` | `10` | attempts per minute on sign-in (per IP + email) and sign-up (per IP) |
 | `SESSION_TTL_DAYS` | `30` | session lifetime (sliding) |
-| `COOKIE_SECURE` | `false` | `true` behind HTTPS |
+| `COOKIE_SECURE` | `false` | `true` behind HTTPS (also enables HSTS) |
 | `S3_ENDPOINT` | `http://localhost:9000` | storage endpoint used by the API (`http://storage:9000` inside Docker) |
 | `S3_PUBLIC_ENDPOINT` | `http://localhost:9000` | storage endpoint reachable by the browser |
 | `S3_REGION` | `us-east-1` | bucket region |

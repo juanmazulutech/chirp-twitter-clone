@@ -14,6 +14,10 @@ describe('loadEnv', () => {
       DATABASE_URL,
       SESSION_TTL_DAYS: 30,
       COOKIE_SECURE: false,
+      WEB_ORIGINS: ['http://localhost:5173'],
+      TRUST_PROXY: false,
+      RATE_LIMIT_GLOBAL_MAX: 300,
+      RATE_LIMIT_AUTH_MAX: 10,
     });
   });
 
@@ -26,6 +30,10 @@ describe('loadEnv', () => {
       DATABASE_URL: 'postgres://user:secret@db:5432/chirp',
       SESSION_TTL_DAYS: '7',
       COOKIE_SECURE: 'true',
+      WEB_ORIGINS: 'https://chirp.example, https://www.chirp.example/',
+      TRUST_PROXY: 'true',
+      RATE_LIMIT_GLOBAL_MAX: '600',
+      RATE_LIMIT_AUTH_MAX: '5',
     });
 
     expect(env).toEqual({
@@ -36,6 +44,10 @@ describe('loadEnv', () => {
       DATABASE_URL: 'postgres://user:secret@db:5432/chirp',
       SESSION_TTL_DAYS: 7,
       COOKIE_SECURE: true,
+      WEB_ORIGINS: ['https://chirp.example', 'https://www.chirp.example'],
+      TRUST_PROXY: true,
+      RATE_LIMIT_GLOBAL_MAX: 600,
+      RATE_LIMIT_AUTH_MAX: 5,
     });
   });
 
@@ -66,6 +78,11 @@ describe('loadEnv', () => {
   it('rejects a session lifetime outside 1–365 days', () => {
     expect(() => loadEnv({ DATABASE_URL, SESSION_TTL_DAYS: '0' })).toThrow(/SESSION_TTL_DAYS/);
     expect(() => loadEnv({ DATABASE_URL, SESSION_TTL_DAYS: '366' })).toThrow(/SESSION_TTL_DAYS/);
+  });
+
+  it('rejects web origins that are not http(s) URLs', () => {
+    expect(() => loadEnv({ DATABASE_URL, WEB_ORIGINS: 'localhost:5173' })).toThrow(/WEB_ORIGINS/);
+    expect(() => loadEnv({ DATABASE_URL, WEB_ORIGINS: ' , ' })).toThrow(/WEB_ORIGINS/);
   });
 
   it('rejects an out-of-range port', () => {
