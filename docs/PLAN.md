@@ -316,7 +316,9 @@ then implement that commit and stop at its boundary with the report described in
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · PostgreSQL 16 · Fastify — · Prisma — · React — · Vite — · Tailwind — · Vitest — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · PostgreSQL 16 · Fastify — · Prisma — · React — · Vite — · Tailwind — · Vitest — · Playwright —
+
+> TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
 ## 9. Plan changelog
 
