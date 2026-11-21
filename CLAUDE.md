@@ -110,6 +110,8 @@ Installed in `.claude/skills/` when their phase starts (PLAN.md §5), pinned in 
 - `fastify-best-practices` shows `@fastify/jwt` → we use server-side sessions (ADR-09).
 - `fastify-best-practices` tests with `node:test` and runs TS via type stripping → we use Vitest, `tsx` in development and `tsup` builds (ADR-20).
 - The Prisma skills target Prisma ORM 7; we pin Prisma 7 (Prisma 8 is still a release candidate). Use the local database from docker-compose, not `prisma dev`.
+- `vercel-react-best-practices` includes Next.js / React Server Components rules (`server-*`, hydration) → not applicable to our Vite SPA. Its SWR rule maps to TanStack Query, which we use (ADR-07).
+- `impeccable` reads product truth from `PRODUCT.md` and the visual system from `DESIGN.md` (repository root). Use its `critique` and `audit` explicitly; its edit hook is intentionally not installed.
 
 | Task | Skill | Installed in |
 |---|---|---|
@@ -117,6 +119,7 @@ Installed in `.claude/skills/` when their phase starts (PLAN.md §5), pinned in 
 | Prisma migrations, seed, CLI | `prisma-cli` | C04 |
 | Prisma Client queries, relations, transactions | `prisma-client-api` | C04 |
 | React components, data fetching, performance | `vercel-react-best-practices` | C14 |
+| Component APIs (compound components, avoiding boolean props) | `vercel-composition-patterns` | C14 |
 | Visual design, UX review, responsive and accessibility audits | `impeccable` | C14 |
 | Playwright E2E specs | `playwright-best-practices` | C46 |
 | Visual QA in a real browser (screenshots per breakpoint) | `webapp-testing` | C46 |
@@ -129,6 +132,7 @@ Installed in `.claude/skills/` when their phase starts (PLAN.md §5), pinned in 
 - Put secrets in code or commit `.env`. New variables go in `.env.example` and `src/config/env.ts`.
 - Disable lint rules, skip tests, or lower coverage thresholds to get `verify` green.
 - Add a dependency without stating why in the report.
+- Use `impeccable live`: it can run an agent with permission checks disabled. Signing in to an Impeccable account is not needed and would send project data to an external service.
 
 ## Definition of done (every commit)
 

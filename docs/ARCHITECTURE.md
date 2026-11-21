@@ -93,6 +93,8 @@ chirp/
 │   └── storage/init.sh             creates bucket, public-read policy and CORS (aws-cli)
 ├── docs/                           PLAN.md · ARCHITECTURE.md · DECISIONS.md
 ├── CLAUDE.md
+├── PRODUCT.md                      product truth for design work (impeccable)
+├── DESIGN.md                       visual system: tokens, type, components (from C16)
 ├── README.md
 ├── .env.example
 ├── .nvmrc

@@ -237,7 +237,8 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Decision:** development is driven with Claude Code under explicit human direction:
   - **Plan first:** the roadmap ([PLAN.md](./PLAN.md)), the architecture and these decisions were written and reviewed before any code.
   - **Conventions as context:** `CLAUDE.md` encodes the module and feature patterns, the rules above and the definition of done, so every session follows the same structure.
-  - **Curated agent skills**, versioned in `.claude/skills/` and reviewed before installation: Fastify (by its lead maintainer), Prisma (official), React performance (Vercel), UI/UX design (impeccable), Playwright, and web app testing (Anthropic).
+  - **Curated agent skills**, versioned in `.claude/skills/` and reviewed before installation: Fastify (by its lead maintainer), Prisma (official), React performance and composition patterns (Vercel), UI/UX design (impeccable, whose native engine is checksum-verified and whose edit hook and live mode are deliberately not used), Playwright, and web app testing (Anthropic).
+  - **Product context for design work:** `PRODUCT.md` (users, positioning, voice, principles) was written through impeccable's interview with the author's answers; `DESIGN.md` will hold the visual system.
   - **Human review at every commit boundary:** the agent implements one planned commit, runs `npm run verify`, and stops; the author reviews the diff and commits it.
   - **Living plan:** deviations are recorded in the plan's changelog rather than silently absorbed.
 - **Context:** the challenge evaluates how AI tools are directed. Consistent patterns, small reviewed commits and tests in every commit are the evidence.

@@ -28,3 +28,6 @@ npm-debug.log*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Impeccable engine binary (downloaded and checksum-verified on first use)
+.claude/skills/impeccable/scripts/bin/

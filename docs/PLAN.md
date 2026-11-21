@@ -104,7 +104,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 
 | # | Commit | Scope |
 |---|---|---|
-| C14 | `chore(skills): add react best practices and impeccable design skills` | reviewed skills + Chirp design context (`/teach-impeccable`: identity, accent color, tone) |
+| C14 | `chore(skills): add react best practices and impeccable design skills` | reviewed skills (`vercel-react-best-practices`, `vercel-composition-patterns`, `impeccable`) + `PRODUCT.md` written with `/impeccable init` (users, positioning, voice); the visual system (`DESIGN.md`) is created with the first UI work in C16 |
 | C15 | `chore(web): scaffold vite react app with tailwind, router, query and zustand` | Vite app, Tailwind, React Router, TanStack Query, Zustand, Vitest + RTL + MSW, `/api` dev proxy; smoke test |
 | C16 | `feat(web): add design tokens and ui primitives` | color/typography/radius tokens with dark mode; `Button`, `Avatar` (image or initials), `Input`, `Textarea`, `Modal`, `Spinner`, `Toast`, `EmptyState`; tests |
 | C17 | `feat(web): add responsive app shell and routing` | `AppShell`, `Sidebar`, `BottomNav`, `RightPanel`, compose FAB; route map with placeholder pages |
@@ -235,7 +235,8 @@ Skills are installed at project level (`.claude/skills/`) when the phase that ne
 | C04 | `fastify-best-practices` | `mcollina` (Fastify lead maintainer) | all API work |
 | C04 | Prisma skills (`prisma-cli`, `prisma-client-api`) | `prisma/skills` (official) | schema, migrations, queries |
 | C14 | `vercel-react-best-practices` | `vercel-labs/agent-skills` | all web work |
-| C14 | `impeccable` | `pbakaus/impeccable` | visual design, UX review, audits |
+| C14 | `vercel-composition-patterns` | `vercel-labs/agent-skills` | component API design |
+| C14 | `impeccable` | `pbakaus/impeccable` | visual design, UX review, audits (native engine downloaded on first use, verified by SHA-256; no edit hook, never `live`) |
 | C46 | `playwright-best-practices` | `currents-dev/playwright-best-practices-skill` | E2E specs |
 | C46 | `webapp-testing` | `anthropics/skills` | agent-driven visual QA (screenshots per breakpoint) |
 
@@ -341,3 +342,4 @@ report described in the session protocol.
 | 2026-11-20 | C11: `requireAuth` moved from C12 into C11 (C12 renamed); `/auth/me` returns `SessionUser` instead of `UserProfile`; logout is idempotent and needs no session | `/auth/me` and logout need the session guard; follower/tweet counts do not exist yet and the private email must never appear in a public profile; signing out must work even with an expired session |
 | 2026-11-20 | C12: `WEB_ORIGIN` became `WEB_ORIGINS` (list); added `TRUST_PROXY`, `RATE_LIMIT_GLOBAL_MAX`, `RATE_LIMIT_AUTH_MAX`; sign-in rate limit keyed by IP + email in `preHandler` | Dev (5173) and Docker (8080) origins differ; limits are tunable per environment and relaxed in tests; the Fastify skill's per-email example keys on an unparsed body (ADR-09) |
 | 2026-11-20 | C13: hand-written seed personas instead of Faker; `db:reset` dropped; seed has reset and `--if-empty` modes | Twelve coherent personas read better than random data and need no dependency; the seed's reset mode already restores demo data, while schema resets stay a deliberate human action; Docker must not wipe data on restart |
+| 2026-11-21 | C14: impeccable 4.10 replaced `/teach-impeccable` with `/impeccable init` → `PRODUCT.md` (product truth) and `DESIGN.md` (visual system, created in C16); added `vercel-composition-patterns`; impeccable installed without its edit hook | Upstream changed the workflow; the hook would run a native binary on every UI edit, so audits run explicitly instead; `live` mode can bypass agent permissions |
