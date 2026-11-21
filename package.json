@@ -21,7 +21,9 @@
     "test": "npm run test --workspaces --if-present",
     "test:coverage": "npm run test:coverage --workspaces --if-present",
     "prepare": "husky",
-    "verify": "npm run lint && npm run format:check && npm run typecheck && npm run test:coverage"
+    "verify": "npm run lint && npm run format:check && npm run typecheck && npm run test:coverage",
+    "services:up": "docker compose up -d db storage storage-init",
+    "services:down": "docker compose down"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [

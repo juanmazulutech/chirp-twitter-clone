@@ -38,7 +38,7 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 | `npm run typecheck` | TypeScript across workspaces | C05 |
 | `npm test` / `npm run test:coverage` | Vitest across workspaces | C05 |
 | `npm run verify` | lint + format check + typecheck + tests with coverage — required before every report | C06 |
-| `docker compose up -d db minio minio-init` | local PostgreSQL (port 5433) and MinIO | C07 |
+| `npm run services:up` / `services:down` | local PostgreSQL (port 5433) and S3-compatible storage (RustFS, port 9000) | C07 |
 | `npm run dev` | API + web in watch mode | C15 |
 | `npm run db:migrate` / `db:seed` / `db:reset` | Prisma migrations and seed | C09 / C13 |
 | `npm run test:e2e` | Playwright | C47 |

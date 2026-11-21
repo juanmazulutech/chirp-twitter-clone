@@ -79,10 +79,10 @@ Estimates are focused hours including review. Each commit includes its tests and
 | C04 | `chore(skills): add fastify and prisma agent skills` | reviewed skills in `.claude/skills/` |
 | C05 | `chore(shared): scaffold shared contracts package` | `packages/shared` as a just-in-time internal package (no build), Vitest, `countCharacters` + `TWEET_MAX_LENGTH`, server-import guards |
 | C06 | `chore(api): scaffold fastify app with env config, error handling and health check` | `buildApp`, `server.ts` (graceful shutdown), `config/env.ts`, logger with redaction, domain errors + errors plugin, explicit module registry, `GET /api/health`, `npm run verify`, tests |
-| C07 | `chore(infra): add docker compose with postgres and minio for local development` | `docker-compose.yml` (`db`, `minio`, `minio-init`), `docker/` init scripts, `.env.example` |
+| C07 | `chore(infra): add docker compose with postgres and s3-compatible storage for local development` | `docker-compose.yml` (`db`, `storage` = RustFS, `storage-init` = aws-cli), `docker/` init scripts, `.env.example`, `services:up`/`services:down` |
 | C08 | `ci: add github actions workflow for lint, typecheck and tests` | workflow with a PostgreSQL service |
 
-**Done when:** `npm ci && npm run verify` passes locally and in CI; `docker compose up -d db minio minio-init` yields healthy services.
+**Done when:** `npm ci && npm run verify` passes locally and in CI; `npm run services:up` yields healthy services and a configured bucket.
 
 ### Phase 1 · Authentication API (~1.25 h)
 
@@ -172,14 +172,14 @@ Estimates are focused hours including review. Each commit includes its tests and
 
 | # | Commit | Scope |
 |---|---|---|
-| C37 | `feat(api): add storage service with s3 and in-memory drivers` | `StorageService`, `S3Storage`, `MemoryStorage`, storage plugin, public URL builder; tests |
-| C38 | `feat(uploads): add presigned upload endpoint` | `POST /uploads/presign` (type, size, user-prefixed key); tests |
+| C37 | `feat(api): add storage service with s3 and in-memory drivers` | `StorageService`, `S3Storage` (client with `requestChecksumCalculation: 'WHEN_REQUIRED'`, see ADR-14), `MemoryStorage`, storage plugin, public URL builder; tests |
+| C38 | `feat(uploads): add presigned upload endpoint` | `POST /uploads/presign` (type, size, user-prefixed key; presign with `signableHeaders` for `content-type` and `content-length`, see ADR-14); tests |
 | C39 | `feat(tweets): support image attachments` | migration `tweet_image_key`, ownership + existence check, `imageUrl` in DTO, best-effort delete; tests |
 | C40 | `feat(web): attach images in composer and render them in tweets` | reusable `useImageUpload` (presign → PUT with progress), preview/remove, lazy images in `TweetCard`; tests |
 | C41 | `feat(users): support avatar uploads` | migration `user_avatar_key`, `avatarKey` in `PATCH /users/me`, avatar picker in the edit profile modal; tests |
 | C42 | `feat(db): seed dicebear avatars` | generation script, committed SVGs, seed uploads them through `StorageService` |
 
-**Done when:** a tweet with an image and a new avatar both render after a reload, locally and against MinIO.
+**Done when:** a tweet with an image and a new avatar both render after a reload, locally and against the storage container.
 
 ### Phase 8 · Notifications — bonus (~1 h)
 
@@ -202,7 +202,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 | C46 | `chore(skills): add playwright and webapp testing skills` | reviewed skills |
 | C47 | `test(e2e): add playwright setup and authentication flow` | config, global setup (reset + seed `chirp_test`), auth flow spec |
 | C48 | `test(e2e): add compose tweet and follow flows` | compose → appears on timeline; follow → their tweets appear on home |
-| C49 | `ci: run end-to-end tests` | E2E job (PostgreSQL, MinIO, Chromium) |
+| C49 | `ci: run end-to-end tests` | E2E job (PostgreSQL, storage, Chromium) |
 | C50 | `fix(web): address responsive and accessibility audit findings` | `impeccable` audit + screenshots at 375 / 768 / 1280; fixes |
 
 **Done when:** the E2E suite is green in CI and the audit findings are resolved or logged as known limitations.
@@ -250,7 +250,7 @@ Work happens in sequential local Claude Code sessions. A new session has no memo
 1. Read `CLAUDE.md`, then this plan's [Status](#8-status) and [Changelog](#9-plan-changelog).
 2. Run `git log --oneline -15` and match the latest commits against [Phases and commits](#4-phases-and-commits) to find the next commit.
 3. Run `git status`. If there are uncommitted changes, they belong to a commit awaiting review: report them and do not start new work.
-4. Bring the environment up: `docker compose up -d db minio minio-init`, `npm ci`, `npm run db:migrate`.
+4. Bring the environment up: `npm run services:up`, `npm ci`, `npm run db:migrate`.
 5. Run `npm run verify`. It must be green before any new work.
 6. Load the skills relevant to the phase.
 
@@ -321,7 +321,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · Prisma — · React — · Tailwind — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · Prisma — · React — · Tailwind — · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -334,3 +334,4 @@ report described in the session protocol.
 | 2026-11-20 | C05: `@chirp/shared` has no build step (exports point at source) instead of a tsup build | Every consumer already compiles TypeScript; avoids a watch process and stale builds. ADR-02 updated |
 | 2026-11-20 | C06: modules registered explicitly instead of `@fastify/autoload` | Autoload scans folders at runtime, which breaks with a bundled build; ADR-03 amended |
 | 2026-11-20 | C06: health split into liveness (`/api/health`) and readiness (`/api/health/ready`, C09); logging driven by `LOG_LEVEL`/`LOG_PRETTY` instead of `NODE_ENV` | Adopted from the Fastify skill review (ADR-03) |
+| 2026-11-20 | C07: local object storage is RustFS (bucket setup with `amazon/aws-cli`) instead of MinIO; services renamed `storage` / `storage-init` | MinIO no longer publishes pullable images; four alternatives were tested against Chirp's storage flow. ADR-14 amended, including two AWS SDK presigning pitfalls to apply in C37–C38 |

@@ -25,7 +25,7 @@ Browser ───────▶ │  Web (React SPA)            /api/* ──�
    │             │  docker: nginx :8080                       │                           │
    │             └────────────────────────────────────────────┼───────────────────────────┘
    │                                                          │ presign / HeadObject
-   └──────── PUT (presigned) / GET images ────────────▶  MinIO / S3  :9000
+   └──────── PUT (presigned) / GET images ────────────▶  S3 (RustFS) :9000
 ```
 
 - The browser only ever calls its own origin for the API (ADR-17); images are uploaded to and served from the bucket directly (ADR-14).
@@ -88,7 +88,7 @@ chirp/
 │   └── index.ts
 ├── docker/
 │   ├── postgres/init.sql           creates chirp_test
-│   └── minio/init.sh               creates bucket + anonymous read policy
+│   └── storage/init.sh             creates bucket, public-read policy and CORS (aws-cli)
 ├── docs/                           PLAN.md · ARCHITECTURE.md · DECISIONS.md
 ├── CLAUDE.md
 ├── README.md
@@ -364,7 +364,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 - **API helpers:** `buildTestApp()` (with `MemoryStorage`), factories (`createUser`, `createTweet`, `follow`, `like`), `loginAs(user)` returning a session cookie.
 - **Isolation:** `TRUNCATE … CASCADE` before each test; test files run serially.
 - **E2E:** `globalSetup` resets and seeds the test database; Playwright's `webServer` starts the API and web app.
-- **CI:** PostgreSQL service → `npm ci` → migrations → lint → type check → tests with coverage → E2E (MinIO started in a step, since the seed uploads avatars).
+- **CI:** PostgreSQL service → `npm ci` → migrations → lint → type check → tests with coverage → E2E (storage started in a step, since the seed uploads avatars).
 - **Thresholds** (the run fails below them): API 85% lines/functions/statements and 80% branches; web 70%.
 
 ## 8. Environments and configuration
@@ -373,15 +373,16 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 
 | Service | Image | Host ports | Purpose |
 |---|---|---|---|
-| `db` | `postgres:16-alpine` | 5433 → 5432 | development and test databases (`init.sql` creates `chirp_test`) |
-| `minio` | `minio/minio` (pinned tag) | 9000 (S3 API), 9001 (console) | object storage |
-| `minio-init` | `minio/mc` (pinned tag) | — | creates bucket `chirp-media` with anonymous read, then exits |
+| `db` | `postgres:16.16-alpine` | 5433 → 5432 | development and test databases (`init.sql` creates `chirp_test`) |
+| `storage` | `rustfs/rustfs:1.0.6` | 9000 (S3 API), 9001 (console) | S3-compatible object storage |
+| `storage-init` | `amazon/aws-cli:2.42.0` | — | creates bucket `chirp-media`, public-read policy (objects only) and CORS, then exits; idempotent |
 | `api` | `apps/api/Dockerfile` | 3000 | entrypoint: `prisma migrate deploy` → seed if `users` is empty → server |
 | `web` | `apps/web/Dockerfile` (nginx) | **8080** | serves the SPA and proxies `/api` to `api:3000` |
 
 - **One command:** `docker compose up --build` → <http://localhost:8080>.
-- **Development:** `docker compose up -d db minio minio-init`, then `npm run dev` → <http://localhost:5173>.
-- Must work with Docker 20.10 / Compose v2.0 (verify `depends_on` conditions; fall back to healthchecks plus entrypoint retries).
+- **Development:** `npm run services:up` (= `docker compose up -d db storage storage-init`), then `npm run dev` → <http://localhost:5173>.
+- Works with Docker 20.10 / Compose v2.0: `depends_on` health conditions are supported; the top-level `name:` key is not, so the project name comes from `COMPOSE_PROJECT_NAME`.
+- Host ports are configurable (`POSTGRES_PORT`, `STORAGE_PORT`, `STORAGE_CONSOLE_PORT`) in case they are taken.
 
 ### 8.2 Environment variables (`.env.example`)
 
@@ -396,21 +397,27 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `WEB_ORIGIN` | `http://localhost:5173` | allowed `Origin` for state-changing requests |
 | `SESSION_TTL_DAYS` | `30` | session lifetime (sliding) |
 | `COOKIE_SECURE` | `false` | `true` behind HTTPS |
-| `S3_ENDPOINT` | `http://localhost:9000` | storage endpoint used by the API (`http://minio:9000` inside Docker) |
+| `S3_ENDPOINT` | `http://localhost:9000` | storage endpoint used by the API (`http://storage:9000` inside Docker) |
 | `S3_PUBLIC_ENDPOINT` | `http://localhost:9000` | storage endpoint reachable by the browser |
 | `S3_REGION` | `us-east-1` | bucket region |
 | `S3_BUCKET` | `chirp-media` | bucket name |
-| `S3_ACCESS_KEY_ID` | `chirp` | storage access key (MinIO root user locally) |
+| `S3_ACCESS_KEY_ID` | `chirp` | storage access key (`STORAGE_ROOT_USER` locally) |
 | `S3_SECRET_ACCESS_KEY` | `chirpsecret` | storage secret key |
-| `S3_FORCE_PATH_STYLE` | `true` | required by MinIO |
+| `S3_FORCE_PATH_STYLE` | `true` | path-style URLs, required by local S3-compatible storage |
 | `UPLOAD_MAX_BYTES` | `5242880` | maximum image size (5 MB) |
-| `MINIO_ROOT_USER` | `chirp` | MinIO root user (docker-compose) |
-| `MINIO_ROOT_PASSWORD` | `chirpsecret` | MinIO root password (docker-compose) |
+| `COMPOSE_PROJECT_NAME` | `chirp` | fixes container/volume names regardless of the folder name |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `chirp` / `chirp` / `chirp` | database container credentials |
+| `POSTGRES_PORT` | `5433` | host port for PostgreSQL |
+| `STORAGE_ROOT_USER` / `STORAGE_ROOT_PASSWORD` | `chirp` / `chirpsecret` | storage root credentials (docker-compose) |
+| `STORAGE_PORT` / `STORAGE_CONSOLE_PORT` | `9000` / `9001` | host ports for the S3 API and web console |
+| `STORAGE_BUCKET` | `chirp-media` | bucket created by `storage-init` |
+| `STORAGE_CORS_ORIGINS` | `http://localhost:5173,http://localhost:8080` | origins allowed to upload with presigned URLs |
 
 ### 8.3 Root scripts
 
 | Script | Runs |
 |---|---|
+| `services:up` / `services:down` | start local PostgreSQL + storage (with bucket setup) / stop them, keeping data |
 | `dev` | API (`tsx watch`) and web (`vite`) concurrently |
 | `build` | shared → api → web |
 | `db:migrate` | `prisma migrate dev` |
@@ -434,4 +441,4 @@ Target state once every feature is in place; each phase extends the seed with th
 - Cross-likes: each user likes 10–30 tweets from people they follow.
 - Notifications consistent with the generated follows and likes (never self-notifications), with some unread for `demo`.
 - Idempotent: `db:seed` clears the tables before inserting; the Docker entrypoint only seeds an empty database.
-- Requires MinIO (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.
+- Requires the storage service (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.
