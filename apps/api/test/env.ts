@@ -7,9 +7,12 @@ export class UnsafeTestDatabaseError extends Error {
   override readonly name = 'UnsafeTestDatabaseError';
 }
 
-/** Returns the test database URL, refusing any database whose name does not end in `_test`. */
-export function testDatabaseUrl(value: string | undefined = process.env.TEST_DATABASE_URL): string {
-  const url = value ?? LOCAL_TEST_DATABASE_URL;
+/**
+ * Returns the test database URL from `TEST_DATABASE_URL` (or the local docker-compose
+ * default), refusing any database whose name does not end in `_test`.
+ */
+export function testDatabaseUrl(env: Record<string, string | undefined> = process.env): string {
+  const url = env.TEST_DATABASE_URL ?? LOCAL_TEST_DATABASE_URL;
   const databaseName = new URL(url).pathname.replace(/^\//, '');
 
   if (!databaseName.endsWith('_test')) {
