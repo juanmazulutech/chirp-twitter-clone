@@ -1,0 +1,435 @@
+# Architecture
+
+How Chirp is structured and the contracts every part of it follows. The reasoning behind each choice lives in [DECISIONS.md](./DECISIONS.md); the delivery roadmap lives in [PLAN.md](./PLAN.md).
+
+## Contents
+
+1. [System overview](#1-system-overview)
+2. [Repository layout](#2-repository-layout)
+3. [Code patterns](#3-code-patterns)
+4. [Data model](#4-data-model)
+5. [API contracts](#5-api-contracts)
+6. [Frontend](#6-frontend)
+7. [Testing strategy](#7-testing-strategy)
+8. [Environments and configuration](#8-environments-and-configuration)
+9. [Seed data](#9-seed-data)
+
+---
+
+## 1. System overview
+
+```
+                 ┌──────────────────────────── single origin ────────────────────────────┐
+Browser ───────▶ │  Web (React SPA)            /api/* ───▶  API (Fastify)  ───▶ PostgreSQL │
+   │             │  dev: Vite :5173                         :3000                  :5433  │
+   │             │  docker: nginx :8080                       │                           │
+   │             └────────────────────────────────────────────┼───────────────────────────┘
+   │                                                          │ presign / HeadObject
+   └──────── PUT (presigned) / GET images ────────────▶  MinIO / S3  :9000
+```
+
+- The browser only ever calls its own origin for the API (ADR-17); images are uploaded to and served from the bucket directly (ADR-14).
+- Authentication is a server-side session referenced by an `httpOnly` cookie (ADR-09).
+
+## 2. Repository layout
+
+```
+chirp/
+├── .claude/skills/                 versioned agent skills
+├── .github/workflows/ci.yml
+├── apps/
+│   ├── api/
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma
+│   │   │   ├── migrations/
+│   │   │   ├── seed.ts
+│   │   │   ├── seed-data/          personas and tweet texts
+│   │   │   ├── seed-assets/avatars/  DiceBear SVGs (committed)
+│   │   │   └── scripts/generate-avatars.ts
+│   │   ├── src/
+│   │   │   ├── app.ts              buildApp(options): testable factory (injects config, storage)
+│   │   │   ├── server.ts           process entry point (listen)
+│   │   │   ├── config/env.ts       environment parsed with Zod; fails fast
+│   │   │   ├── plugins/            prisma · session/auth · storage · errors · security
+│   │   │   ├── lib/                cursor · password · tokens · serializers · errors
+│   │   │   └── modules/
+│   │   │       ├── auth/           routes.ts · service.ts · *.test.ts
+│   │   │       ├── users/
+│   │   │       ├── follows/
+│   │   │       ├── tweets/
+│   │   │       ├── timeline/
+│   │   │       ├── likes/
+│   │   │       ├── search/
+│   │   │       ├── uploads/
+│   │   │       └── notifications/
+│   │   ├── test/                   setup (database), factories, helpers
+│   │   ├── Dockerfile
+│   │   └── docker-entrypoint.sh    migrate deploy → seed if empty → start
+│   └── web/
+│       ├── src/
+│       │   ├── app/                router.tsx · providers.tsx · layout/ (AppShell, Sidebar, BottomNav, RightPanel)
+│       │   ├── features/
+│       │   │   ├── auth/           pages · components · hooks.ts · api.ts · *.test.tsx
+│       │   │   ├── tweets/         Composer, TweetCard, TweetList, HomePage…
+│       │   │   ├── profile/        ProfilePage, FollowButton, FollowList, EditProfileModal…
+│       │   │   ├── search/
+│       │   │   ├── uploads/        useImageUpload
+│       │   │   └── notifications/
+│       │   ├── components/ui/      Button, Avatar, Input, Textarea, Modal, Spinner, Toast, EmptyState
+│       │   ├── stores/             Zustand stores (UI state only)
+│       │   ├── lib/                api-client.ts · query-client.ts · query-keys.ts · format.ts
+│       │   └── test/               msw/ (handlers, server) · render.tsx · fixtures.ts
+│       ├── e2e/                    Playwright specs and global setup
+│       ├── nginx.conf
+│       └── Dockerfile
+├── packages/shared/src/
+│   ├── schemas/                    auth · users · tweets · pagination · uploads · notifications · errors
+│   ├── constants.ts                TWEET_MAX_LENGTH, USERNAME_PATTERN, PAGE_SIZE…
+│   └── index.ts
+├── docker/
+│   ├── postgres/init.sql           creates chirp_test
+│   └── minio/init.sh               creates bucket + anonymous read policy
+├── docs/                           PLAN.md · ARCHITECTURE.md · DECISIONS.md
+├── CLAUDE.md
+├── README.md
+├── .env.example
+├── .nvmrc
+├── docker-compose.yml
+└── package.json                    workspaces + root scripts
+```
+
+## 3. Code patterns
+
+### 3.1 API module
+
+```ts
+// src/modules/tweets/routes.ts
+export default async function tweetsRoutes(app: FastifyInstance) {
+  const tweets = createTweetsService({ prisma: app.prisma, storage: app.storage });
+
+  app.withTypeProvider<ZodTypeProvider>().post(
+    '/tweets',
+    {
+      preHandler: app.requireAuth,
+      schema: { body: createTweetBodySchema, response: { 201: tweetSchema } },
+    },
+    async (request, reply) => reply.code(201).send(await tweets.create(request.user.id, request.body)),
+  );
+}
+```
+
+| Layer | Responsibility | Must not |
+|---|---|---|
+| `routes.ts` | HTTP: schemas, status codes, auth guard, calling the service | contain business rules or Prisma queries |
+| `service.ts` | business rules with injected dependencies (`prisma`, `storage`); throws domain errors (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`) | know about HTTP |
+| `lib/serializers.ts` | Prisma rows → DTOs (`imageKey` → `imageUrl`, `_count` → `likeCount`) | query the database |
+| `plugins/errors.ts` | domain errors and Zod errors → HTTP error format | — |
+
+Tests sit next to the module (`*.test.ts`) and exercise routes through `app.inject()` against the test database.
+
+### 3.2 Web feature
+
+| File | Responsibility |
+|---|---|
+| `features/<x>/api.ts` | typed fetch functions using `@chirp/shared` types |
+| `features/<x>/hooks.ts` | `useQuery` / `useInfiniteQuery` / `useMutation`, keys from `lib/query-keys.ts` |
+| `features/<x>/components/*` | presentational components |
+| `features/<x>/pages/*` | composition plus loading, empty and error states |
+| `*.test.tsx` | React Testing Library + MSW (network mocked at the fetch level, never hooks) |
+
+Forms use `react-hook-form` with `zodResolver(<shared schema>)`.
+
+### 3.3 Error format
+
+```json
+{ "error": { "code": "VALIDATION_ERROR", "message": "Invalid request", "details": { "fieldErrors": { "content": ["Too long"] } } } }
+```
+
+| HTTP | `code` | When |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | schema validation fails, malformed cursor, self-follow |
+| 401 | `UNAUTHENTICATED` | missing/expired session, invalid credentials |
+| 403 | `FORBIDDEN` | deleting another user's tweet, foreign upload key, invalid `Origin` |
+| 404 | `NOT_FOUND` | unknown user or tweet |
+| 409 | `CONFLICT` | email or username already taken |
+| 429 | `RATE_LIMITED` | rate limit exceeded |
+| 500 | `INTERNAL_ERROR` | unhandled error (no internals leaked) |
+
+## 4. Data model
+
+The complete target model. Tables are introduced by the feature that needs them (ADR-21); the migration sequence is listed after the schema.
+
+```prisma
+enum NotificationType {
+  FOLLOW
+  LIKE
+}
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  email        String   @unique
+  username     String   @unique @db.VarChar(15)
+  displayName  String   @map("display_name") @db.VarChar(50)
+  bio          String   @default("") @db.VarChar(160)
+  avatarKey    String?  @map("avatar_key")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sessions           Session[]
+  tweets             Tweet[]
+  following          Follow[]       @relation("FollowFollower")
+  followers          Follow[]       @relation("FollowFollowing")
+  likes              Like[]
+  notifications      Notification[] @relation("NotificationRecipient")
+  actedNotifications Notification[] @relation("NotificationActor")
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Tweet {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  content   String   @db.VarChar(280) // varchar length counts characters (code points) in Postgres
+  imageKey  String?  @map("image_key")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes         Like[]
+  notifications Notification[]
+
+  @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
+  @@map("tweets")
+}
+
+model Follow {
+  followerId  String   @map("follower_id") @db.Uuid
+  followingId String   @map("following_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId, createdAt(sort: Desc)])
+  @@map("follows")
+  // migration SQL adds: CHECK (follower_id <> following_id)
+}
+
+model Like {
+  userId    String   @map("user_id") @db.Uuid
+  tweetId   String   @map("tweet_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tweet Tweet @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tweetId])
+  @@index([tweetId])
+  @@map("likes")
+}
+
+model Notification {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  type        NotificationType
+  recipientId String           @map("recipient_id") @db.Uuid
+  actorId     String           @map("actor_id") @db.Uuid
+  tweetId     String?          @map("tweet_id") @db.Uuid
+  readAt      DateTime?        @map("read_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  recipient User   @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  tweet     Tweet? @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([recipientId, readAt])
+  @@map("notifications")
+}
+```
+
+### Migration sequence
+
+| # | Migration | Introduced by |
+|---|---|---|
+| 1 | `users_and_sessions` | authentication (Phase 1) |
+| 2 | `tweets` | tweets (Phase 3) |
+| 3 | `follows` (with self-follow `CHECK`) | follows (Phase 3) |
+| 4 | `likes` | likes (Phase 4) |
+| 5 | `user_search_trgm` (`pg_trgm` extension + GIN trigram indexes on `username`, `display_name`) | search (Phase 6) |
+| 6 | `tweet_image_key` (`tweets.image_key`) | tweet images (Phase 7) |
+| 7 | `user_avatar_key` (`users.avatar_key`) | avatar uploads (Phase 7) |
+| 8 | `notifications` | notifications (Phase 8) |
+
+## 5. API contracts
+
+All routes are prefixed with `/api` and exchange JSON. 🔒 = requires a session. Zod schemas for every body, query and response live in `packages/shared/src/schemas` and are added by the feature that introduces the endpoint.
+
+### 5.1 DTOs
+
+```ts
+UserSummary  = { id, username, displayName, avatarUrl: string | null }
+UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, tweetsCount, isFollowing: boolean, isMe: boolean }
+Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean }
+Notification = { id, type: 'FOLLOW' | 'LIKE', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }
+Page<T>      = { items: T[], nextCursor: string | null }
+```
+
+### 5.2 Endpoints
+
+| Method | Path | Auth | Input | Response | Notes |
+|---|---|---|---|---|---|
+| GET | `/health` | — | — | `200 { status: 'ok' }` | checks the database |
+| POST | `/auth/register` | — | `{ email, username, displayName, password }` | `201 { user: UserSummary }` + cookie | 409 on taken email/username; password 8–72 chars; rate limited |
+| POST | `/auth/login` | — | `{ email, password }` | `200 { user: UserSummary }` + cookie | generic 401; rate limited |
+| POST | `/auth/logout` | 🔒 | — | `204` | deletes session, clears cookie |
+| GET | `/auth/me` | 🔒 | — | `200 { user: UserProfile }` | |
+| GET | `/users/search` | 🔒 | `?q=&cursor=&limit=` | `200 Page<UserSummary>` | `q` 1–50 chars; matches username or display name |
+| GET | `/users/:username` | 🔒 | — | `200 UserProfile` | 404 |
+| PATCH | `/users/me` | 🔒 | `{ displayName?, bio?, avatarKey?: string \| null }` | `200 UserProfile` | `avatarKey` ownership verified |
+| GET | `/users/:username/tweets` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | |
+| GET | `/users/:username/followers` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | cursor on `(follow.createdAt, userId)` |
+| GET | `/users/:username/following` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | |
+| POST | `/users/:username/follow` | 🔒 | — | `200 { isFollowing: true, followersCount }` | idempotent; 400 on self-follow; notifies |
+| DELETE | `/users/:username/follow` | 🔒 | — | `200 { isFollowing: false, followersCount }` | idempotent; removes notification |
+| GET | `/timeline` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | followed users + self |
+| POST | `/tweets` | 🔒 | `{ content, imageKey? }` | `201 Tweet` | 1–280 code points after trim; content required even with an image |
+| GET | `/tweets/:id` | 🔒 | — | `200 Tweet` | 404 |
+| DELETE | `/tweets/:id` | 🔒 | — | `204` | 403 if not the author; image deleted best-effort |
+| POST | `/tweets/:id/like` | 🔒 | — | `200 { liked: true, likeCount }` | idempotent; notifies author unless self |
+| DELETE | `/tweets/:id/like` | 🔒 | — | `200 { liked: false, likeCount }` | idempotent; removes notification |
+| POST | `/uploads/presign` | 🔒 | `{ purpose: 'tweet' \| 'avatar', contentType, size }` | `200 { uploadUrl, key }` | 400 on invalid type/size |
+| GET | `/notifications` | 🔒 | `?cursor=&limit=` | `200 Page<Notification>` | |
+| GET | `/notifications/unread-count` | 🔒 | — | `200 { count }` | |
+| POST | `/notifications/read` | 🔒 | — | `204` | marks all as read |
+
+Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
+
+## 6. Frontend
+
+### 6.1 Routes
+
+| Path | Page | Access |
+|---|---|---|
+| `/` | redirects to `/home` or `/login` | — |
+| `/login`, `/register` | authentication | guests only (redirect to `/home` when signed in) |
+| `/home` | composer + timeline | signed in |
+| `/search` | user search | signed in |
+| `/notifications` | notifications | signed in |
+| `/:username` | profile + tweets | signed in |
+| `/:username/followers`, `/:username/following` | follow lists | signed in |
+| `/:username/status/:tweetId` | tweet detail (optional) | signed in |
+
+### 6.2 Responsive layout
+
+| Viewport | Layout |
+|---|---|
+| `< 640px` | top bar (avatar + logo); full-width feed; **bottom navigation** (Home, Search, Notifications, Profile); **floating action button** opens a full-screen composer |
+| `640–1024px` | icon-only left sidebar with a compose button; centered feed (max ~600px); no right panel |
+| `> 1024px` | left sidebar with labels; center feed; **right panel** with search and "who to follow" |
+
+### 6.3 Interaction rules
+
+- Infinite scroll: `useInfiniteQuery` + an `IntersectionObserver` sentinel; explicit loading, empty, error and end-of-feed states.
+- Likes and follows are **optimistic** with rollback (`onMutate` / `onError` / `onSettled`).
+- Composer: code-point character counter with a progress ring; disabled when empty or over 280; image attach with preview and progress.
+- A newly created tweet is inserted into the first timeline page in the cache (no full refetch).
+- A 401 from any request invalidates `['auth', 'me']`, which redirects to `/login` and returns to the original route after signing in.
+- Accessibility: labelled controls, visible focus, `aria-pressed` on like/follow toggles, keyboard navigation, WCAG AA contrast.
+
+## 7. Testing strategy
+
+| Layer | Tooling | What is verified |
+|---|---|---|
+| Shared | Vitest | schema boundaries: 280 code points including emoji, username pattern, password rules |
+| API unit | Vitest | password hashing, token generation/hashing, cursor encode/decode (malformed → 400), serializers, service rules |
+| API integration | Vitest + `app.inject` + PostgreSQL `chirp_test` | every endpoint: success, 401, 403, 404, 409, validation; pagination (no duplicates or gaps across pages, tie-breaking by id); cascades; idempotency; notification rules |
+| Web integration | Vitest + React Testing Library + user-event + MSW | login (success/failure), registration, route protection, composing (counter, limit), infinite scroll, optimistic like with rollback, follow, search, notifications |
+| End-to-end | Playwright (Chromium) against the running stack | full auth flow (register → home → logout → login → protected route redirects when signed out); compose a tweet; follow a user and see their tweets on the home timeline |
+
+- **API helpers:** `buildTestApp()` (with `MemoryStorage`), factories (`createUser`, `createTweet`, `follow`, `like`), `loginAs(user)` returning a session cookie.
+- **Isolation:** `TRUNCATE … CASCADE` before each test; test files run serially.
+- **E2E:** `globalSetup` resets and seeds the test database; Playwright's `webServer` starts the API and web app.
+- **CI:** PostgreSQL service → `npm ci` → migrations → lint → type check → tests with coverage → E2E (MinIO started in a step, since the seed uploads avatars).
+- **Thresholds** (the run fails below them): API 85% lines/functions/statements and 80% branches; web 70%.
+
+## 8. Environments and configuration
+
+### 8.1 Docker Compose services
+
+| Service | Image | Host ports | Purpose |
+|---|---|---|---|
+| `db` | `postgres:16-alpine` | 5433 → 5432 | development and test databases (`init.sql` creates `chirp_test`) |
+| `minio` | `minio/minio` (pinned tag) | 9000 (S3 API), 9001 (console) | object storage |
+| `minio-init` | `minio/mc` (pinned tag) | — | creates bucket `chirp-media` with anonymous read, then exits |
+| `api` | `apps/api/Dockerfile` | 3000 | entrypoint: `prisma migrate deploy` → seed if `users` is empty → server |
+| `web` | `apps/web/Dockerfile` (nginx) | **8080** | serves the SPA and proxies `/api` to `api:3000` |
+
+- **One command:** `docker compose up --build` → <http://localhost:8080>.
+- **Development:** `docker compose up -d db minio minio-init`, then `npm run dev` → <http://localhost:5173>.
+- Must work with Docker 20.10 / Compose v2.0 (verify `depends_on` conditions; fall back to healthchecks plus entrypoint retries).
+
+### 8.2 Environment variables (`.env.example`)
+
+| Variable | Example | Description |
+|---|---|---|
+| `NODE_ENV` | `development` | runtime environment |
+| `API_PORT` | `3000` | API port |
+| `API_HOST` | `0.0.0.0` | API bind address |
+| `DATABASE_URL` | `postgresql://chirp:chirp@localhost:5433/chirp` | main database |
+| `TEST_DATABASE_URL` | `postgresql://chirp:chirp@localhost:5433/chirp_test` | test and E2E database |
+| `WEB_ORIGIN` | `http://localhost:5173` | allowed `Origin` for state-changing requests |
+| `SESSION_TTL_DAYS` | `30` | session lifetime (sliding) |
+| `COOKIE_SECURE` | `false` | `true` behind HTTPS |
+| `S3_ENDPOINT` | `http://localhost:9000` | storage endpoint used by the API (`http://minio:9000` inside Docker) |
+| `S3_PUBLIC_ENDPOINT` | `http://localhost:9000` | storage endpoint reachable by the browser |
+| `S3_REGION` | `us-east-1` | bucket region |
+| `S3_BUCKET` | `chirp-media` | bucket name |
+| `S3_ACCESS_KEY_ID` | `chirp` | storage access key (MinIO root user locally) |
+| `S3_SECRET_ACCESS_KEY` | `chirpsecret` | storage secret key |
+| `S3_FORCE_PATH_STYLE` | `true` | required by MinIO |
+| `UPLOAD_MAX_BYTES` | `5242880` | maximum image size (5 MB) |
+| `MINIO_ROOT_USER` | `chirp` | MinIO root user (docker-compose) |
+| `MINIO_ROOT_PASSWORD` | `chirpsecret` | MinIO root password (docker-compose) |
+
+### 8.3 Root scripts
+
+| Script | Runs |
+|---|---|
+| `dev` | API (`tsx watch`) and web (`vite`) concurrently |
+| `build` | shared → api → web |
+| `db:migrate` | `prisma migrate dev` |
+| `db:seed` | `prisma db seed` |
+| `db:reset` | reset the database and seed |
+| `lint` / `typecheck` | across all workspaces |
+| `test` | shared, API and web tests |
+| `test:coverage` | the same, enforcing coverage thresholds |
+| `test:e2e` | Playwright |
+| `verify` | `lint` + `typecheck` + `test:coverage` |
+
+## 9. Seed data
+
+Target state once every feature is in place; each phase extends the seed with the data its feature needs.
+
+- Deterministic: Faker with a fixed seed, so every run yields the same data.
+- **12 users** with coherent personas (developer, designer, photographer, runner, chef…), matching bios and DiceBear avatars.
+- **Demo account:** `demo@chirp.dev` / `Password123!` (username `demo`). Every seed user shares the password `Password123!`; their emails are listed in the README.
+- 8–15 tweets per user, written to match the persona, spread over the last 30 days.
+- Follow graph: `demo` follows 8 users; every user follows 4–9 others; no self-follows.
+- Cross-likes: each user likes 10–30 tweets from people they follow.
+- Notifications consistent with the generated follows and likes (never self-notifications), with some unread for `demo`.
+- Idempotent: `db:seed` clears the tables before inserting; the Docker entrypoint only seeds an empty database.
+- Requires MinIO (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.
