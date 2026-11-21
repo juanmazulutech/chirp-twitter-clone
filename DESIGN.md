@@ -12,6 +12,8 @@ colors:
   ink-muted-night: "#a7b3cf"
   hairline: "#dbe2ef"
   hairline-night: "#26365e"
+  field-border: "#7d8aab"
+  field-border-night: "#6576a0"
   airmail-red: "#c81e3a"
   airmail-red-night: "#ff6b7d"
   on-airmail-red: "#ffffff"
@@ -20,8 +22,12 @@ colors:
   airmail-blue-night: "#8bb0ff"
   danger: "#a3141f"
   danger-night: "#ff8a8a"
+  on-danger: "#ffffff"
+  on-danger-night: "#121f40"
   selection: "#d6e2fb"
   selection-night: "#23407e"
+  scrim: "rgb(20 37 74 / 0.45)"
+  scrim-night: "rgb(3 7 18 / 0.7)"
   avatar-1: "#2f7563"
   avatar-2: "#a84a25"
   avatar-3: "#6b4fa8"
@@ -77,6 +83,7 @@ typography:
     letterSpacing: "0.04em"
     fontFeature: "\"tnum\" 1"
 rounded:
+  field: "0.5rem"
   card: "0.875rem"
   full: "9999px"
 spacing:
@@ -90,9 +97,47 @@ components:
     textColor: "{colors.on-airmail-red}"
     rounded: "{rounded.full}"
     padding: "0 20px"
-    height: "48px"
+    height: "44px"
+  button-primary-sm:
+    backgroundColor: "{colors.airmail-red}"
+    textColor: "{colors.on-airmail-red}"
+    rounded: "{rounded.full}"
+    padding: "0 16px"
+    height: "36px"
+  button-secondary:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.full}"
+    padding: "0 20px"
+    height: "44px"
+  button-secondary-hover:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+  button-ghost:
+    textColor: "{colors.ink-muted}"
+    rounded: "{rounded.full}"
+    padding: "0 20px"
+    height: "44px"
+  button-ghost-hover:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+  button-danger:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.danger}"
+    rounded: "{rounded.full}"
+    padding: "0 20px"
+    height: "44px"
+  button-danger-hover:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.on-danger}"
   link:
     textColor: "{colors.airmail-blue}"
+  field-input:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
+    padding: "0 12px"
+    height: "44px"
   chirp-row:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink}"
@@ -103,6 +148,27 @@ components:
     textColor: "#ffffff"
     rounded: "{rounded.full}"
     size: "44px"
+  avatar-fallback-sm:
+    backgroundColor: "{colors.avatar-1}"
+    textColor: "#ffffff"
+    rounded: "{rounded.full}"
+    size: "32px"
+  avatar-fallback-lg:
+    backgroundColor: "{colors.avatar-1}"
+    textColor: "#ffffff"
+    rounded: "{rounded.full}"
+    size: "80px"
+  modal:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "24px"
+    width: "min(32rem, calc(100vw - 2rem))"
+  toast:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "12px 16px"
   postmark:
     textColor: "{colors.airmail-blue}"
     typography: "{typography.postmark-label}"
@@ -132,7 +198,7 @@ The surface is dense in the way a phone feed must be (a 44px avatar, 15px body, 
 - Airmail paper and navy ink by day, a navy envelope by night, both following `prefers-color-scheme` through `light-dark()`.
 - Airmail red for the one primary action and the liked state; airmail blue for links, selection, focus and the postmark ring.
 - One chevron hairline, under the header, and nowhere else.
-- Flat: hairline dividers, no decorative shadows.
+- Flat: hairline dividers, no decorative shadows; one soft float shadow only for things that hover above the page.
 - Archivo Variable throughout, tabular figures wherever numbers sit.
 - Every chirp carries a postmark: day first, 24-hour time, tilted about 6°.
 
@@ -148,24 +214,27 @@ A two-accent airmail palette over cool paper and navy ink; every token is a `lig
 - **Selection Wash** (`selection` / `selection-night`): the `::selection` background; text stays ink.
 
 ### Neutral
-- **Airmail Paper** (`paper` / `paper-night`): the page ground, a blue-tinted white by day and a navy envelope by night.
-- **Sheet** (`sheet` / `sheet-night`): raised surfaces: header, chirp rows, panels.
+- **Airmail Paper** (`paper` / `paper-night`): the page ground, a blue-tinted white by day and a navy envelope by night. Also the hover wash of secondary and ghost buttons and of the modal's close button.
+- **Sheet** (`sheet` / `sheet-night`): raised surfaces: header, chirp rows, panels, fields, modals, toasts.
 - **Navy Ink** (`ink` / `ink-night`): body text. 14.2:1 on paper by day, 16.0:1 by night.
-- **Faded Ink** (`ink-muted` / `ink-muted-night`): handles, meta, counts, captions, inactive icons. 6.6:1 on the sheet by day, 7.7:1 by night.
-- **Hairline** (`hairline` / `hairline-night`): the one divider system; also the scrollbar thumb.
+- **Faded Ink** (`ink-muted` / `ink-muted-night`): handles, meta, counts, captions, hints, placeholders, inactive icons. 6.6:1 on the sheet by day, 7.7:1 by night.
+- **Hairline** (`hairline` / `hairline-night`): the one divider system; also the resting border of secondary buttons, modals and toasts, and the scrollbar thumb.
+- **Field Border** (`field-border` / `field-border-night`): the outline of text fields. It is the only cue of where to type, so it clears 3:1 against the sheet and the paper (3.45 / 3.24 by day, 3.59 / 3.97 by night; WCAG 1.4.11), which a hairline cannot.
+- **Scrim** (`scrim` / `scrim-night`): the translucent navy veil behind a modal (navy ink at 45% by day, near-black at 70% by night). It is only ever a backdrop, never a surface or a text colour.
 
 ### Status
-- **Danger** (`danger` / `danger-night`): destructive actions and errors only. 7.8:1 on the sheet by day, 7.1:1 by night.
+- **Danger** (`danger` / `danger-night`): destructive actions and errors only. As text on the sheet (errors, the outlined danger button) 7.8:1 by day, 7.1:1 by night.
+- **On Danger** (`on-danger` / `on-danger-night`): text on a danger fill (white by day, the night sheet by night), seen only when the danger button is hovered. 7.8:1 by day, 7.1:1 by night.
 
 ### Avatar fallbacks
-Six fixed mid-dark hues (`avatar-1` … `avatar-6`: green, rust, violet, steel blue, plum, olive) carry white initials when a user has no photo; the colour is derived from the user id. Every one holds white text at 5.4:1 or better, and they do not change between themes.
+Six fixed mid-dark hues (`avatar-1` … `avatar-6`: green, rust, violet, steel blue, plum, olive) carry white initials when a user has no photo; the colour is derived from the user id, so the same person always gets the same hue. Every one holds white text at 5.4:1 or better, and they do not change between themes.
 
 ### Named Rules
 **The Red Letter Rule.** Airmail red marks the one primary action and the liked state, nothing else. If a second red element appears on a screen, one of them is wrong.
 
 **The Blue Pen Rule.** Airmail blue means "you can go here or you are here": links, selection, focus and the postmark. It never fills a button.
 
-**The Not By Colour Alone Rule.** No state is carried by colour alone: a liked chirp changes its icon and its accessible state as well as turning red; errors carry words.
+**The Not By Colour Alone Rule.** No state is carried by colour alone: a liked chirp changes its icon and its accessible state as well as turning red; errors carry an icon and words.
 
 **The AA Both Ways Rule.** Every foreground/background pair passes WCAG AA in both themes. A new token ships with its day and night ratios checked, not just its day one.
 
@@ -180,14 +249,16 @@ Six fixed mid-dark hues (`avatar-1` … `avatar-6`: green, rust, violet, steel b
 ### Hierarchy
 - **Headline** (700, 1.5rem, 2rem, -0.02em): page titles ("Home").
 - **Wordmark** (700, 1.25rem, 1.75rem, -0.02em): the "Chirp" wordmark in the header.
-- **Title** (600, 1.125rem, 1.75rem): section headings.
-- **Body** (400, 0.9375rem, 1.25rem): chirp text; display names sit at 600 in the meta size. Long prose is capped at 65ch.
-- **Meta** (400, 0.875rem, 1.25rem, tabular): handles, counts ("12 likes") in faded ink.
-- **Caption** (400, 0.75rem, 1rem): secondary labels in faded ink.
+- **Title** (600, 1.125rem, 1.75rem): section headings, modal titles, empty-state titles.
+- **Body** (400, 0.9375rem, 1.25rem): chirp text, modal body, toast messages; display names sit at 600 in the meta size. Long prose is capped at 65ch.
+- **Meta** (400, 0.875rem, 1.25rem, tabular): handles, counts ("12 likes") in faded ink; field labels at 600 in ink, hints in faded ink, small buttons at 600.
+- **Caption** (400, 0.75rem, 1rem): secondary labels in faded ink; the character counter (tabular).
 - **Postmark** (600, 0.5625rem / 0.6875rem with the time line at 0.75rem / 1rem, +0.04em, uppercase, tabular): only inside the postmark ring.
 
+Buttons set their label at 600: 1rem in the default size, 0.875rem in the small one.
+
 ### Named Rules
-**The Tabular Figures Rule.** Wherever digits sit (times, counts, dates) they use tabular figures, so columns of numbers and the postmark do not jitter.
+**The Tabular Figures Rule.** Wherever digits sit (times, counts, dates, the character counter) they use tabular figures, so columns of numbers and the postmark do not jitter.
 
 **The One Family Rule.** Archivo Variable is the only typeface. Hierarchy comes from size, weight and tracking, never from a second display face.
 
@@ -198,25 +269,33 @@ Mobile-first and familiar. The base layout targets a 390px phone and must remain
 - **Phone:** a 56px header on the sheet (avatar, wordmark) with the chevron hairline beneath it; the timeline as full-bleed rows on the sheet; the red "Chirp" button bottom right, above a 64px bottom navigation.
 - **Desktop:** a labelled left rail, a 600px feed column, a right search panel.
 - **Rhythm:** 16px side gutter, 12px vertical row padding, 12px gap between avatar and content. A chirp row reserves 64px on the right of its text column so the postmark never collides with the text.
+- **Overlays:** modals centre in the viewport at up to 32rem wide, keeping 1rem clear on each side of a phone. Toasts stack bottom centre, lifted 80px on phones to clear the 64px bottom navigation.
+- **Scroll:** the page always reserves its scrollbar gutter (`scrollbar-gutter: stable`), so locking scroll behind a modal never shifts the layout sideways.
 
-The phone and desktop shells are planned for the app-shell commit; only the header, the chevron and the chirp row are built and rendered at `/styleguide` so far.
+**Planned, not built:** the phone and desktop shells (bottom navigation, left rail, search panel, the floating compose button) arrive with the app-shell commit. Built so far: the header, the chevron, the chirp row and the UI primitives below, all rendered at `/styleguide`.
 
 ### Named Rules
 **The Full Bleed Feed Rule.** Feed rows run edge to edge on the sheet and are separated by hairlines. They are never cards, and never cards inside cards.
 
 ## Elevation & Depth
 
-Flat. There are no shadows in the system. Depth is tonal: chirps, header and panels sit on the sheet, which sits on the paper ground, and 1px hairlines divide rows. Focus is shown with an outline (2px airmail blue, 2px offset), never a glow.
+Flat by default. Depth is tonal: chirps, header and panels sit on the sheet, which sits on the paper ground, and 1px hairlines divide rows. Focus is shown with an outline (2px airmail blue, 2px offset), never a glow.
+
+Two things leave the page. Toasts float, and carry the one shadow in the system. Modals do not cast a shadow: the scrim dims the page behind them, and they keep the sheet, a hairline border and the card radius.
+
+### Shadow Vocabulary
+- **Float** (`shadow-float`: `box-shadow: 0 6px 16px var(--float-shadow)`, where `--float-shadow` is navy ink at 18% by day and black at 50% by night): toasts now; the floating compose button when the app shell is built.
 
 ### Named Rules
-**The Hairline Rule.** Structure comes from hairlines and the paper/sheet step. Decorative shadows are not part of this world; if something needs to float (a menu, a dialog), it earns elevation from its behaviour, and that elevation will be added to this file when it is built.
+**The Hairline Rule.** Structure comes from hairlines and the paper/sheet step. The only shadow is `shadow-float`, and it belongs only to things that float above the page (toasts now, the compose button later); a modal is set apart by the scrim instead. No other shadow exists in this world: not on cards, rows, buttons, fields or menus at rest.
 
 ## Shapes
 
-Two shapes do almost all the work: the circle and the softly rounded card.
+Three radii do all the work: the circle, the softly rounded card and the gently rounded field.
 
-- **Circles** (`rounded.full`): avatars (44px), the postmark ring (56px) and pill controls such as the primary button.
-- **Cards** (`rounded.card`, 0.875rem): panels and containers that are not feed rows. Cards stay in the 12–16px range; pills are reserved for small controls.
+- **Circles** (`rounded.full`): avatars (32, 44 and 80px), the postmark ring (56px), every button (a pill at 44px or 36px tall) and the modal's 36px close button.
+- **Cards** (`rounded.card`, 0.875rem): panels, modals and toasts: containers that are not feed rows. Cards stay in the 12–16px range; pills are reserved for controls.
+- **Fields** (`rounded.field`, 0.5rem): text inputs and textareas, a tighter corner than the card so a form reads as writing space, not as another panel.
 - **The chevron edge:** a 4px band of repeating 135° stripes (10px red, 6px sheet, 10px blue, 6px sheet), the airmail envelope border.
 
 ### Named Rules
@@ -224,16 +303,58 @@ Two shapes do almost all the work: the circle and the softly rounded card.
 
 ## Components
 
-The built primitives are few and deliberate; the full UI primitive set and the app shell arrive in later commits and will be recorded here as they land.
+Screens are built from the primitives in `apps/web/src/components/ui/`; nothing re-creates a button, field or dialog by hand. The app shell and its compose button arrive in a later commit and will be recorded here as they land.
 
 ### Buttons
-- **Shape:** a full pill (`rounded.full`), 48px tall.
-- **Primary:** airmail red with on-airmail-red text, weight 600 at the base 1rem size, 20px horizontal padding. Used once per screen: the "Chirp" action.
+Pills that say what they do; one red one per screen.
+- **Shape:** a full pill (`rounded.full`). Two sizes: default 44px tall with 20px horizontal padding and a 1rem label; small 36px tall with 16px padding and a 0.875rem label. Labels at 600, icon and text 8px apart.
+- **Primary:** airmail red with on-airmail-red text. The one main action on a screen ("Chirp", "Sign in"). Hover darkens it slightly (95% brightness), pressed a step more (90%).
+- **Secondary:** the sheet with a hairline border and ink text, for every other action ("Follow", "Cancel"). Hover takes the paper wash.
+- **Ghost:** no fill or border, faded ink text; hover takes the paper wash and ink text. For quiet actions in toolbars, menus and modal cancels.
+- **Danger:** **outlined**, never filled at rest: the sheet with a danger border and danger text, so it never reads as the primary action even beside it. Hover fills it with danger and on-danger text. Only for confirming something destructive ("Delete chirp").
+- **Loading:** the button keeps its full colour and width; the label hides and a spinner sits centred in it. It is marked `aria-busy`, blocks the action, and shows a wait cursor.
+- **Disabled:** fades to 50% opacity with a not-allowed cursor.
 - **Focus:** the global focus ring, 2px airmail blue outline at 2px offset.
-- **Hover / pressed / disabled:** not yet built.
+- **Button link:** navigation that looks like a button ("Sign up" on the sign-in page) shares exactly the same variants and sizes.
 
 ### Links
 - Airmail blue, medium weight, underlined with a 0.2em offset.
+
+### Fields
+A labelled control, accessible by construction: label, control, hint and error are wired together, never assembled by hand.
+- **Structure:** label (meta size, 600, ink), then the control, then an optional hint (meta size, faded ink) and the error; 6px between them.
+- **Input:** 44px tall, 12px horizontal padding, the sheet with a 1px field-border outline (≥3:1), gently rounded (`rounded.field`, 8px), ink text, faded-ink placeholder. Hover darkens the border to ink.
+- **Textarea:** the same skin, at least 96px tall with 10px vertical padding, resizable vertically. An optional counter sits under it on the right in caption size, tabular: "N characters left" in faded ink, or "N over the limit" in danger at 600. It counts Unicode code points, so an emoji counts as one.
+- **Focus:** the global focus ring.
+- **Error:** the control's border turns danger and it is marked invalid; the message below is danger text at 500 led by a 16px alert icon, so it never relies on colour alone. A textarea over its limit is marked invalid too.
+- **Disabled:** 50% opacity, not-allowed cursor.
+
+### Modal
+A letter laid on the desk: the page dims, one sheet sits on top.
+- Built on the native `<dialog>`: the browser traps focus, closes it on Escape and returns focus to the opener.
+- **Box:** the sheet, a hairline border, the card radius, 24px padding, 16px between parts; up to 32rem wide, keeping 1rem clear of a phone's edges. No shadow.
+- **Backdrop:** the scrim.
+- **Close button:** top right (12px in), a 36px circle with an X icon in faded ink; hover takes the paper wash and ink.
+- **Parts:** a title (title size, 600, slightly tightened) that names the dialog, the body in body size and faded ink, and the actions right-aligned with 12px between them, wrapping on narrow screens.
+- **Closes on:** Escape, the close button, or a genuine backdrop click (a drag that starts inside the dialog does not count).
+- **Scroll:** the page behind is locked while it is open; the stable scrollbar gutter keeps the layout still.
+
+### Toast
+A short note that confirms or apologises, then leaves.
+- Shown only through `notify.success` / `notify.error` (`apps/web/src/lib/notify.ts`); never through the toast library directly.
+- **Box:** the sheet, a hairline border, the card radius, 12px × 16px padding, 12px between icon and text, and `shadow-float`. The message is body size at 500; an optional description is meta size in faded ink.
+- **Success:** a check-circle icon in ink.
+- **Error:** an alert-circle icon in danger, and the border turns danger.
+- **Placement:** bottom centre, 80px up on phones to clear the bottom navigation; each stays 5 seconds. The region is labelled "Notifications".
+- A modal's top layer covers the toast region, so close any open modal before showing a toast.
+
+### Spinner
+- A 2.5px ring in the current text colour (the track at 25%) with a turning arc, 20px by default. Named "Loading" for assistive technology unless a parent already announces the busy state. Under reduced motion it stands still.
+
+### Empty state
+What a list shows when there is nothing in it yet, and what to do about it.
+- Centred, 48px vertical and 24px horizontal padding, 12px between parts.
+- A title (title size, 600, ink) as a section heading (level 2 by default, level 3 to keep the page's heading order), an optional description in faded ink capped at 40ch, and an optional call to action (usually a button link) below.
 
 ### Chirp row
 - **Background:** the sheet, full bleed, 1px hairline below each row (none after the last).
@@ -241,8 +362,9 @@ The built primitives are few and deliberate; the full UI primitive set and the a
 - **Content:** display name (600) and @handle (faded ink) on one meta line, body text below, counts in faded tabular meta.
 - **Postmark:** absolutely placed top right (10px from the top, 14px from the right).
 
-### Avatar fallback
-- A 44px circle in one of the six avatar hues, white initials at 600. Decorative (`aria-hidden`); the name beside it carries the identity.
+### Avatar
+- A circle in three sizes: small 32px, default 44px, large 80px (profile header). It shows the user's picture, or, without one (or if it fails to load), white initials at 600 on one of the six avatar hues, derived from the user id. Up to two initials from the display name; "?" when there are none.
+- **Decorative by default** (`aria-hidden`, empty alt): beside a visible name, the name carries the identity and is not read twice. An avatar that stands alone takes an opt-in label and is then announced as an image with that name.
 
 ### Header
 - 56px on the sheet with the wordmark, followed by the chevron edge.
@@ -255,7 +377,7 @@ Every chirp is stamped with the moment it was sent.
 - **Planned, not built:** a "stamp" landing motion when a chirp is posted (scale + opacity, ease-out), removed under `prefers-reduced-motion`.
 
 ### Icons
-Undecided; the icon set is chosen with the app shell.
+- Lucide line icons at a 1.75 stroke, usually 16–20px, in the current text colour and `aria-hidden` (the text or label beside them carries the meaning). Never emoji or Unicode glyphs as icons.
 
 ## Do's and Don'ts
 
@@ -268,13 +390,19 @@ Undecided; the icon set is chosen with the app shell.
 - **Do** postmark chirps day first ("21 NOV") with 24-hour time, and expose the full date to assistive technology inside `<time datetime>`.
 - **Do** pair every colour-coded state with an icon change, text or `aria-pressed`.
 - **Do** let `prefers-reduced-motion` reduce every animation and transition to effectively zero.
+- **Do** build screens from the primitives (Button, ButtonLink, Avatar, Field, Modal, Spinner, EmptyState) and show toasts only through `notify`, after any open modal has closed.
+- **Do** confirm destructive actions with the outlined danger button.
+- **Do** keep a busy button at full colour with its spinner; fade only buttons that are genuinely disabled.
+- **Do** draw icons from Lucide at a 1.75 stroke.
 
 ### Don't:
 - **Don't** add a second chevron edge or use the chevron as a frame; there is exactly one, under the header.
-- **Don't** use decorative shadows; depth is paper, sheet and hairline.
+- **Don't** use decorative shadows; depth is paper, sheet and hairline, and `shadow-float` is reserved for things that float (toasts, the compose button).
 - **Don't** wrap feed rows in cards, or nest cards inside cards.
 - **Don't** fill buttons with airmail blue or use red for anything but the primary action and the liked state.
+- **Don't** fill the danger button at rest; it is outlined so it never competes with the primary action.
 - **Don't** carry a state by colour alone.
 - **Don't** replace the postmark with relative "2m" labels as the only sense of time.
 - **Don't** introduce a second typeface.
+- **Don't** use emoji or Unicode glyphs as icons.
 - **Don't** use X's name, bird mark or brand blue.

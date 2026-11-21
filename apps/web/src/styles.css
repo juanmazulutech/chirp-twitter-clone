@@ -17,11 +17,16 @@
   --ink: light-dark(#14254a, #eef2fb); /* body text: navy ink */
   --ink-muted: light-dark(#4f5d7e, #a7b3cf); /* secondary text, meta, inactive icons */
   --hairline: light-dark(#dbe2ef, #26365e); /* the one divider system */
+  --field-border: light-dark(#7d8aab, #6576a0); /* text field outlines: >= 3:1 (WCAG 1.4.11) */
   --airmail-red: light-dark(#c81e3a, #ff6b7d); /* primary action, liked state */
   --on-airmail-red: light-dark(#ffffff, #2a0610);
   --airmail-blue: light-dark(#2452b8, #8bb0ff); /* links, selection, focus */
   --danger: light-dark(#a3141f, #ff8a8a); /* destructive actions and errors */
+  --on-danger: light-dark(#ffffff, #121f40);
   --selection: light-dark(#d6e2fb, #23407e);
+  --scrim: light-dark(rgb(20 37 74 / 0.45), rgb(3 7 18 / 0.7)); /* behind modals */
+  /* The only elevation: things that float above the page (toasts, the compose button). */
+  --float-shadow: light-dark(rgb(20 37 74 / 0.18), rgb(0 0 0 / 0.5));
 
   /* Avatar fallbacks (initials on a colour derived from the user id); white text >= 5.4:1. */
   --avatar-1: #2f7563;
@@ -48,10 +53,13 @@
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-hairline: var(--hairline);
+  --color-field-border: var(--field-border);
   --color-airmail-red: var(--airmail-red);
   --color-on-airmail-red: var(--on-airmail-red);
   --color-airmail-blue: var(--airmail-blue);
   --color-danger: var(--danger);
+  --color-on-danger: var(--on-danger);
+  --color-scrim: var(--scrim);
   --color-avatar-1: var(--avatar-1);
   --color-avatar-2: var(--avatar-2);
   --color-avatar-3: var(--avatar-3);
@@ -61,6 +69,8 @@
 
   /* Cards stay at 12–16px; pills are for small controls only. */
   --radius-card: 0.875rem;
+
+  --shadow-float: 0 6px 16px var(--float-shadow);
 }
 
 @layer base {
@@ -71,6 +81,8 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     scrollbar-color: var(--hairline) transparent;
+    /* Locking scroll for a modal must not shift the page sideways. */
+    scrollbar-gutter: stable;
   }
 
   body {

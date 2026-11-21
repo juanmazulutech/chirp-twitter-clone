@@ -1,4 +1,21 @@
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
+
+import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  Field,
+  FieldError,
+  FieldHint,
+  FieldInput,
+  FieldLabel,
+  FieldTextarea,
+} from '@/components/ui/Field';
+import { Modal, ModalActions, ModalBody, ModalTitle } from '@/components/ui/Modal';
 import { Postmark } from '@/components/ui/Postmark';
+import { Spinner } from '@/components/ui/Spinner';
+import { notify } from '@/lib/notify';
 
 // Development-only reference of the Postmarked world: the tokens, type and signature
 // move as they render. Used for visual review; never shipped in production builds.
@@ -27,7 +44,6 @@ const sampleChirps = [
     initials: 'AT',
     name: 'Ana Torres',
     handle: 'ana_codes',
-    color: 'bg-avatar-1',
     text: 'Shipped keyboard focus styles for the whole design system today. Tab through it and tell me what breaks.',
     sentAt: '2026-11-21T21:42:00.000Z',
     likes: 12,
@@ -36,7 +52,6 @@ const sampleChirps = [
     initials: 'KW',
     name: 'Kenji Watanabe',
     handle: 'kenji_cooks',
-    color: 'bg-avatar-2',
     text: "Day 3 of the new sourdough starter. It smells like green apples, which I'm choosing to take as a good sign.",
     sentAt: '2026-11-21T21:26:00.000Z',
     likes: 27,
@@ -79,12 +94,7 @@ function ThemedChirps({ name, className }: { name: string; className: string }) 
             key={chirp.handle}
             className="relative grid grid-cols-[2.75rem_1fr] gap-3 border-b border-hairline px-4 py-3 last:border-b-0"
           >
-            <span
-              aria-hidden="true"
-              className={`grid size-11 place-content-center rounded-full font-semibold text-white ${chirp.color}`}
-            >
-              {chirp.initials}
-            </span>
+            <Avatar name={chirp.name} userId={chirp.handle} />
             <div className="pr-16">
               <p className="text-sm">
                 <span className="font-semibold">{chirp.name}</span>{' '}
@@ -98,9 +108,7 @@ function ThemedChirps({ name, className }: { name: string; className: string }) 
         ))}
       </ol>
       <div className="mt-2 flex flex-wrap items-center gap-4">
-        <span className="inline-flex h-12 items-center rounded-full bg-airmail-red px-5 font-semibold text-on-airmail-red">
-          Chirp
-        </span>
+        <Button variant="primary">Chirp</Button>
         <a href="#signature" className="font-medium text-airmail-blue underline">
           A link in airmail blue
         </a>
@@ -109,7 +117,117 @@ function ThemedChirps({ name, className }: { name: string; className: string }) 
   );
 }
 
+function ThemedComponents({
+  name,
+  className,
+  initialModalOpen = false,
+}: {
+  name: string;
+  className: string;
+  initialModalOpen?: boolean;
+}) {
+  const [modalOpen, setModalOpen] = useState(initialModalOpen);
+
+  return (
+    <div
+      className={`${className} flex flex-col gap-6 rounded-card border border-hairline bg-paper p-4 text-ink`}
+    >
+      <h3 className="text-sm font-semibold">{name}</h3>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="primary">Chirp</Button>
+        <Button variant="secondary">Follow</Button>
+        <Button variant="ghost">Cancel</Button>
+        <Button variant="danger">Delete</Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="primary" size="sm">
+          Chirp
+        </Button>
+        <Button variant="secondary" size="sm">
+          Following
+        </Button>
+        <Button variant="primary" loading>
+          Chirp
+        </Button>
+        <Button variant="secondary" disabled>
+          Disabled
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Avatar name="Ana Torres" userId="ana" size="sm" />
+        <Avatar name="Kenji Watanabe" userId="kenji" />
+        <Avatar name="Amara Nwosu" userId="amara" size="lg" />
+        <Spinner className="size-6 text-airmail-blue" />
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-card border border-hairline bg-sheet p-4">
+        <Field>
+          <FieldLabel>Username</FieldLabel>
+          <FieldInput defaultValue="ana_codes" />
+          <FieldHint>3–15 letters, numbers or underscores.</FieldHint>
+        </Field>
+        <Field error="This email is already registered">
+          <FieldLabel>Email</FieldLabel>
+          <FieldInput type="email" defaultValue="ana@chirp.dev" />
+          <FieldError />
+        </Field>
+        <Field>
+          <FieldLabel>Bio</FieldLabel>
+          <FieldTextarea
+            maxCharacters={160}
+            defaultValue="Frontend dev · TypeScript & accessibility nerd"
+          />
+        </Field>
+      </div>
+
+      <div className="rounded-card border border-hairline bg-sheet">
+        <EmptyState title="Nothing here yet" description="Follow someone to fill your timeline.">
+          <Button variant="secondary" size="sm">
+            Find people
+          </Button>
+        </EmptyState>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <Button onClick={() => setModalOpen(true)}>Open modal</Button>
+        <Button onClick={() => notify.success('Chirp posted')}>Success toast</Button>
+        <Button onClick={() => notify.error('Could not delete the chirp')}>Error toast</Button>
+      </div>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <ModalTitle>Delete chirp?</ModalTitle>
+        <ModalBody>It will disappear from your profile and everyone’s timeline.</ModalBody>
+        <ModalActions>
+          <Button variant="ghost" onClick={() => setModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={() => setModalOpen(false)}>
+            Delete
+          </Button>
+        </ModalActions>
+      </Modal>
+    </div>
+  );
+}
+
+/**
+ * Review helpers: `?section=components` renders one section alone, `?modal=day|night`
+ * opens that panel's modal and `?toasts=1` shows a success and an error toast.
+ */
 export function StyleguidePage() {
+  const [searchParams] = useSearchParams();
+  const only = searchParams.get('section');
+  const show = (section: string) => only === null || only === section;
+  const openModalIn = searchParams.get('modal');
+  const showToasts = searchParams.get('toasts') === '1';
+
+  useEffect(() => {
+    if (!showToasts) return;
+    notify.success('Chirp posted');
+    notify.error('Could not delete the chirp');
+  }, [showToasts]);
+
   return (
     <div className="min-h-dvh bg-paper text-ink">
       <header className="bg-sheet">
@@ -128,40 +246,63 @@ export function StyleguidePage() {
           </p>
         </section>
 
-        <section aria-labelledby="signature" className="flex flex-col gap-4">
-          <h2 id="signature" className="text-lg font-semibold">
-            Signature: the postmark
-          </h2>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {themes.map((theme) => (
-              <ThemedChirps key={theme.name} {...theme} />
-            ))}
-          </div>
-        </section>
+        {show('signature') ? (
+          <section aria-labelledby="signature" className="flex flex-col gap-4">
+            <h2 id="signature" className="text-lg font-semibold">
+              Signature: the postmark
+            </h2>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {themes.map((theme) => (
+                <ThemedChirps key={theme.name} {...theme} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <section aria-labelledby="palette" className="flex flex-col gap-4">
-          <h2 id="palette" className="text-lg font-semibold">
-            Palette
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {themes.map((theme) => (
-              <ThemedPalette key={theme.name} {...theme} />
-            ))}
-          </div>
-        </section>
+        {show('components') ? (
+          <section aria-labelledby="components" className="flex flex-col gap-4">
+            <h2 id="components" className="text-lg font-semibold">
+              Components
+            </h2>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {themes.map((theme) => (
+                <ThemedComponents
+                  key={theme.name}
+                  {...theme}
+                  initialModalOpen={openModalIn === theme.name.toLowerCase()}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <section aria-labelledby="type" className="flex flex-col gap-4">
-          <h2 id="type" className="text-lg font-semibold">
-            Type
-          </h2>
-          <ul className="flex flex-col gap-3">
-            {typeScale.map((style) => (
-              <li key={style.name} className={`tabular-nums ${style.className}`}>
-                {style.name} · Archivo, tabular 0123456789
-              </li>
-            ))}
-          </ul>
-        </section>
+        {show('palette') ? (
+          <section aria-labelledby="palette" className="flex flex-col gap-4">
+            <h2 id="palette" className="text-lg font-semibold">
+              Palette
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {themes.map((theme) => (
+                <ThemedPalette key={theme.name} {...theme} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {show('type') ? (
+          <section aria-labelledby="type" className="flex flex-col gap-4">
+            <h2 id="type" className="text-lg font-semibold">
+              Type
+            </h2>
+            <ul className="flex flex-col gap-3">
+              {typeScale.map((style) => (
+                <li key={style.name} className={`tabular-nums ${style.className}`}>
+                  {style.name} · Archivo, tabular 0123456789
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </main>
     </div>
   );

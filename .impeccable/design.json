@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-21T05:26:46+00:00",
+  "generatedAt": "2026-11-21T09:36:06+00:00",
   "title": "Design System: Chirp",
   "extensions": {
     "colorMeta": {
@@ -40,7 +40,7 @@
         "role": "neutral",
         "displayName": "Sheet (day)",
         "canonical": "light-dark(#ffffff, #121f40)",
-        "purpose": "Raised surfaces: header, chirp rows, panels.",
+        "purpose": "Raised surfaces: header, chirp rows, panels, fields, modals, toasts.",
         "tonalRamp": [
           "oklch(15% 0.000 90)",
           "oklch(26% 0.000 90)",
@@ -56,7 +56,7 @@
         "role": "neutral",
         "displayName": "Sheet (night)",
         "canonical": "light-dark(#ffffff, #121f40)",
-        "purpose": "Raised surfaces: header, chirp rows, panels.",
+        "purpose": "Raised surfaces: header, chirp rows, panels, fields, modals, toasts.",
         "tonalRamp": [
           "oklch(15% 0.025 266)",
           "oklch(26% 0.036 266)",
@@ -104,7 +104,7 @@
         "role": "neutral",
         "displayName": "Faded Ink (day)",
         "canonical": "light-dark(#4f5d7e, #a7b3cf)",
-        "purpose": "Secondary text, meta, inactive icons.",
+        "purpose": "Secondary text, meta, hints, placeholders, inactive icons.",
         "tonalRamp": [
           "oklch(15% 0.021 267)",
           "oklch(26% 0.031 267)",
@@ -120,7 +120,7 @@
         "role": "neutral",
         "displayName": "Faded Ink (night)",
         "canonical": "light-dark(#4f5d7e, #a7b3cf)",
-        "purpose": "Secondary text, meta, inactive icons.",
+        "purpose": "Secondary text, meta, hints, placeholders, inactive icons.",
         "tonalRamp": [
           "oklch(15% 0.016 267)",
           "oklch(26% 0.024 267)",
@@ -136,7 +136,7 @@
         "role": "neutral",
         "displayName": "Hairline (day)",
         "canonical": "light-dark(#dbe2ef, #26365e)",
-        "purpose": "The one divider system; scrollbar thumb.",
+        "purpose": "The one divider system; resting border of fields, secondary buttons, modals and toasts; scrollbar thumb.",
         "tonalRamp": [
           "oklch(15% 0.007 263)",
           "oklch(26% 0.011 263)",
@@ -152,7 +152,7 @@
         "role": "neutral",
         "displayName": "Hairline (night)",
         "canonical": "light-dark(#dbe2ef, #26365e)",
-        "purpose": "The one divider system; scrollbar thumb.",
+        "purpose": "The one divider system; resting border of fields, secondary buttons, modals and toasts; scrollbar thumb.",
         "tonalRamp": [
           "oklch(15% 0.028 266)",
           "oklch(26% 0.041 266)",
@@ -292,6 +292,38 @@
           "oklch(95% 0.054 21)"
         ]
       },
+      "on-danger": {
+        "role": "status",
+        "displayName": "On Danger (day)",
+        "canonical": "light-dark(#ffffff, #121f40)",
+        "purpose": "Text on a danger fill (the hovered danger button).",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(38% 0.000 90)",
+          "oklch(49% 0.000 90)",
+          "oklch(61% 0.000 90)",
+          "oklch(72% 0.000 90)",
+          "oklch(84% 0.000 90)",
+          "oklch(95% 0.000 90)"
+        ]
+      },
+      "on-danger-night": {
+        "role": "status",
+        "displayName": "On Danger (night)",
+        "canonical": "light-dark(#ffffff, #121f40)",
+        "purpose": "Text on a danger fill (the hovered danger button).",
+        "tonalRamp": [
+          "oklch(15% 0.037 266)",
+          "oklch(26% 0.045 266)",
+          "oklch(38% 0.053 266)",
+          "oklch(49% 0.061 266)",
+          "oklch(61% 0.061 266)",
+          "oklch(72% 0.053 266)",
+          "oklch(84% 0.045 266)",
+          "oklch(95% 0.037 266)"
+        ]
+      },
       "selection": {
         "role": "secondary",
         "displayName": "Selection Wash (day)",
@@ -322,6 +354,38 @@
           "oklch(72% 0.081 263)",
           "oklch(84% 0.062 263)",
           "oklch(95% 0.042 263)"
+        ]
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim (day)",
+        "canonical": "light-dark(rgb(20 37 74 / 0.45), rgb(3 7 18 / 0.7))",
+        "purpose": "Backdrop behind a modal only; never a surface or text colour.",
+        "tonalRamp": [
+          "oklch(15% 0.041 264)",
+          "oklch(26% 0.049 264)",
+          "oklch(38% 0.059 264)",
+          "oklch(49% 0.068 264)",
+          "oklch(61% 0.068 264)",
+          "oklch(72% 0.059 264)",
+          "oklch(84% 0.049 264)",
+          "oklch(95% 0.041 264)"
+        ]
+      },
+      "scrim-night": {
+        "role": "neutral",
+        "displayName": "Scrim (night)",
+        "canonical": "light-dark(rgb(20 37 74 / 0.45), rgb(3 7 18 / 0.7))",
+        "purpose": "Backdrop behind a modal only; never a surface or text colour.",
+        "tonalRamp": [
+          "oklch(15% 0.015 262)",
+          "oklch(26% 0.019 262)",
+          "oklch(38% 0.022 262)",
+          "oklch(49% 0.026 262)",
+          "oklch(61% 0.026 262)",
+          "oklch(72% 0.022 262)",
+          "oklch(84% 0.019 262)",
+          "oklch(95% 0.015 262)"
         ]
       },
       "avatar-1": {
@@ -419,6 +483,38 @@
           "oklch(84% 0.056 119)",
           "oklch(95% 0.038 119)"
         ]
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field Border (day)",
+        "canonical": "light-dark(#7d8aab, #6576a0)",
+        "purpose": "Outline of text fields; >= 3:1 against sheet and paper (WCAG 1.4.11).",
+        "tonalRamp": [
+          "oklch(15% 0.007 263)",
+          "oklch(26% 0.011 263)",
+          "oklch(38% 0.014 263)",
+          "oklch(49% 0.018 263)",
+          "oklch(61% 0.018 263)",
+          "oklch(72% 0.014 263)",
+          "oklch(84% 0.011 263)",
+          "oklch(95% 0.007 263)"
+        ]
+      },
+      "field-border-night": {
+        "role": "neutral",
+        "displayName": "Field Border (night)",
+        "canonical": "light-dark(#7d8aab, #6576a0)",
+        "purpose": "Night value of the field outline.",
+        "tonalRamp": [
+          "oklch(15% 0.028 266)",
+          "oklch(26% 0.041 266)",
+          "oklch(38% 0.054 266)",
+          "oklch(49% 0.067 266)",
+          "oklch(61% 0.067 266)",
+          "oklch(72% 0.054 266)",
+          "oklch(84% 0.041 266)",
+          "oklch(95% 0.028 266)"
+        ]
       }
     },
     "typographyMeta": {
@@ -432,19 +528,19 @@
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Section headings."
+        "purpose": "Section headings, modal titles, empty-state titles."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Chirp text; prose capped at 65ch."
+        "purpose": "Chirp text, modal body, toast messages; prose capped at 65ch."
       },
       "meta": {
         "displayName": "Meta",
-        "purpose": "Names, handles and counts; tabular figures."
+        "purpose": "Names, handles and counts (tabular); field labels at 600, hints, small button labels."
       },
       "caption": {
         "displayName": "Caption",
-        "purpose": "Secondary labels in faded ink."
+        "purpose": "Secondary labels in faded ink; the character counter (tabular)."
       },
       "postmark-label": {
         "displayName": "Postmark label",
@@ -455,7 +551,15 @@
         "purpose": "24-hour time line inside the postmark ring only."
       }
     },
-    "shadows": [],
+    "shadows": [
+      {
+        "name": "float",
+        "token": "shadow-float",
+        "value": "0 6px 16px var(--float-shadow)",
+        "color": "--float-shadow: light-dark(rgb(20 37 74 / 0.18), rgb(0 0 0 / 0.5))",
+        "purpose": "The only elevation: things that float above the page. Toasts now; the floating compose button when the app shell is built. Modals use the scrim instead, no shadow."
+      }
+    ],
     "focus": {
       "value": "outline: 2px solid var(--airmail-blue); outline-offset: 2px",
       "purpose": "Global :focus-visible ring; never a glow."
@@ -484,21 +588,43 @@
           "night": 6.8
         },
         {
-          "pair": "danger / sheet",
-          "day": 7.8,
-          "night": 7.1
-        },
-        {
           "pair": "white / avatar-1..6",
           "both": ">= 5.4 (5.46 to 7.2)"
+        },
+        {
+          "pair": "on-danger / danger (hovered danger button)",
+          "day": 7.84,
+          "night": 7.14
+        },
+        {
+          "pair": "danger / sheet (outlined danger button, field errors)",
+          "day": 7.84,
+          "night": 7.14
         }
-      ]
+      ],
+      "note": "Ratios recomputed from the hex values (WCAG 2.x relative luminance).",
+      "field-border/sheet": {
+        "pair": "field-border / sheet",
+        "day": 3.45,
+        "night": 3.59,
+        "requirement": "3:1 non-text (WCAG 1.4.11)"
+      }
     },
     "motion": [
       {
         "name": "reduced-motion",
         "value": "animation-duration: 0.01ms; transition-duration: 0.01ms",
         "purpose": "Applied to everything under prefers-reduced-motion: reduce."
+      },
+      {
+        "name": "state-transition",
+        "value": "150ms (Tailwind default easing) on background-color, color, filter and border-color",
+        "purpose": "Button, field and close-button hover/press changes."
+      },
+      {
+        "name": "spinner",
+        "value": "animate-spin; motion-reduce:animate-none",
+        "purpose": "Loading ring; stands still under reduced motion."
       },
       {
         "name": "postmark-stamp",
@@ -519,19 +645,88 @@
     ],
     "planned": [
       "Postmark stamp landing motion",
-      "UI primitives (later commits)",
-      "App shell: bottom nav, left rail, search panel (C17)",
-      "Icon set (undecided)"
-    ]
+      "App shell: bottom nav, left rail, search panel, floating compose button (C17)"
+    ],
+    "rounded": {
+      "field": {
+        "value": "0.5rem",
+        "purpose": "Text inputs and textareas (Tailwind rounded-lg)."
+      },
+      "card": {
+        "value": "0.875rem",
+        "purpose": "Panels, modals, toasts."
+      },
+      "full": {
+        "value": "9999px",
+        "purpose": "Avatars, postmark, buttons, close button."
+      }
+    },
+    "scroll": {
+      "value": "html { scrollbar-gutter: stable }",
+      "purpose": "Locking scroll for a modal never shifts the page sideways."
+    },
+    "icons": {
+      "set": "lucide-react",
+      "strokeWidth": 1.75,
+      "purpose": "Line icons, aria-hidden, in the current text colour; never emoji or Unicode glyphs."
+    }
   },
   "components": [
     {
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one primary action on a screen (\"Chirp\"): an airmail red pill. Hover and pressed states are not built yet.",
-      "html": "<button class=\"ds-btn-primary\" type=\"button\">Chirp</button>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-btn-primary{display:inline-flex;align-items:center;height:48px;padding:0 20px;border:none;border-radius:9999px;background:var(--airmail-red);color:var(--on-airmail-red);font:600 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;cursor:pointer;} .ds-btn-primary:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;}"
+      "description": "The one primary action on a screen (\"Chirp\", \"Sign in\"): an airmail red pill, 44px (36px small). Hover 95% brightness, pressed 90%; loading keeps full colour with a centred spinner.",
+      "html": "<button class=\"ds-btn ds-btn-primary\" type=\"button\">Chirp</button>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:1px solid transparent;border-radius:9999px;font:600 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .15s,color .15s,filter .15s;} .ds-btn:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-btn:disabled{opacity:.5;cursor:not-allowed;} .ds-btn-primary{background:var(--airmail-red);color:var(--on-airmail-red);} .ds-btn-primary:hover{filter:brightness(.95);} .ds-btn-primary:active{filter:brightness(.9);}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Every other action (\"Follow\", \"Cancel\"): sheet pill with a hairline border; hover takes the paper wash.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\" type=\"button\">Follow</button>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:1px solid transparent;border-radius:9999px;font:600 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .15s,color .15s,filter .15s;} .ds-btn:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-btn:disabled{opacity:.5;cursor:not-allowed;} .ds-btn-secondary{background:var(--sheet);color:var(--ink);border-color:var(--hairline);} .ds-btn-secondary:hover{background:var(--paper);} .ds-btn-secondary:active{filter:brightness(.95);}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Quiet actions in toolbars, menus and modal cancels: faded ink text, no fill; hover takes the paper wash and ink.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\" type=\"button\">Cancel</button>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:1px solid transparent;border-radius:9999px;font:600 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .15s,color .15s,filter .15s;} .ds-btn:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-btn:disabled{opacity:.5;cursor:not-allowed;} .ds-btn-ghost{background:transparent;color:var(--ink-muted);} .ds-btn-ghost:hover{background:var(--paper);color:var(--ink);} .ds-btn-ghost:active{filter:brightness(.95);}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Confirms something destructive (\"Delete chirp\"). Outlined at rest so it never reads as the primary action; hover fills with danger and on-danger text.",
+      "html": "<button class=\"ds-btn ds-btn-danger\" type=\"button\">Delete</button>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:1px solid transparent;border-radius:9999px;font:600 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .15s,color .15s,filter .15s;} .ds-btn:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-btn:disabled{opacity:.5;cursor:not-allowed;} .ds-btn-danger{background:var(--sheet);color:var(--danger);border-color:var(--danger);} .ds-btn-danger:hover{background:var(--danger);color:var(--on-danger);}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "field-input",
+      "description": "Labelled 44px input, 8px radius, hairline border (faded ink on hover, danger when invalid); hint in faded ink; error is an alert icon plus text in danger.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-email\">Email</label><input class=\"ds-field-input\" id=\"ds-email\" type=\"email\" value=\"ana@chirp.dev\" aria-invalid=\"true\" aria-describedby=\"ds-email-error\"><p class=\"ds-field-error\" id=\"ds-email-error\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/></svg>This email is already registered</p></div><div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-user\">Username</label><input class=\"ds-field-input\" id=\"ds-user\" value=\"ana_codes\" aria-describedby=\"ds-user-hint\"><p class=\"ds-field-hint\" id=\"ds-user-hint\">3–15 letters, numbers or underscores.</p></div>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;color:var(--ink);} .ds-field-label{font-size:.875rem;line-height:1.25rem;font-weight:600;} .ds-field-input{height:44px;padding:0 12px;border:1px solid var(--hairline);border-radius:8px;background:var(--sheet);color:var(--ink);font:400 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;transition:border-color .15s;} .ds-field-input::placeholder{color:var(--ink-muted);} .ds-field-input:hover{border-color:var(--ink-muted);} .ds-field-input:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-field-input[aria-invalid=true]{border-color:var(--danger);} .ds-field-hint{margin:0;font-size:.875rem;line-height:1.25rem;color:var(--ink-muted);} .ds-field-error{display:flex;align-items:center;gap:6px;margin:0;font-size:.875rem;line-height:1.25rem;font-weight:500;color:var(--danger);} .ds-field-error svg{flex-shrink:0;}"
+    },
+    {
+      "name": "Modal",
+      "kind": "custom",
+      "refersTo": "modal",
+      "description": "Native <dialog> on the scrim: sheet, hairline border, card radius, no shadow; close button top right; title, body in faded ink, right-aligned actions.",
+      "html": "<div class=\"ds-scrim\"><div class=\"ds-modal\" role=\"dialog\" aria-labelledby=\"ds-modal-title\"><button class=\"ds-modal-close\" type=\"button\" aria-label=\"Close\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg></button><h2 class=\"ds-modal-title\" id=\"ds-modal-title\">Delete chirp?</h2><div class=\"ds-modal-body\">It will disappear from your profile and everyone’s timeline.</div><div class=\"ds-modal-actions\"><button class=\"ds-btn ds-btn-ghost\" type=\"button\">Cancel</button><button class=\"ds-btn ds-btn-danger\" type=\"button\">Delete</button></div></div></div>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:1px solid transparent;border-radius:9999px;font:600 1rem/1.5rem 'Archivo Variable',ui-sans-serif,system-ui,sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .15s,color .15s,filter .15s;} .ds-btn:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-btn:disabled{opacity:.5;cursor:not-allowed;} .ds-btn-ghost{background:transparent;color:var(--ink-muted);} .ds-btn-ghost:hover{background:var(--paper);color:var(--ink);} .ds-btn-danger{background:var(--sheet);color:var(--danger);border-color:var(--danger);} .ds-btn-danger:hover{background:var(--danger);color:var(--on-danger);} .ds-scrim{display:grid;place-items:center;padding:32px 16px;background:var(--scrim);} .ds-modal{position:relative;display:flex;flex-direction:column;gap:16px;width:min(32rem,100%);box-sizing:border-box;padding:24px;border:1px solid var(--hairline);border-radius:.875rem;background:var(--sheet);color:var(--ink);} .ds-modal-close{position:absolute;top:12px;right:12px;display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:9999px;background:transparent;color:var(--ink-muted);cursor:pointer;transition:background-color .15s,color .15s;} .ds-modal-close:hover{background:var(--paper);color:var(--ink);} .ds-modal-close:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;} .ds-modal-title{margin:0;padding-right:40px;font-size:1.125rem;line-height:1.75rem;font-weight:600;letter-spacing:-.01em;} .ds-modal-body{font-size:.9375rem;line-height:1.25rem;color:var(--ink-muted);} .ds-modal-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;padding-top:8px;}"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Shown only through notify: sheet, hairline border, card radius, shadow-float; success icon in ink, error icon in danger with a danger border.",
+      "html": "<div class=\"ds-toasts\" role=\"region\" aria-label=\"Notifications\"><div class=\"ds-toast\"><span class=\"ds-toast-icon\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg></span><span class=\"ds-toast-title\">Chirp posted</span></div><div class=\"ds-toast ds-toast-error\"><span class=\"ds-toast-icon ds-toast-icon-error\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/></svg></span><span class=\"ds-toast-title\">Could not delete the chirp</span></div></div>",
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-toasts{display:flex;flex-direction:column;gap:12px;padding:16px;background:var(--paper);} .ds-toast{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--hairline);border-radius:.875rem;background:var(--sheet);color:var(--ink);box-shadow:0 6px 16px var(--float-shadow);} .ds-toast-error{border-color:var(--danger);} .ds-toast-icon{display:inline-flex;flex-shrink:0;color:var(--ink);} .ds-toast-icon-error{color:var(--danger);} .ds-toast-title{font-size:.9375rem;line-height:1.25rem;font-weight:500;}"
     },
     {
       "name": "Link",
@@ -539,7 +734,7 @@
       "refersTo": "link",
       "description": "Inline links in airmail blue, underlined.",
       "html": "<a class=\"ds-link\" href=\"#\">A link in airmail blue</a>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-link{color:var(--airmail-blue);font-weight:500;text-decoration:underline;text-underline-offset:0.2em;} .ds-link:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;}"
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-link{color:var(--airmail-blue);font-weight:500;text-decoration:underline;text-underline-offset:0.2em;} .ds-link:focus-visible{outline:2px solid var(--airmail-blue);outline-offset:2px;}"
     },
     {
       "name": "Header with chevron edge",
@@ -547,7 +742,7 @@
       "refersTo": "header",
       "description": "56px sheet header with the wordmark and the page's one airmail chevron hairline beneath it.",
       "html": "<header class=\"ds-header\"><div class=\"ds-header-bar\"><span class=\"ds-wordmark\">Chirp</span></div><div class=\"ds-airmail-edge\"></div></header>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-header{background:var(--sheet);color:var(--ink);} .ds-header-bar{display:flex;align-items:center;height:56px;padding:0 16px;} .ds-wordmark{font-size:1.25rem;line-height:1.75rem;font-weight:700;letter-spacing:-0.02em;} .ds-airmail-edge{height:4px;background:repeating-linear-gradient(135deg,var(--airmail-red) 0 10px,var(--sheet) 10px 16px,var(--airmail-blue) 16px 26px,var(--sheet) 26px 32px);}"
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-header{background:var(--sheet);color:var(--ink);} .ds-header-bar{display:flex;align-items:center;height:56px;padding:0 16px;} .ds-wordmark{font-size:1.25rem;line-height:1.75rem;font-weight:700;letter-spacing:-0.02em;} .ds-airmail-edge{height:4px;background:repeating-linear-gradient(135deg,var(--airmail-red) 0 10px,var(--sheet) 10px 16px,var(--airmail-blue) 16px 26px,var(--sheet) 26px 32px);}"
     },
     {
       "name": "Postmark",
@@ -555,15 +750,15 @@
       "refersTo": "postmark",
       "description": "Signature: every chirp is stamped with its time, day first, 24-hour, tilted -6deg; the full date is in a visually hidden label inside <time datetime>.",
       "html": "<time class=\"ds-postmark\" datetime=\"2026-11-21T21:42:00.000Z\" title=\"November 21, 2026 at 9:42 PM\"><span class=\"ds-sr-only\">November 21, 2026 at 9:42 PM</span><span aria-hidden=\"true\">21 NOV</span><span aria-hidden=\"true\" class=\"ds-postmark-time\">21:42</span><span aria-hidden=\"true\">CHIRP</span></time>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-postmark{display:inline-grid;place-content:center;width:56px;height:56px;flex-shrink:0;transform:rotate(-6deg);border:1.5px solid var(--airmail-blue);border-radius:9999px;color:var(--airmail-blue);text-align:center;font-size:0.5625rem;line-height:0.6875rem;font-weight:600;letter-spacing:0.04em;font-variant-numeric:tabular-nums;} .ds-postmark-time{font-size:0.75rem;line-height:1rem;} .ds-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}"
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-postmark{display:inline-grid;place-content:center;width:56px;height:56px;flex-shrink:0;transform:rotate(-6deg);border:1.5px solid var(--airmail-blue);border-radius:9999px;color:var(--airmail-blue);text-align:center;font-size:0.5625rem;line-height:0.6875rem;font-weight:600;letter-spacing:0.04em;font-variant-numeric:tabular-nums;} .ds-postmark-time{font-size:0.75rem;line-height:1rem;} .ds-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}"
     },
     {
       "name": "Avatar fallback",
       "kind": "custom",
       "refersTo": "avatar-fallback",
-      "description": "44px circle with white initials on one of six fixed avatar hues derived from the user id.",
+      "description": "Circle at 32, 44 (default) or 80px; picture, or white initials on one of six hues derived from the user id. Decorative by default (aria-hidden); an opt-in label makes a standalone avatar an image with that name.",
       "html": "<span class=\"ds-avatar\" aria-hidden=\"true\">AT</span>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-avatar{display:grid;place-content:center;width:44px;height:44px;border-radius:9999px;background:var(--avatar-1);color:#ffffff;font-weight:600;}"
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-avatar{display:grid;place-content:center;width:44px;height:44px;border-radius:9999px;background:var(--avatar-1);color:#ffffff;font-weight:600;}"
     },
     {
       "name": "Chirp row",
@@ -571,7 +766,7 @@
       "refersTo": "chirp-row",
       "description": "Full-bleed feed row on the sheet: avatar, name and handle, text, tabular count, postmark top right; hairline below. Never a card.",
       "html": "<ol class=\"ds-feed\"><li class=\"ds-chirp\"><span class=\"ds-chirp-avatar\" aria-hidden=\"true\">AT</span><div class=\"ds-chirp-body\"><p class=\"ds-chirp-meta\"><span class=\"ds-chirp-name\">Ana Torres</span> <span class=\"ds-chirp-handle\">@ana_codes</span></p><p class=\"ds-chirp-text\">Shipped keyboard focus styles for the whole design system today. Tab through it and tell me what breaks.</p><p class=\"ds-chirp-count\">12 likes</p></div><time class=\"ds-chirp-postmark\" datetime=\"2026-11-21T21:42:00.000Z\"><span class=\"ds-sr-only\">November 21, 2026 at 9:42 PM</span><span aria-hidden=\"true\">21 NOV</span><span aria-hidden=\"true\" class=\"ds-chirp-postmark-time\">21:42</span><span aria-hidden=\"true\">CHIRP</span></time></li></ol>",
-      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-feed{list-style:none;margin:0;padding:0;background:var(--sheet);color:var(--ink);} .ds-chirp{position:relative;display:grid;grid-template-columns:2.75rem 1fr;gap:12px;padding:12px 16px;border-bottom:1px solid var(--hairline);} .ds-chirp:last-child{border-bottom:0;} .ds-chirp-avatar{display:grid;place-content:center;width:44px;height:44px;border-radius:9999px;background:var(--avatar-1);color:#fff;font-weight:600;} .ds-chirp-body{padding-right:64px;} .ds-chirp-body p{margin:0;} .ds-chirp-meta{font-size:0.875rem;line-height:1.25rem;} .ds-chirp-name{font-weight:600;} .ds-chirp-handle{color:var(--ink-muted);} .ds-chirp-text{margin-top:4px !important;font-size:0.9375rem;line-height:1.25rem;} .ds-chirp-count{margin-top:8px !important;font-size:0.875rem;line-height:1.25rem;color:var(--ink-muted);font-variant-numeric:tabular-nums;} .ds-chirp-postmark{position:absolute;top:10px;right:14px;display:inline-grid;place-content:center;width:56px;height:56px;transform:rotate(-6deg);border:1.5px solid var(--airmail-blue);border-radius:9999px;color:var(--airmail-blue);text-align:center;font-size:0.5625rem;line-height:0.6875rem;font-weight:600;letter-spacing:0.04em;font-variant-numeric:tabular-nums;} .ds-chirp-postmark-time{font-size:0.75rem;line-height:1rem;} .ds-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}"
+      "css": ":host{color-scheme:light dark;--paper:light-dark(#f6f8fc,#0c1630);--sheet:light-dark(#ffffff,#121f40);--ink:light-dark(#14254a,#eef2fb);--ink-muted:light-dark(#4f5d7e,#a7b3cf);--hairline:light-dark(#dbe2ef,#26365e);--airmail-red:light-dark(#c81e3a,#ff6b7d);--on-airmail-red:light-dark(#ffffff,#2a0610);--airmail-blue:light-dark(#2452b8,#8bb0ff);--danger:light-dark(#a3141f,#ff8a8a);--on-danger:light-dark(#ffffff,#121f40);--scrim:light-dark(rgb(20 37 74 / 0.45),rgb(3 7 18 / 0.7));--float-shadow:light-dark(rgb(20 37 74 / 0.18),rgb(0 0 0 / 0.5));--avatar-1:#2f7563;font-family:'Archivo Variable',ui-sans-serif,system-ui,sans-serif;} .ds-feed{list-style:none;margin:0;padding:0;background:var(--sheet);color:var(--ink);} .ds-chirp{position:relative;display:grid;grid-template-columns:2.75rem 1fr;gap:12px;padding:12px 16px;border-bottom:1px solid var(--hairline);} .ds-chirp:last-child{border-bottom:0;} .ds-chirp-avatar{display:grid;place-content:center;width:44px;height:44px;border-radius:9999px;background:var(--avatar-1);color:#fff;font-weight:600;} .ds-chirp-body{padding-right:64px;} .ds-chirp-body p{margin:0;} .ds-chirp-meta{font-size:0.875rem;line-height:1.25rem;} .ds-chirp-name{font-weight:600;} .ds-chirp-handle{color:var(--ink-muted);} .ds-chirp-text{margin-top:4px !important;font-size:0.9375rem;line-height:1.25rem;} .ds-chirp-count{margin-top:8px !important;font-size:0.875rem;line-height:1.25rem;color:var(--ink-muted);font-variant-numeric:tabular-nums;} .ds-chirp-postmark{position:absolute;top:10px;right:14px;display:inline-grid;place-content:center;width:56px;height:56px;transform:rotate(-6deg);border:1.5px solid var(--airmail-blue);border-radius:9999px;color:var(--airmail-blue);text-align:center;font-size:0.5625rem;line-height:0.6875rem;font-weight:600;letter-spacing:0.04em;font-variant-numeric:tabular-nums;} .ds-chirp-postmark-time{font-size:0.75rem;line-height:1rem;} .ds-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}"
     }
   ],
   "narrative": {
@@ -581,55 +776,46 @@
       "Airmail paper and navy ink by day, a navy envelope by night, both following `prefers-color-scheme` through `light-dark()`.",
       "Airmail red for the one primary action and the liked state; airmail blue for links, selection, focus and the postmark ring.",
       "One chevron hairline, under the header, and nowhere else.",
-      "Flat: hairline dividers, no decorative shadows.",
+      "Flat: hairline dividers, no decorative shadows; one soft float shadow only for things that hover above the page.",
       "Archivo Variable throughout, tabular figures wherever numbers sit.",
       "Every chirp carries a postmark: day first, 24-hour time, tilted about 6°."
     ],
     "rules": [
       {
         "name": "The Red Letter Rule",
-        "body": "Airmail red marks the one primary action and the liked state, nothing else. If a second red element appears on a screen, one of them is wrong.",
-        "section": "colors"
+        "body": "Airmail red marks the one primary action and the liked state, nothing else. If a second red element appears on a screen, one of them is wrong."
       },
       {
         "name": "The Blue Pen Rule",
-        "body": "Airmail blue means \"you can go here or you are here\": links, selection, focus and the postmark. It never fills a button.",
-        "section": "colors"
+        "body": "Airmail blue means \"you can go here or you are here\": links, selection, focus and the postmark. It never fills a button."
       },
       {
         "name": "The Not By Colour Alone Rule",
-        "body": "No state is carried by colour alone: a liked chirp changes its icon and its accessible state as well as turning red; errors carry words.",
-        "section": "colors"
+        "body": "No state is carried by colour alone: a liked chirp changes its icon and its accessible state as well as turning red; errors carry an icon and words."
       },
       {
         "name": "The AA Both Ways Rule",
-        "body": "Every foreground/background pair passes WCAG AA in both themes. A new token ships with its day and night ratios checked, not just its day one.",
-        "section": "colors"
+        "body": "Every foreground/background pair passes WCAG AA in both themes. A new token ships with its day and night ratios checked, not just its day one."
       },
       {
         "name": "The Tabular Figures Rule",
-        "body": "Wherever digits sit (times, counts, dates) they use tabular figures, so columns of numbers and the postmark do not jitter.",
-        "section": "typography"
+        "body": "Wherever digits sit (times, counts, dates, the character counter) they use tabular figures, so columns of numbers and the postmark do not jitter."
       },
       {
         "name": "The One Family Rule",
-        "body": "Archivo Variable is the only typeface. Hierarchy comes from size, weight and tracking, never from a second display face.",
-        "section": "typography"
+        "body": "Archivo Variable is the only typeface. Hierarchy comes from size, weight and tracking, never from a second display face."
       },
       {
         "name": "The Full Bleed Feed Rule",
-        "body": "Feed rows run edge to edge on the sheet and are separated by hairlines. They are never cards, and never cards inside cards.",
-        "section": "layout"
+        "body": "Feed rows run edge to edge on the sheet and are separated by hairlines. They are never cards, and never cards inside cards."
       },
       {
         "name": "The Hairline Rule",
-        "body": "Structure comes from hairlines and the paper/sheet step. Decorative shadows are not part of this world; if something needs to float (a menu, a dialog), it earns elevation from its behaviour, and that elevation will be added to this file when it is built.",
-        "section": "elevation"
+        "body": "Structure comes from hairlines and the paper/sheet step. The only shadow is `shadow-float`, and it belongs only to things that float above the page (toasts now, the compose button later); a modal is set apart by the scrim instead. No other shadow exists in this world: not on cards, rows, buttons, fields or menus at rest."
       },
       {
         "name": "The One Chevron Rule",
-        "body": "Exactly one chevron hairline per page, under the header. It is the page's only edging; it never frames cards, buttons or dialogs.",
-        "section": "shapes"
+        "body": "Exactly one chevron hairline per page, under the header. It is the page's only edging; it never frames cards, buttons or dialogs."
       }
     ],
     "dos": [
@@ -640,16 +826,22 @@
       "**Do** use tabular figures for every time, count and date.",
       "**Do** postmark chirps day first (\"21 NOV\") with 24-hour time, and expose the full date to assistive technology inside `<time datetime>`.",
       "**Do** pair every colour-coded state with an icon change, text or `aria-pressed`.",
-      "**Do** let `prefers-reduced-motion` reduce every animation and transition to effectively zero."
+      "**Do** let `prefers-reduced-motion` reduce every animation and transition to effectively zero.",
+      "**Do** build screens from the primitives (Button, ButtonLink, Avatar, Field, Modal, Spinner, EmptyState) and show toasts only through `notify`, after any open modal has closed.",
+      "**Do** confirm destructive actions with the outlined danger button.",
+      "**Do** keep a busy button at full colour with its spinner; fade only buttons that are genuinely disabled.",
+      "**Do** draw icons from Lucide at a 1.75 stroke."
     ],
     "donts": [
       "**Don't** add a second chevron edge or use the chevron as a frame; there is exactly one, under the header.",
-      "**Don't** use decorative shadows; depth is paper, sheet and hairline.",
+      "**Don't** use decorative shadows; depth is paper, sheet and hairline, and `shadow-float` is reserved for things that float (toasts, the compose button).",
       "**Don't** wrap feed rows in cards, or nest cards inside cards.",
       "**Don't** fill buttons with airmail blue or use red for anything but the primary action and the liked state.",
+      "**Don't** fill the danger button at rest; it is outlined so it never competes with the primary action.",
       "**Don't** carry a state by colour alone.",
       "**Don't** replace the postmark with relative \"2m\" labels as the only sense of time.",
       "**Don't** introduce a second typeface.",
+      "**Don't** use emoji or Unicode glyphs as icons.",
       "**Don't** use X's name, bird mark or brand blue."
     ]
   }

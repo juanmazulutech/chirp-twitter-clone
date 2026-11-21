@@ -74,7 +74,9 @@ Detail and examples: ARCHITECTURE.md §3.
 - Forms: `react-hook-form` + `zodResolver(<schema from @chirp/shared>)`.
 - Mobile-first: base classes target mobile; scale up with `sm:` (640px) and `lg:` (1024px).
 - Visual system: read `DESIGN.md` before any UI work. Use only the semantic token classes (`bg-paper`, `bg-sheet`, `text-ink`, `text-ink-muted`, `border-hairline`, `bg-airmail-red`, `text-airmail-blue`, `text-danger`, `bg-avatar-N`); never raw hex values. Red is only for the primary action and liked state; one chevron (`.airmail-edge`) under the header; no decorative shadows; feed rows are full-bleed with hairlines, never cards in cards; no state carried by colour alone.
-- Check visual changes on the dev-only `/styleguide` route and with `impeccable detect` before reporting.
+- Build screens from the primitives in `src/components/ui/` (`Button`, `ButtonLink`, `Avatar`, `Field*`, `Modal*`, `Spinner`, `EmptyState`); show toasts only through `notify` (`src/lib/notify.ts`), never Sonner directly, and only after closing any open `Modal` (a native dialog covers the toast region). Icons come from `lucide-react` with `strokeWidth={1.75}`; never emoji or Unicode glyphs as icons.
+- Files that export components export only components (Fast Refresh); helpers live in sibling `*.ts` files (e.g. `button-classes.ts`, `avatar-utils.ts`).
+- Check visual changes on the dev-only `/styleguide` route (`?section=<id>` renders one section) and with `impeccable detect` before reporting. Headless Chrome cannot render narrower than 500px; use `impeccable shot` for phone-width captures.
 - Likes and follows are optimistic with rollback.
 
 **Database**
