@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 
+import authRoutes from './auth/routes';
 import healthRoutes from './health/routes';
 
 /**
@@ -8,6 +9,7 @@ import healthRoutes from './health/routes';
  */
 const modules: FastifyPluginAsync = async (app) => {
   await app.register(healthRoutes);
+  await app.register(authRoutes);
 };
 
 export default modules;

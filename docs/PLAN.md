@@ -92,8 +92,8 @@ Estimates are focused hours including review. Each commit includes its tests and
 |---|---|---|
 | C09 | `feat(db): add users and sessions schema with test database harness` | Prisma setup, migration `users_and_sessions`, prisma plugin, test setup (migrate `chirp_test`, truncate), `buildTestApp`, user factory, PostgreSQL service + migrations in the CI workflow |
 | C10 | `feat(auth): add password hashing and session token utilities` | `lib/password.ts` (argon2id), `lib/tokens.ts` (random token + SHA-256); unit tests |
-| C11 | `feat(auth): add register, login, logout and me endpoints` | auth contracts in shared, auth module, session plugin (cookie, lookup, sliding renewal), `loginAs` helper; integration tests (201/200/204/401/409, validation) |
-| C12 | `feat(auth): add route protection, origin check and rate limiting` | `requireAuth`, `Origin` verification, helmet, rate limiting; tests |
+| C11 | `feat(auth): add register, login, logout and me endpoints` | auth contracts in shared, auth module, session plugin (cookie, lookup, sliding renewal, `requireAuth`), `loginAs` helper; integration tests (201/200/204/401/409, validation) |
+| C12 | `feat(auth): add origin check, security headers and rate limiting` | `Origin` verification on state-changing requests, helmet, rate limiting on auth routes; tests |
 | C13 | `feat(db): add seed with demo users` | `seed.ts` with 12 personas and the demo account |
 
 **Done when:** a seeded user can sign in with `curl` and call `GET /api/auth/me`; API coverage ≥ 85%.
@@ -310,7 +310,7 @@ report described in the session protocol.
 | Phase | Commits | Status |
 |---|---|---|
 | 0 · Foundation | C01–C08 | ✅ Done |
-| 1 · Authentication API | C09–C13 | 🚧 In progress (C09) |
+| 1 · Authentication API | C09–C13 | 🚧 In progress (C11) |
 | 2 · Web foundation and auth UI | C14–C20 | ⏳ |
 | 3 · Tweets and timeline | C21–C26 | ⏳ |
 | 4 · Likes | C27–C29 | ⏳ |
@@ -321,7 +321,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · @fastify/cookie 11.1.5 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -338,3 +338,4 @@ report described in the session protocol.
 | 2026-11-20 | C08: the CI PostgreSQL service moves to C09; lint fails on any warning (`--max-warnings 0`) | Configuration lands with the first code that exercises it; warnings should not accumulate silently |
 | 2026-11-20 | C09: readiness endpoint `GET /api/health/ready`; npm `overrides` pins `effect@3.22.5` | Readiness was split out in C06; the Prisma CLI's transitive `effect` dependency has a high-severity advisory (ADR-04) |
 | 2026-11-20 | Fix after C09: `testDatabaseUrl()` takes the whole environment object; its fallback test passes `{}` | CI failed: passing `undefined` triggers the parameter default (`process.env`), so the test only passed locally because `.env` matched the fallback. Local CI simulations now use a URL that differs from the fallback |
+| 2026-11-20 | C11: `requireAuth` moved from C12 into C11 (C12 renamed); `/auth/me` returns `SessionUser` instead of `UserProfile`; logout is idempotent and needs no session | `/auth/me` and logout need the session guard; follower/tweet counts do not exist yet and the private email must never appear in a public profile; signing out must work even with an expired session |

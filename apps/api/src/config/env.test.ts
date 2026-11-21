@@ -12,6 +12,8 @@ describe('loadEnv', () => {
       LOG_LEVEL: 'info',
       LOG_PRETTY: false,
       DATABASE_URL,
+      SESSION_TTL_DAYS: 30,
+      COOKIE_SECURE: false,
     });
   });
 
@@ -22,6 +24,8 @@ describe('loadEnv', () => {
       LOG_LEVEL: 'debug',
       LOG_PRETTY: 'true',
       DATABASE_URL: 'postgres://user:secret@db:5432/chirp',
+      SESSION_TTL_DAYS: '7',
+      COOKIE_SECURE: 'true',
     });
 
     expect(env).toEqual({
@@ -30,6 +34,8 @@ describe('loadEnv', () => {
       LOG_LEVEL: 'debug',
       LOG_PRETTY: true,
       DATABASE_URL: 'postgres://user:secret@db:5432/chirp',
+      SESSION_TTL_DAYS: 7,
+      COOKIE_SECURE: true,
     });
   });
 
@@ -55,6 +61,11 @@ describe('loadEnv', () => {
     expect(load).toThrow(/API_PORT/);
     expect(load).toThrow(/LOG_LEVEL/);
     expect(load).toThrow(/LOG_PRETTY/);
+  });
+
+  it('rejects a session lifetime outside 1–365 days', () => {
+    expect(() => loadEnv({ DATABASE_URL, SESSION_TTL_DAYS: '0' })).toThrow(/SESSION_TTL_DAYS/);
+    expect(() => loadEnv({ DATABASE_URL, SESSION_TTL_DAYS: '366' })).toThrow(/SESSION_TTL_DAYS/);
   });
 
   it('rejects an out-of-range port', () => {

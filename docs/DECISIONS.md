@@ -99,7 +99,9 @@ Decisions are appended or amended as the project evolves; superseded decisions a
   - On login the server generates a 32-byte random token and stores **only its SHA-256 hash** in `sessions`, with a 30-day sliding expiry (renewed once past half its lifetime).
   - The raw token is sent as cookie `chirp_session`: `HttpOnly`, `SameSite=Lax`, `Secure` in production, `Path=/`.
   - Each request: read cookie → hash → indexed lookup → `request.user`.
-  - Logout deletes the row and clears the cookie: **revocation is immediate**.
+  - Logout deletes the row and clears the cookie: **revocation is immediate**. Logout is idempotent (always `204`), so a client with an already-expired session can still sign out cleanly.
+  - Signing in or registering while already signed in revokes the previous session instead of leaving it orphaned.
+  - Sessions are resolved in a global `onRequest` hook (only when the cookie is present); routes guard with a route-level `onRequest: app.requireAuth`, which rejects anonymous requests before the body is parsed (Fastify skill guidance). Unknown or expired tokens clear the cookie; expired rows are deleted when encountered. A periodic cleanup job for abandoned expired sessions is out of scope (documented trade-off).
   - CSRF: `SameSite=Lax` + `Origin` check on state-changing methods + JSON-only bodies.
   - Rate limiting on `/auth/login` and `/auth/register`; generic "invalid credentials" errors on login.
   - Login takes the same time whether or not the email exists: an unknown email still runs one argon2 verification against a precomputed dummy hash, so response timing cannot be used to enumerate accounts.

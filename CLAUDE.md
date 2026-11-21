@@ -53,7 +53,7 @@ Detail and examples: ARCHITECTURE.md §3.
 
 **API (`apps/api`)**
 - One folder per feature in `src/modules/<feature>/`: `routes.ts`, `service.ts`, tests next to them. Each module is registered explicitly in `src/modules/index.ts` (one line per feature).
-- `routes.ts` handles HTTP only (schemas, status codes, `preHandler: app.requireAuth`). No business rules, no Prisma queries.
+- `routes.ts` handles HTTP only (schemas, status codes, `onRequest: app.requireAuth`). No business rules, no Prisma queries. Read the signed-in user with `currentUser(request)`.
 - `service.ts` holds business rules with injected dependencies (`prisma`, `storage`) and throws domain errors (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`). It never touches `request`/`reply`.
 - Rows become DTOs only through `src/lib/serializers.ts`. Never return Prisma rows directly.
 - All lists use the keyset cursor from `src/lib/cursor.ts` on `(createdAt, id)` and return `{ items, nextCursor }`. Never offset pagination, never Prisma's `cursor: { id }`.

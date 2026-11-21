@@ -112,10 +112,10 @@ export default async function tweetsRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/tweets',
     {
-      preHandler: app.requireAuth,
+      onRequest: app.requireAuth, // rejects anonymous requests before the body is parsed
       schema: { body: createTweetBodySchema, response: { 201: tweetSchema } },
     },
-    async (request, reply) => reply.code(201).send(await tweets.create(request.user.id, request.body)),
+    async (request, reply) => reply.code(201).send(await tweets.create(currentUser(request).id, request.body)),
   );
 }
 ```
@@ -284,6 +284,7 @@ All routes are prefixed with `/api` and exchange JSON. 🔒 = requires a session
 
 ```ts
 UserSummary  = { id, username, displayName, avatarUrl: string | null }
+SessionUser  = UserSummary & { email, bio, createdAt }            // the signed-in user, as seen by themselves
 UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, tweetsCount, isFollowing: boolean, isMe: boolean }
 Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean }
 Notification = { id, type: 'FOLLOW' | 'LIKE', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }
@@ -298,8 +299,8 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | GET | `/health/ready` | — | — | `200 { status: 'ok', checks }` or `503` | readiness: checks the database (added in C09) |
 | POST | `/auth/register` | — | `{ email, username, displayName, password }` | `201 { user: UserSummary }` + cookie | 409 on taken email/username; password 8–72 chars; rate limited |
 | POST | `/auth/login` | — | `{ email, password }` | `200 { user: UserSummary }` + cookie | generic 401; rate limited |
-| POST | `/auth/logout` | 🔒 | — | `204` | deletes session, clears cookie |
-| GET | `/auth/me` | 🔒 | — | `200 { user: UserProfile }` | |
+| POST | `/auth/logout` | — | — | `204` | idempotent: deletes the current session (if any) and clears the cookie |
+| GET | `/auth/me` | 🔒 | — | `200 { user: SessionUser }` | includes the private email; public profiles with counts come from `GET /users/:username` |
 | GET | `/users/search` | 🔒 | `?q=&cursor=&limit=` | `200 Page<UserSummary>` | `q` 1–50 chars; matches username or display name |
 | GET | `/users/:username` | 🔒 | — | `200 UserProfile` | 404 |
 | PATCH | `/users/me` | 🔒 | `{ displayName?, bio?, avatarKey?: string \| null }` | `200 UserProfile` | `avatarKey` ownership verified |

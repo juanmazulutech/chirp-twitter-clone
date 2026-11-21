@@ -12,6 +12,9 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   LOG_PRETTY: booleanString.default(false),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, error: 'Must be a postgresql:// URL' }),
+  SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  // Set to true behind HTTPS so the session cookie is never sent over plain HTTP.
+  COOKIE_SECURE: booleanString.default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;

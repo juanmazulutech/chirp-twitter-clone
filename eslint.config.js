@@ -79,6 +79,14 @@ export default defineConfig(
     },
   },
 
+  // Asymmetric matchers (`expect.any(String)`) are typed `any` by design.
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
+
   // Plain JavaScript (config files) has no type information to lint against.
   {
     files: ['**/*.{js,mjs,cjs}'],

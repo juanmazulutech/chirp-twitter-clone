@@ -13,6 +13,7 @@ import { buildLoggerOptions } from './config/logger';
 import modules from './modules';
 import errorsPlugin from './plugins/errors';
 import prismaPlugin from './plugins/prisma';
+import sessionPlugin from './plugins/session';
 
 export type AppConfig = Env;
 
@@ -53,6 +54,10 @@ export async function buildApp(config: AppConfig) {
 
   await app.register(errorsPlugin);
   await app.register(prismaPlugin, { databaseUrl: config.DATABASE_URL });
+  await app.register(sessionPlugin, {
+    sessionTtlDays: config.SESSION_TTL_DAYS,
+    cookieSecure: config.COOKIE_SECURE,
+  });
   await app.register(modules, { prefix: '/api' });
 
   return app;
