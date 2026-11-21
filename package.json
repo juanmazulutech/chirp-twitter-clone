@@ -9,7 +9,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=22.14.0",
+    "node": ">=22.22.0",
     "npm": ">=10.9.0"
   },
   "scripts": {
@@ -26,7 +26,9 @@
     "services:down": "docker compose down",
     "db:generate": "npm run db:generate -w @chirp/api",
     "db:migrate": "npm run db:migrate -w @chirp/api",
-    "db:seed": "npm run db:seed -w @chirp/api"
+    "db:seed": "npm run db:seed -w @chirp/api",
+    "dev": "concurrently --names api,web --prefix-colors blue,magenta --kill-others-on-fail \"npm run dev -w @chirp/api\" \"npm run dev -w @chirp/web\"",
+    "build": "npm run build -w @chirp/web"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
@@ -38,6 +40,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@vitest/coverage-v8": "5.1.1",
+    "concurrently": "10.0.7",
     "eslint": "10.15.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-simple-import-sort": "14.0.0",

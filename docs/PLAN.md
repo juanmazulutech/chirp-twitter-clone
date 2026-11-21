@@ -105,7 +105,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 | # | Commit | Scope |
 |---|---|---|
 | C14 | `chore(skills): add react best practices and impeccable design skills` | reviewed skills (`vercel-react-best-practices`, `vercel-composition-patterns`, `impeccable`) + `PRODUCT.md` written with `/impeccable init` (users, positioning, voice); the visual system (`DESIGN.md`) is created with the first UI work in C16 |
-| C15 | `chore(web): scaffold vite react app with tailwind, router, query and zustand` | Vite app, Tailwind, React Router, TanStack Query, Zustand, Vitest + RTL + MSW, `/api` dev proxy; smoke test |
+| C15 | `chore(web): scaffold vite react app with tailwind, router and query` | Vite app, Tailwind 4, React Router 8 (library mode), TanStack Query, Vitest + jsdom + RTL + MSW (strict), `@/` alias, `/api` dev proxy, `npm run dev` (API + web); smoke tests. Zustand and react-hook-form arrive with their first use (C17, C19) |
 | C16 | `feat(web): add design tokens and ui primitives` | color/typography/radius tokens with dark mode; `Button`, `Avatar` (image or initials), `Input`, `Textarea`, `Modal`, `Spinner`, `Toast`, `EmptyState`; tests |
 | C17 | `feat(web): add responsive app shell and routing` | `AppShell`, `Sidebar`, `BottomNav`, `RightPanel`, compose FAB; route map with placeholder pages |
 | C18 | `feat(web): add api client and session handling` | `api-client.ts` (typed errors, global 401 handling), query client, query keys, `useSession`; MSW base handlers; tests |
@@ -312,7 +312,7 @@ report described in the session protocol.
 |---|---|---|
 | 0 · Foundation | C01–C08 | ✅ Done |
 | 1 · Authentication API | C09–C13 | ✅ Done |
-| 2 · Web foundation and auth UI | C14–C20 | ⏳ Next |
+| 2 · Web foundation and auth UI | C14–C20 | 🚧 In progress (C15) |
 | 3 · Tweets and timeline | C21–C26 | ⏳ |
 | 4 · Likes | C27–C29 | ⏳ |
 | 5 · Profiles and social graph | C30–C34 | ⏳ |
@@ -322,7 +322,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · @fastify/cookie 11.1.5 · @fastify/helmet 13.2.0 · @fastify/rate-limit 11.3.0 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.23.5 · npm 10.9.9 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · @fastify/cookie 11.1.5 · @fastify/helmet 13.2.0 · @fastify/rate-limit 11.3.0 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · React 19.3.1 · React Router 8.5.2 · TanStack Query 5.108.2 · Tailwind 4.3.5 · MSW 3.0.7 · jsdom 31.0.1 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -343,3 +343,4 @@ report described in the session protocol.
 | 2026-11-20 | C12: `WEB_ORIGIN` became `WEB_ORIGINS` (list); added `TRUST_PROXY`, `RATE_LIMIT_GLOBAL_MAX`, `RATE_LIMIT_AUTH_MAX`; sign-in rate limit keyed by IP + email in `preHandler` | Dev (5173) and Docker (8080) origins differ; limits are tunable per environment and relaxed in tests; the Fastify skill's per-email example keys on an unparsed body (ADR-09) |
 | 2026-11-20 | C13: hand-written seed personas instead of Faker; `db:reset` dropped; seed has reset and `--if-empty` modes | Twelve coherent personas read better than random data and need no dependency; the seed's reset mode already restores demo data, while schema resets stay a deliberate human action; Docker must not wipe data on restart |
 | 2026-11-21 | C14: impeccable 4.10 replaced `/teach-impeccable` with `/impeccable init` → `PRODUCT.md` (product truth) and `DESIGN.md` (visual system, created in C16); added `vercel-composition-patterns`; impeccable installed without its edit hook | Upstream changed the workflow; the hook would run a native binary on every UI edit, so audits run explicitly instead; `live` mode can bypass agent permissions |
+| 2026-11-21 | C15: Node 22.14 → 22.23.5 (`.nvmrc`, engines `>=22.22.0`); web dependencies are added with their first use (Zustand in C17, react-hook-form in C19) | React Router 8 and jsdom 31 require Node ≥ 22.22 (same LTS line, security fixes). Sequential work removed the reason to pre-install dependencies, so no commit adds an unused one |

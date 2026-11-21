@@ -31,6 +31,8 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 
 ## Commands
 
+Use the Node version in `.nvmrc` (`nvm use`); several dependencies require Node ≥ 22.22.
+
 | Command | Purpose | Available from |
 |---|---|---|
 | `npm run lint` / `npm run lint:fix` | ESLint (type-aware for TypeScript; any warning fails) | C02 |
@@ -39,7 +41,7 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 | `npm test` / `npm run test:coverage` | Vitest across workspaces | C05 |
 | `npm run verify` | lint + format check + typecheck + tests with coverage — required before every report | C06 |
 | `npm run services:up` / `services:down` | local PostgreSQL (port 5433) and S3-compatible storage (RustFS, port 9000) | C07 |
-| `npm run dev` | API + web in watch mode | C15 |
+| `npm run dev` | API (:3000) + web (:5173) in watch mode | C15 |
 | `npm run db:migrate` | create and apply a migration to the development database (`prisma migrate dev`) | C09 |
 | `npm run db:generate` | regenerate the Prisma client (also runs on every `npm install`) | C09 |
 | `npm run db:seed` | **replace** all development data with the demo data set (idempotent; `--if-empty` variant used by Docker) | C13 |

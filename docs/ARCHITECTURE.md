@@ -426,7 +426,8 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | Script | Runs |
 |---|---|
 | `services:up` / `services:down` | start local PostgreSQL + storage (with bucket setup) / stop them, keeping data |
-| `dev` | API (`tsx watch`) and web (`vite`) concurrently |
+| `dev` | API (`tsx watch`, :3000) and web (`vite`, :5173, proxying `/api`) concurrently |
+| `build` | production build of the web app (`apps/web/dist`) |
 | `build` | shared → api → web |
 | `db:migrate` | `prisma migrate dev` |
 | `db:generate` | `prisma generate` (also runs on `postinstall`) |
