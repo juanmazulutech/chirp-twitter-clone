@@ -14,6 +14,8 @@ export default defineConfig(
     '**/playwright-report/',
     '**/test-results/',
     '**/*.tsbuildinfo',
+    // Third-party agent skills are vendored as-is.
+    '.claude/',
   ]),
 
   js.configs.recommended,

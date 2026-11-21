@@ -96,12 +96,20 @@ Detail: ARCHITECTURE.md §7.
 
 ## Agent skills
 
-Installed in `.claude/skills/` when their phase starts (PLAN.md §5). Load the relevant one before working in its area.
+Installed in `.claude/skills/` when their phase starts (PLAN.md §5), pinned in `skills-lock.json`. Load the relevant one before working in its area.
+
+**Precedence:** skills are generic guidance; this file and DECISIONS.md are project decisions. When they conflict, the project wins. Known conflicts:
+
+- `fastify-best-practices` uses TypeBox → we use Zod via `fastify-type-provider-zod` (ADR-02, ADR-03).
+- `fastify-best-practices` shows `@fastify/jwt` → we use server-side sessions (ADR-09).
+- `fastify-best-practices` tests with `node:test` and runs TS via type stripping → we use Vitest, `tsx` in development and `tsup` builds (ADR-20).
+- The Prisma skills target Prisma ORM 7; we pin Prisma 7 (Prisma 8 is still a release candidate). Use the local database from docker-compose, not `prisma dev`.
 
 | Task | Skill | Installed in |
 |---|---|---|
 | Fastify routes, plugins, hooks, tests | `fastify-best-practices` | C04 |
-| Prisma schema, migrations, queries | Prisma skills | C04 |
+| Prisma migrations, seed, CLI | `prisma-cli` | C04 |
+| Prisma Client queries, relations, transactions | `prisma-client-api` | C04 |
 | React components, data fetching, performance | `vercel-react-best-practices` | C14 |
 | Visual design, UX review, responsive and accessibility audits | `impeccable` | C14 |
 | Playwright E2E specs | `playwright-best-practices` | C46 |

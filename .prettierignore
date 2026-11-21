@@ -5,6 +5,10 @@ coverage/
 playwright-report/
 test-results/
 package-lock.json
+skills-lock.json
+
+# Third-party agent skills are vendored as-is
+.claude/
 
 # Documentation is formatted by hand
 *.md
