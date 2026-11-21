@@ -80,7 +80,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 | C05 | `chore(shared): scaffold shared contracts package` | `packages/shared` as a just-in-time internal package (no build), Vitest, `countCharacters` + `TWEET_MAX_LENGTH`, server-import guards |
 | C06 | `chore(api): scaffold fastify app with env config, error handling and health check` | `buildApp`, `server.ts` (graceful shutdown), `config/env.ts`, logger with redaction, domain errors + errors plugin, explicit module registry, `GET /api/health`, `npm run verify`, tests |
 | C07 | `chore(infra): add docker compose with postgres and s3-compatible storage for local development` | `docker-compose.yml` (`db`, `storage` = RustFS, `storage-init` = aws-cli), `docker/` init scripts, `.env.example`, `services:up`/`services:down` |
-| C08 | `ci: add github actions workflow for lint, typecheck and tests` | workflow with a PostgreSQL service |
+| C08 | `ci: add github actions workflow for lint, typecheck and tests` | `verify` on every push/PR with actions pinned by SHA, coverage table in the job summary (PostgreSQL service joins in C09, with the first database tests) |
 
 **Done when:** `npm ci && npm run verify` passes locally and in CI; `npm run services:up` yields healthy services and a configured bucket.
 
@@ -90,7 +90,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 
 | # | Commit | Scope |
 |---|---|---|
-| C09 | `feat(db): add users and sessions schema with test database harness` | Prisma setup, migration `users_and_sessions`, prisma plugin, test setup (migrate `chirp_test`, truncate), `buildTestApp`, user factory |
+| C09 | `feat(db): add users and sessions schema with test database harness` | Prisma setup, migration `users_and_sessions`, prisma plugin, test setup (migrate `chirp_test`, truncate), `buildTestApp`, user factory, PostgreSQL service + migrations in the CI workflow |
 | C10 | `feat(auth): add password hashing and session token utilities` | `lib/password.ts` (argon2id), `lib/tokens.ts` (random token + SHA-256); unit tests |
 | C11 | `feat(auth): add register, login, logout and me endpoints` | auth contracts in shared, auth module, session plugin (cookie, lookup, sliding renewal), `loginAs` helper; integration tests (201/200/204/401/409, validation) |
 | C12 | `feat(auth): add route protection, origin check and rate limiting` | `requireAuth`, `Origin` verification, helmet, rate limiting; tests |
@@ -309,8 +309,8 @@ report described in the session protocol.
 
 | Phase | Commits | Status |
 |---|---|---|
-| 0 · Foundation | C01–C08 | ⏳ Not started |
-| 1 · Authentication API | C09–C13 | ⏳ |
+| 0 · Foundation | C01–C08 | ✅ Done |
+| 1 · Authentication API | C09–C13 | ⏳ Next |
 | 2 · Web foundation and auth UI | C14–C20 | ⏳ |
 | 3 · Tweets and timeline | C21–C26 | ⏳ |
 | 4 · Likes | C27–C29 | ⏳ |
@@ -321,7 +321,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · Prisma — · React — · Tailwind — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Prisma — · React — · Tailwind — · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -335,3 +335,4 @@ report described in the session protocol.
 | 2026-11-20 | C06: modules registered explicitly instead of `@fastify/autoload` | Autoload scans folders at runtime, which breaks with a bundled build; ADR-03 amended |
 | 2026-11-20 | C06: health split into liveness (`/api/health`) and readiness (`/api/health/ready`, C09); logging driven by `LOG_LEVEL`/`LOG_PRETTY` instead of `NODE_ENV` | Adopted from the Fastify skill review (ADR-03) |
 | 2026-11-20 | C07: local object storage is RustFS (bucket setup with `amazon/aws-cli`) instead of MinIO; services renamed `storage` / `storage-init` | MinIO no longer publishes pullable images; four alternatives were tested against Chirp's storage flow. ADR-14 amended, including two AWS SDK presigning pitfalls to apply in C37–C38 |
+| 2026-11-20 | C08: the CI PostgreSQL service moves to C09; lint fails on any warning (`--max-warnings 0`) | Configuration lands with the first code that exercises it; warnings should not accumulate silently |

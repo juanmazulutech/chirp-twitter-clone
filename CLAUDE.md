@@ -33,7 +33,7 @@ Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
 
 | Command | Purpose | Available from |
 |---|---|---|
-| `npm run lint` / `npm run lint:fix` | ESLint (type-aware for TypeScript) | C02 |
+| `npm run lint` / `npm run lint:fix` | ESLint (type-aware for TypeScript; any warning fails) | C02 |
 | `npm run format` / `npm run format:check` | Prettier (Markdown is excluded) | C02 |
 | `npm run typecheck` | TypeScript across workspaces | C05 |
 | `npm test` / `npm run test:coverage` | Vitest across workspaces | C05 |

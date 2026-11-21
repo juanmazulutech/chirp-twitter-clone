@@ -364,7 +364,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 - **API helpers:** `buildTestApp()` (with `MemoryStorage`), factories (`createUser`, `createTweet`, `follow`, `like`), `loginAs(user)` returning a session cookie.
 - **Isolation:** `TRUNCATE … CASCADE` before each test; test files run serially.
 - **E2E:** `globalSetup` resets and seeds the test database; Playwright's `webServer` starts the API and web app.
-- **CI:** PostgreSQL service → `npm ci` → migrations → lint → type check → tests with coverage → E2E (storage started in a step, since the seed uploads avatars).
+- **CI (`.github/workflows/ci.yml`):** `npm ci` → `npm run verify` → coverage table in the job summary. Actions are pinned by commit SHA; the job has read-only permissions. A PostgreSQL service and migrations join in C09; an E2E job (with the storage service, since the seed uploads avatars) joins in C49.
 - **Thresholds** (the run fails below them): API 85% lines/functions/statements and 80% branches; web 70%.
 
 ## 8. Environments and configuration

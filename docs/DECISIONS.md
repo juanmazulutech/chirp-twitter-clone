@@ -215,7 +215,8 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 ## ADR-20 · Automated quality gates
 
 - **Decision:** TypeScript `strict`; ESLint (typescript-eslint, react-hooks, import order); Prettier; coverage thresholds enforced in `vitest.config` (API ≥ 85% lines/functions/statements and ≥ 80% branches; web ≥ 70%); GitHub Actions on every push.
-- **`npm run verify`** runs lint, format check, type check and tests with coverage. It must pass before every commit.
+- **`npm run verify`** runs lint (zero warnings allowed), format check, type check and tests with coverage.
+- **CI hardening:** GitHub Actions are pinned to full commit SHAs (tags can be moved; SHAs cannot), the workflow token is read-only, and the runner image is pinned (`ubuntu-24.04`) rather than `latest`. It must pass before every commit.
 
 ## ADR-21 · Evolutionary schema: one migration per feature
 
