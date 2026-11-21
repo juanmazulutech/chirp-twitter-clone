@@ -77,7 +77,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 | C02 | `chore: initialize npm workspaces monorepo with typescript, eslint and prettier` | root `package.json` (workspaces, scripts), `tsconfig.base.json`, ESLint flat config, Prettier, `.editorconfig`, `.gitignore`, `.nvmrc` |
 | C03 | `docs: add CLAUDE.md with repository conventions` | patterns (API module, web feature), rules (shared has no server code; no server state in Zustand), commands, definition of done, session protocol summary, skill map |
 | C04 | `chore(skills): add fastify and prisma agent skills` | reviewed skills in `.claude/skills/` |
-| C05 | `chore(shared): scaffold shared contracts package` | `packages/shared` with tsup build, Vitest, `constants.ts` |
+| C05 | `chore(shared): scaffold shared contracts package` | `packages/shared` as a just-in-time internal package (no build), Vitest, `countCharacters` + `TWEET_MAX_LENGTH`, server-import guards |
 | C06 | `chore(api): scaffold fastify app with env config, error handling and health check` | `buildApp`, `server.ts`, `config/env.ts`, errors plugin, `GET /health`, Vitest with coverage thresholds, tests |
 | C07 | `chore(infra): add docker compose with postgres and minio for local development` | `docker-compose.yml` (`db`, `minio`, `minio-init`), `docker/` init scripts, `.env.example` |
 | C08 | `ci: add github actions workflow for lint, typecheck and tests` | workflow with a PostgreSQL service |
@@ -321,7 +321,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · PostgreSQL 16 · Fastify — · Prisma — · React — · Vite — · Tailwind — · Vitest — · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.14.0 · npm 10.9.2 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16 · Fastify — · Prisma — · React — · Tailwind — · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -331,3 +331,4 @@ report described in the session protocol.
 |---|---|---|
 | 2026-11-20 | Initial plan | — |
 | 2026-11-20 | Session protocol: the agent explains each commit and waits for approval before implementing | The author reviews the approach before any code is written, not only the resulting diff |
+| 2026-11-20 | C05: `@chirp/shared` has no build step (exports point at source) instead of a tsup build | Every consumer already compiles TypeScript; avoids a watch process and stale builds. ADR-02 updated |

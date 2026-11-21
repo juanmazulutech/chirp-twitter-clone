@@ -41,9 +41,10 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 
 ## ADR-02 · Shared contracts as an internal package
 
-- **Decision:** `@chirp/shared` contains **only** Zod schemas, inferred types and constants. It is never published: Vite bundles it into the web build and tsup bundles it into the API's `dist`. Docker images are built from the monorepo root.
+- **Decision:** `@chirp/shared` contains **only** Zod schemas, inferred types and constants. It is an *internal, just-in-time* package: it has no build step and its `exports` point at the TypeScript source. Each consumer compiles it with its own toolchain — Vite for the web app, `tsx` and Vitest for the API in development, and tsup bundles it into the API's `dist` for production. It is never published; Docker images are built from the monorepo root.
 - **Context:** one source of truth for validation — the API validates requests with the same schemas the web forms use.
-- **Rule:** `shared` must not import Prisma, `node:*` or any server-only code (enforced with ESLint `no-restricted-imports`), so server code can never leak into the client bundle.
+- **Rule:** `shared` must not import Prisma, `node:*` or any server-only code, so server code can never leak into the client bundle. Enforced twice: ESLint `no-restricted-imports`, and a `tsconfig` with no Node or DOM types (`types: []`), so `process` or `Buffer` fail to compile.
+- **Why no build step:** no watch process to run and no stale `dist` — a schema change is visible to the API and web app immediately. A build is only needed once the package is published.
 - **Alternatives:** duplicated types (drift, integration bugs); OpenAPI + code generation (sturdier across repositories, more moving parts).
 - **Revisit when:** frontend and backend move to separate repositories → generate an OpenAPI spec from the Zod schemas (`@fastify/swagger`) and type the client with `openapi-typescript`, or publish `@chirp/shared` to a private registry with semver.
 

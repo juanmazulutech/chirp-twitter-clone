@@ -53,6 +53,28 @@ export default defineConfig(
     },
   },
 
+  // Shared contracts ship in the browser bundle: no server-only imports.
+  {
+    files: ['packages/shared/src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['node:*'],
+              message: 'packages/shared runs in the browser; Node built-ins are not allowed.',
+            },
+            {
+              group: ['@prisma/*', 'prisma', 'fastify', 'fastify-*', '@fastify/*', '@chirp/api*'],
+              message: 'packages/shared must not depend on server code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Plain JavaScript (config files) has no type information to lint against.
   {
     files: ['**/*.{js,mjs,cjs}'],
