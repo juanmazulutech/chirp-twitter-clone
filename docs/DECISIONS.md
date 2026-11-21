@@ -91,6 +91,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Decision:** Tailwind CSS. Base classes target mobile; `sm:` and `lg:` scale up. The layout follows the familiar X/Twitter structure with Chirp's own identity (name, logo, accent color).
 - **Breakpoints:** `< 640px` mobile, `640–1024px` tablet, `> 1024px` desktop — matching Tailwind's `sm` (640) and `lg` (1024).
 - **Context:** utility classes make mobile-first the default rather than a discipline; design tokens are CSS variables, which keeps dark mode and theming cheap.
+- **Visual world (C16a):** "Postmarked" — airmail paper and navy ink by day, a navy envelope by night; airmail red for the primary action, airmail blue for links and focus, Archivo (self-hosted), and the postmark as the signature move. Chosen by the author on impeccable's decision page over the rolled direction. Tokens use CSS `light-dark()`, so each token declares its day and night value once and any subtree can pin a scheme with `color-scheme`. Full system: `DESIGN.md`.
 
 ## ADR-09 · Authentication: server-side sessions in an httpOnly cookie
 

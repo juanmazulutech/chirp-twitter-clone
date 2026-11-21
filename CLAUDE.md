@@ -73,6 +73,8 @@ Detail and examples: ARCHITECTURE.md §3.
 - Server data lives in TanStack Query only (keys from `src/lib/query-keys.ts`), including the current session. **Never copy server data into Zustand**; Zustand is for UI state (modals, toasts, drafts).
 - Forms: `react-hook-form` + `zodResolver(<schema from @chirp/shared>)`.
 - Mobile-first: base classes target mobile; scale up with `sm:` (640px) and `lg:` (1024px).
+- Visual system: read `DESIGN.md` before any UI work. Use only the semantic token classes (`bg-paper`, `bg-sheet`, `text-ink`, `text-ink-muted`, `border-hairline`, `bg-airmail-red`, `text-airmail-blue`, `text-danger`, `bg-avatar-N`); never raw hex values. Red is only for the primary action and liked state; one chevron (`.airmail-edge`) under the header; no decorative shadows; feed rows are full-bleed with hairlines, never cards in cards; no state carried by colour alone.
+- Check visual changes on the dev-only `/styleguide` route and with `impeccable detect` before reporting.
 - Likes and follows are optimistic with rollback.
 
 **Database**

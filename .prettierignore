@@ -10,6 +10,9 @@ skills-lock.json
 # Generated Prisma client
 apps/api/src/generated/
 
+# Impeccable's working files (decision sketches, rolls, captures) are tool-generated
+**/.impeccable/
+
 # Third-party agent skills are vendored as-is
 .claude/
 

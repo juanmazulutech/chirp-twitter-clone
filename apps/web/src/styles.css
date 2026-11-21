@@ -1,1 +1,117 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/archivo';
+
+/*
+ * Postmarked: Chirp's visual world (DESIGN.md).
+ * Airmail paper and navy ink by day, a navy envelope by night. Red is reserved for
+ * the one primary action and liked state; blue carries links, selection and focus.
+ * Every pair below is checked against WCAG AA in both themes.
+ */
+:root {
+  /* Follows the system; `.theme-light` / `.theme-dark` pin a subtree (used by the styleguide). */
+  color-scheme: light dark;
+
+  /* light-dark(day, night): airmail paper by day, a navy envelope by night. */
+  --paper: light-dark(#f6f8fc, #0c1630); /* page ground */
+  --sheet: light-dark(#ffffff, #121f40); /* raised surfaces: header, chirps, panels */
+  --ink: light-dark(#14254a, #eef2fb); /* body text: navy ink */
+  --ink-muted: light-dark(#4f5d7e, #a7b3cf); /* secondary text, meta, inactive icons */
+  --hairline: light-dark(#dbe2ef, #26365e); /* the one divider system */
+  --airmail-red: light-dark(#c81e3a, #ff6b7d); /* primary action, liked state */
+  --on-airmail-red: light-dark(#ffffff, #2a0610);
+  --airmail-blue: light-dark(#2452b8, #8bb0ff); /* links, selection, focus */
+  --danger: light-dark(#a3141f, #ff8a8a); /* destructive actions and errors */
+  --selection: light-dark(#d6e2fb, #23407e);
+
+  /* Avatar fallbacks (initials on a colour derived from the user id); white text >= 5.4:1. */
+  --avatar-1: #2f7563;
+  --avatar-2: #a84a25;
+  --avatar-3: #6b4fa8;
+  --avatar-4: #2a6391;
+  --avatar-5: #8a3b6b;
+  --avatar-6: #5e6b1f;
+}
+
+.theme-light {
+  color-scheme: light;
+}
+
+.theme-dark {
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline: var(--hairline);
+  --color-airmail-red: var(--airmail-red);
+  --color-on-airmail-red: var(--on-airmail-red);
+  --color-airmail-blue: var(--airmail-blue);
+  --color-danger: var(--danger);
+  --color-avatar-1: var(--avatar-1);
+  --color-avatar-2: var(--avatar-2);
+  --color-avatar-3: var(--avatar-3);
+  --color-avatar-4: var(--avatar-4);
+  --color-avatar-5: var(--avatar-5);
+  --color-avatar-6: var(--avatar-6);
+
+  /* Cards stay at 12–16px; pills are for small controls only. */
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--hairline) transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    caret-color: var(--airmail-blue);
+  }
+
+  ::selection {
+    background-color: var(--selection);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--airmail-blue);
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* The signature edging: one airmail chevron hairline, used once, under the header. */
+  .airmail-edge {
+    height: 4px;
+    background: repeating-linear-gradient(
+      135deg,
+      var(--airmail-red) 0 10px,
+      var(--sheet) 10px 16px,
+      var(--airmail-blue) 16px 26px,
+      var(--sheet) 26px 32px
+    );
+  }
+}

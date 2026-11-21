@@ -68,8 +68,10 @@ chirp/
 │   │   ├── Dockerfile
 │   │   └── docker-entrypoint.sh    migrate deploy → seed if empty → start
 │   └── web/
+│       ├── .impeccable/surfaces/   direction contract for the app surfaces (impeccable)
 │       ├── src/
-│       │   ├── app/                router.tsx · providers.tsx · layout/ (AppShell, Sidebar, BottomNav, RightPanel)
+│       │   ├── styles.css          design tokens: light-dark() day/night pairs → Tailwind theme
+│       │   ├── app/                routes.tsx · providers.tsx · StyleguidePage (dev only) · layout/ (AppShell, Sidebar, BottomNav, RightPanel)
 │       │   ├── features/
 │       │   │   ├── auth/           pages · components · hooks.ts · api.ts · *.test.tsx
 │       │   │   ├── tweets/         Composer, TweetCard, TweetList, HomePage…
@@ -94,7 +96,8 @@ chirp/
 ├── docs/                           PLAN.md · ARCHITECTURE.md · DECISIONS.md
 ├── CLAUDE.md
 ├── PRODUCT.md                      product truth for design work (impeccable)
-├── DESIGN.md                       visual system: tokens, type, components (from C16)
+├── DESIGN.md                       visual system "Postmarked": tokens, type, components
+├── .impeccable/design.json         machine-readable sidecar of DESIGN.md
 ├── README.md
 ├── .env.example
 ├── .nvmrc

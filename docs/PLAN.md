@@ -106,7 +106,8 @@ Estimates are focused hours including review. Each commit includes its tests and
 |---|---|---|
 | C14 | `chore(skills): add react best practices and impeccable design skills` | reviewed skills (`vercel-react-best-practices`, `vercel-composition-patterns`, `impeccable`) + `PRODUCT.md` written with `/impeccable init` (users, positioning, voice); the visual system (`DESIGN.md`) is created with the first UI work in C16 |
 | C15 | `chore(web): scaffold vite react app with tailwind, router and query` | Vite app, Tailwind 4, React Router 8 (library mode), TanStack Query, Vitest + jsdom + RTL + MSW (strict), `@/` alias, `/api` dev proxy, `npm run dev` (API + web); smoke tests. Zustand and react-hook-form arrive with their first use (C17, C19) |
-| C16 | `feat(web): add design tokens and ui primitives` | color/typography/radius tokens with dark mode; `Button`, `Avatar` (image or initials), `Input`, `Textarea`, `Modal`, `Spinner`, `Toast`, `EmptyState`; tests |
+| C16a | `feat(web): add visual identity and design tokens` | impeccable world round (roll, decision page, author chose **Postmarked**), direction contract (`apps/web/.impeccable/surfaces/`), `light-dark()` tokens for day and night with AA-verified pairs, self-hosted Archivo, `Postmark` signature component, dev-only `/styleguide`, detector + finish review (ship) + `DESIGN.md` |
+| C16b | `feat(web): add ui primitives` | `Button`, `Avatar` (image or initials on avatar tokens), `Input`, `Textarea`, `Modal` (compound, native `<dialog>`), `Spinner`, `Toast`, `EmptyState`; explicit variants, React 19 refs; tests |
 | C17 | `feat(web): add responsive app shell and routing` | `AppShell`, `Sidebar`, `BottomNav`, `RightPanel`, compose FAB; route map with placeholder pages, each code-split with route `lazy` (the C15 bundle is 348 KB) |
 | C18 | `feat(web): add api client and session handling` | `api-client.ts` (typed errors, global 401 handling), query client, query keys, `useSession`; MSW base handlers; tests |
 | C19 | `feat(web): add login and register pages` | forms with `react-hook-form` + shared schemas, server errors mapped to fields; tests (success, validation, invalid credentials, taken email) |
@@ -312,7 +313,7 @@ report described in the session protocol.
 |---|---|---|
 | 0 · Foundation | C01–C08 | ✅ Done |
 | 1 · Authentication API | C09–C13 | ✅ Done |
-| 2 · Web foundation and auth UI | C14–C20 | 🚧 In progress (C15) |
+| 2 · Web foundation and auth UI | C14–C20 | 🚧 In progress (C16) |
 | 3 · Tweets and timeline | C21–C26 | ⏳ |
 | 4 · Likes | C27–C29 | ⏳ |
 | 5 · Profiles and social graph | C30–C34 | ⏳ |
@@ -322,7 +323,7 @@ report described in the session protocol.
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
 
-**Pinned versions** (filled in as each tool is added): Node 22.23.5 · npm 10.9.9 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · @fastify/cookie 11.1.5 · @fastify/helmet 13.2.0 · @fastify/rate-limit 11.3.0 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · React 19.3.1 · React Router 8.5.2 · TanStack Query 5.108.2 · Tailwind 4.3.5 · MSW 3.0.7 · jsdom 31.0.1 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Playwright —
+**Pinned versions** (filled in as each tool is added): Node 22.23.5 · npm 10.9.9 · TypeScript 6.0.3 · ESLint 10.15.0 · typescript-eslint 8.73.0 · Prettier 3.10.1 · Zod 4.6.7 · Vitest 5.1.1 · Vite 8.3.8 · PostgreSQL 16.16 · Prisma 7.10.1 · @node-rs/argon2 2.2.2 · @fastify/cookie 11.1.5 · @fastify/helmet 13.2.0 · @fastify/rate-limit 11.3.0 · Fastify 5.12.8 · fastify-type-provider-zod 7.0.0 · React 19.3.1 · React Router 8.5.2 · TanStack Query 5.108.2 · Tailwind 4.3.5 · Archivo (Fontsource) 5.3.0 · MSW 3.0.7 · jsdom 31.0.1 · RustFS 1.0.6 · aws-cli 2.42.0 · actions/checkout 7.0.1 · actions/setup-node 7.1.0 · Playwright —
 
 > TypeScript stays on 6.0.x: typescript-eslint 8.73 supports `typescript <6.1`, so TypeScript 7 would break type-aware linting. Revisit when typescript-eslint adds TS 7 support.
 
@@ -345,3 +346,5 @@ report described in the session protocol.
 | 2026-11-21 | C14: impeccable 4.10 replaced `/teach-impeccable` with `/impeccable init` → `PRODUCT.md` (product truth) and `DESIGN.md` (visual system, created in C16); added `vercel-composition-patterns`; impeccable installed without its edit hook | Upstream changed the workflow; the hook would run a native binary on every UI edit, so audits run explicitly instead; `live` mode can bypass agent permissions |
 | 2026-11-21 | C15: Node 22.14 → 22.23.5 (`.nvmrc`, engines `>=22.22.0`); web dependencies are added with their first use (Zustand in C17, react-hook-form in C19) | React Router 8 and jsdom 31 require Node ≥ 22.22 (same LTS line, security fixes). Sequential work removed the reason to pre-install dependencies, so no commit adds an unused one |
 | 2026-11-21 | Workflow: each commit explanation names the agent skills that apply and what is adopted from them; web adds a no-barrel-files rule and route-level code splitting (from C17) | C15 was implemented without consulting `vercel-react-best-practices`; a post-hoc review found no violations but surfaced `bundle-dynamic-imports` and `bundle-barrel-imports`, so the check is now visible before approval |
+| 2026-11-21 | C16 split into C16a (visual identity and tokens) and C16b (UI primitives); visual world chosen through impeccable's process: the roll assigned "On Air", the author chose "Postmarked" (airmail) on the decision page | The world round, its review and DESIGN.md are a substantial, separately reviewable step; one commit per concern keeps the history readable |
+| 2026-11-21 | Impeccable's finish reviewer and documenter run as fresh-context agents (authorized by the author); the reviewer returned `fix` (nested card, postmark accessibility, avatar contrast, day-first postmark), all four were fixed and scored resolved (`ship`) | The skill's own agents ship in Codex format; a fresh general-purpose agent following the skill's reviewer/documenter procedure preserves the unbiased review |
