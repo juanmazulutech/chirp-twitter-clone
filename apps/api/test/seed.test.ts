@@ -1,3 +1,7 @@
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import {
   emailSchema,
   pageSchema,
@@ -7,7 +11,14 @@ import {
 } from '@chirp/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { runSeedCli, seedDatabase, UnsafeSeedResetError } from '../prisma/seed';
+import { generateAvatars } from '../prisma/scripts/generate-avatars';
+import { runSeedCli, seedDatabase, SeedStorageError, UnsafeSeedResetError } from '../prisma/seed';
+import {
+  renderSeedAvatar,
+  SEED_AVATAR_DIR,
+  seedAvatarKey,
+  seedAvatarPath,
+} from '../prisma/seed-data/avatars';
 import { seedFollows } from '../prisma/seed-data/follows';
 import {
   pickSeedLikes,
@@ -23,6 +34,7 @@ import {
   seedPersonas,
 } from '../prisma/seed-data/users';
 import type { App } from '../src/app';
+import { MemoryStorage } from '../src/lib/memory-storage';
 import { buildTestApp } from './app';
 import { loginAs } from './auth';
 import { resetDatabase } from './database';
@@ -45,7 +57,7 @@ describe('seed', () => {
   });
 
   it('creates at least 10 users with valid, normalized identifiers', async () => {
-    const result = await seedDatabase(app.prisma);
+    const result = await seedDatabase(app.prisma, app.storage);
 
     expect(result).toMatchObject({ seeded: true, users: seedPersonas.length });
     const users = await app.prisma.user.findMany();
@@ -58,14 +70,14 @@ describe('seed', () => {
   });
 
   it('gives every account its own password hash', async () => {
-    await seedDatabase(app.prisma);
+    await seedDatabase(app.prisma, app.storage);
 
     const hashes = (await app.prisma.user.findMany()).map((user) => user.passwordHash);
     expect(new Set(hashes).size).toBe(hashes.length);
   });
 
   it('lets the documented demo account sign in', async () => {
-    await seedDatabase(app.prisma);
+    await seedDatabase(app.prisma, app.storage);
 
     const response = await app.inject({
       method: 'POST',
@@ -78,7 +90,7 @@ describe('seed', () => {
   });
 
   it('keeps the personas join dates', async () => {
-    await seedDatabase(app.prisma);
+    await seedDatabase(app.prisma, app.storage);
 
     const ana = await app.prisma.user.findUniqueOrThrow({ where: { username: 'ana_codes' } });
     expect(ana.createdAt.toISOString()).toBe('2026-03-12T14:20:00.000Z');
@@ -87,8 +99,8 @@ describe('seed', () => {
   it('is idempotent in reset mode and, when allowed, replaces non-seed data', async () => {
     await createUser(app.prisma, { username: 'leftover' });
 
-    await seedDatabase(app.prisma, { allowNonSeedData: true });
-    await seedDatabase(app.prisma);
+    await seedDatabase(app.prisma, app.storage, { allowNonSeedData: true });
+    await seedDatabase(app.prisma, app.storage);
 
     expect(await app.prisma.user.count()).toBe(seedPersonas.length);
     expect(await app.prisma.user.findUnique({ where: { username: 'leftover' } })).toBeNull();
@@ -120,7 +132,7 @@ describe('seed', () => {
 
     it('stores every chirp at its relative time, within the last 30 days', async () => {
       const now = new Date('2026-11-21T12:00:00.000Z');
-      const result = await seedDatabase(app.prisma, { now });
+      const result = await seedDatabase(app.prisma, app.storage, { now });
 
       const tweets = await app.prisma.tweet.findMany({ include: { author: true } });
       expect(tweets).toHaveLength(result.tweets);
@@ -158,7 +170,7 @@ describe('seed', () => {
     });
 
     it('has the demo account follow exactly 8 people', async () => {
-      await seedDatabase(app.prisma);
+      await seedDatabase(app.prisma, app.storage);
 
       const demo = await app.prisma.user.findUniqueOrThrow({
         where: { username: DEMO_USERNAME },
@@ -168,7 +180,7 @@ describe('seed', () => {
     });
 
     it('gives the demo account a populated timeline with more pages to load', async () => {
-      await seedDatabase(app.prisma);
+      await seedDatabase(app.prisma, app.storage);
       const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
 
       const response = await app.inject({
@@ -213,7 +225,7 @@ describe('seed', () => {
 
     it('stores likes after the chirp was posted and the liker joined, never in the future', async () => {
       const now = new Date('2026-11-21T12:00:00.000Z');
-      const result = await seedDatabase(app.prisma, { now });
+      const result = await seedDatabase(app.prisma, app.storage, { now });
 
       const rows = await app.prisma.like.findMany({ include: { tweet: true, user: true } });
       expect(rows).toHaveLength(result.likes);
@@ -233,7 +245,7 @@ describe('seed', () => {
     });
 
     it('shows like counts and the demo account’s own likes on its first timeline page', async () => {
-      await seedDatabase(app.prisma);
+      await seedDatabase(app.prisma, app.storage);
       const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
 
       const response = await app.inject({
@@ -253,7 +265,7 @@ describe('seed', () => {
       const user = await createUser(app.prisma, { username: 'real_person' });
       await app.prisma.tweet.create({ data: { authorId: user.id, content: 'Keep me' } });
 
-      await expect(seedDatabase(app.prisma)).rejects.toThrow(
+      await expect(seedDatabase(app.prisma, app.storage)).rejects.toThrow(
         new UnsafeSeedResetError('the database has 1 account(s) the seed did not create'),
       );
       expect(await app.prisma.user.count()).toBe(1);
@@ -263,17 +275,17 @@ describe('seed', () => {
     it('treats a seed username with a different email as a non-seed account', async () => {
       await createUser(app.prisma, { username: DEMO_USERNAME, email: 'someone@example.com' });
 
-      await expect(seedDatabase(app.prisma)).rejects.toThrow(UnsafeSeedResetError);
+      await expect(seedDatabase(app.prisma, app.storage)).rejects.toThrow(UnsafeSeedResetError);
     });
 
     it('resets freely when the database holds only seed accounts and their activity', async () => {
-      await seedDatabase(app.prisma);
+      await seedDatabase(app.prisma, app.storage);
       const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
       await app.prisma.tweet.create({
         data: { authorId: demo.id, content: 'Posted while testing' },
       });
 
-      const result = await seedDatabase(app.prisma);
+      const result = await seedDatabase(app.prisma, app.storage);
 
       expect(result.seeded).toBe(true);
       expect(await app.prisma.tweet.count()).toBe(result.tweets);
@@ -283,25 +295,106 @@ describe('seed', () => {
   it('leaves a database with data untouched in if-empty mode', async () => {
     await createUser(app.prisma, { username: 'existing' });
 
-    const result = await seedDatabase(app.prisma, { mode: 'if-empty' });
+    const result = await seedDatabase(app.prisma, app.storage, { mode: 'if-empty' });
 
     expect(result).toEqual({ seeded: false, users: 0, tweets: 0, follows: 0, likes: 0 });
     expect(await app.prisma.user.count()).toBe(1);
   });
 
   it('seeds an empty database in if-empty mode', async () => {
-    const result = await seedDatabase(app.prisma, { mode: 'if-empty' });
+    const result = await seedDatabase(app.prisma, app.storage, { mode: 'if-empty' });
 
     expect(result.seeded).toBe(true);
     expect(await app.prisma.user.count()).toBe(seedPersonas.length);
+  });
+
+  describe('avatars', () => {
+    it('uploads every persona’s committed SVG and points the account at it', async () => {
+      const storage = new MemoryStorage();
+
+      await seedDatabase(app.prisma, storage);
+
+      const users = await app.prisma.user.findMany();
+      expect(users).toHaveLength(seedPersonas.length);
+      for (const user of users) {
+        expect(user.avatarKey).toBe(seedAvatarKey(user.username));
+        const object = storage.get(seedAvatarKey(user.username));
+        expect(object?.contentType).toBe('image/svg+xml');
+        expect(Buffer.from(object?.body ?? []).toString()).toBe(
+          (await readFile(seedAvatarPath(user.username))).toString(),
+        );
+      }
+    });
+
+    it('shows the avatars as public URLs', async () => {
+      await seedDatabase(app.prisma, app.storage);
+      const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/auth/me',
+        headers: { cookie: await loginAs(app, demo) },
+      });
+
+      expect(response.json()).toMatchObject({
+        user: { avatarUrl: app.storage.publicUrl(seedAvatarKey(DEMO_USERNAME)) },
+      });
+    });
+
+    it('fails before touching the database when storage is unreachable', async () => {
+      await createUser(app.prisma, { username: 'keeper' });
+      const storage = new MemoryStorage();
+      storage.put = () => Promise.reject(new Error('connect ECONNREFUSED'));
+
+      await expect(seedDatabase(app.prisma, storage)).rejects.toThrow(SeedStorageError);
+      await expect(seedDatabase(app.prisma, storage)).rejects.toThrow(/npm run services:up/);
+      expect(await app.prisma.user.findMany({ select: { username: true } })).toEqual([
+        { username: 'keeper' },
+      ]);
+    });
+
+    it('commits exactly the SVGs the generator produces, one per persona', async () => {
+      const committed = (await readdir(SEED_AVATAR_DIR)).sort();
+      expect(committed).toEqual(seedPersonas.map(({ username }) => `${username}.svg`).sort());
+      for (const { username } of seedPersonas) {
+        expect((await readFile(seedAvatarPath(username))).toString()).toBe(
+          renderSeedAvatar(username),
+        );
+      }
+    });
+
+    it('generates a CC0 drawing that cannot run scripts', () => {
+      const svg = renderSeedAvatar(DEMO_USERNAME);
+
+      expect(svg).toContain('CC0 1.0');
+      expect(svg).not.toMatch(/<script|\son\w+=|href="(?!#)/i);
+      expect(renderSeedAvatar('ana_codes')).not.toBe(svg);
+    });
+
+    it('writes the avatars with the generation script', async () => {
+      const directory = await mkdtemp(join(tmpdir(), 'chirp-avatars-'));
+      const output: string[] = [];
+
+      const written = await generateAvatars({ directory, write: (line) => output.push(line) });
+
+      expect(written).toHaveLength(seedPersonas.length);
+      expect(await readFile(join(directory, `${DEMO_USERNAME}.svg`), 'utf8')).toBe(
+        renderSeedAvatar(DEMO_USERNAME),
+      );
+      expect(output.join('')).toContain(`Generated ${seedPersonas.length} avatars`);
+      await rm(directory, { recursive: true });
+    });
   });
 
   describe('command line', () => {
     const databaseName = new URL(testDatabaseUrl()).pathname.slice(1);
     const run = async (argv: string[], env: Record<string, string> = {}) => {
       const output: string[] = [];
-      await runSeedCli(argv, { DATABASE_URL: testDatabaseUrl(), ...env }, (line) =>
-        output.push(line),
+      await runSeedCli(
+        argv,
+        { DATABASE_URL: testDatabaseUrl(), ...env },
+        (line) => output.push(line),
+        new MemoryStorage(),
       );
       return output.join('');
     };

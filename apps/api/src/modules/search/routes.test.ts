@@ -185,7 +185,7 @@ describe('GET /api/users/search on the demo data', () => {
   beforeAll(async () => {
     app = await buildTestApp();
     await resetDatabase(app.prisma);
-    await seedDatabase(app.prisma);
+    await seedDatabase(app.prisma, app.storage);
   });
 
   afterAll(async () => {

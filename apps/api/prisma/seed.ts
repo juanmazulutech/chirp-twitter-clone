@@ -2,12 +2,16 @@
 //   npm run db:seed                       reset application data and seed it again
 //   SEED_CONFIRM_RESET=<db> npm run db:seed   reset even if it holds non-seed accounts
 //   tsx prisma/seed.ts --if-empty         seed only an empty database (Docker entrypoint)
+// Needs the storage service (`npm run services:up`): it uploads the persona avatars.
 import { fileURLToPath } from 'node:url';
 
+import { createS3Storage } from '../src/app';
 import { loadEnv } from '../src/config/env';
 import type { PrismaClient } from '../src/generated/prisma/client';
 import { hashPassword } from '../src/lib/password';
 import { createPrismaClient } from '../src/lib/prisma-client';
+import type { StorageService } from '../src/lib/storage';
+import { readSeedAvatar, seedAvatarKey } from './seed-data/avatars';
 import { seedFollows } from './seed-data/follows';
 import { pickSeedLikes, seedLikeDate } from './seed-data/likes';
 import { seedTweetDate, seedTweets } from './seed-data/tweets';
@@ -21,6 +25,35 @@ export interface SeedOptions {
   now?: Date;
   /** Reset mode only: also delete accounts that the seed did not create (ADR-23). */
   allowNonSeedData?: boolean;
+}
+
+/** Storage could not take the avatars; nothing in the database has changed yet. */
+export class SeedStorageError extends Error {
+  override readonly name = 'SeedStorageError';
+}
+
+/**
+ * Uploads every persona's committed SVG through `StorageService`, the path a user's own
+ * avatar takes (ADR-16). Idempotent: the keys are per username, so re-seeding overwrites.
+ */
+export async function uploadSeedAvatars(storage: StorageService): Promise<void> {
+  try {
+    await Promise.all(
+      seedPersonas.map(async ({ username }) =>
+        storage.put({
+          key: seedAvatarKey(username),
+          body: await readSeedAvatar(username),
+          contentType: 'image/svg+xml',
+        }),
+      ),
+    );
+  } catch (error) {
+    throw new SeedStorageError(
+      'Could not upload the seed avatars to storage. Is it running? Start it with ' +
+        '`npm run services:up`, then seed again.',
+      { cause: error },
+    );
+  }
 }
 
 /** Thrown instead of deleting data the seed cannot recreate (ADR-23). */
@@ -40,11 +73,14 @@ export interface SeedResult {
 
 export async function seedDatabase(
   prisma: PrismaClient,
+  storage: StorageService,
   { mode = 'reset', now = new Date(), allowNonSeedData = false }: SeedOptions = {},
 ): Promise<SeedResult> {
   if (mode === 'if-empty' && (await prisma.user.count()) > 0) {
     return { seeded: false, users: 0, tweets: 0, follows: 0, likes: 0 };
   }
+  // Before the database changes: without storage there is nothing to show the avatars from.
+  await uploadSeedAvatars(storage);
 
   // Each account gets its own salted hash, like a real registration.
   const users = await Promise.all(
@@ -53,6 +89,7 @@ export async function seedDatabase(
       username: persona.username,
       displayName: persona.displayName,
       bio: persona.bio,
+      avatarKey: seedAvatarKey(persona.username),
       passwordHash: await hashPassword(SEED_PASSWORD),
       createdAt: new Date(persona.joinedAt),
     })),
@@ -146,14 +183,19 @@ export async function seedDatabase(
   });
 }
 
-/** CLI entry point; arguments, environment and output are injectable for tests. */
+/**
+ * CLI entry point; arguments, environment, output and storage are injectable for tests.
+ * Without a storage, it talks to the configured S3 endpoint.
+ */
 export async function runSeedCli(
   argv: string[] = process.argv,
   env: Record<string, string | undefined> = process.env,
   write: (message: string) => void = (message) => process.stdout.write(message),
+  injectedStorage?: StorageService,
 ): Promise<void> {
   const mode: SeedMode = argv.includes('--if-empty') ? 'if-empty' : 'reset';
-  const { DATABASE_URL } = loadEnv(env);
+  const config = loadEnv(env);
+  const { DATABASE_URL } = config;
   const databaseName = decodeURIComponent(new URL(DATABASE_URL).pathname.replace(/^\//, ''));
   const confirmation = env.SEED_CONFIRM_RESET;
   // Naming the database, not a yes/no flag, so a confirmation meant for one database
@@ -164,9 +206,10 @@ export async function runSeedCli(
     );
   }
   const prisma = createPrismaClient(DATABASE_URL);
+  const storage = injectedStorage ?? createS3Storage(config);
 
   try {
-    const result = await seedDatabase(prisma, {
+    const result = await seedDatabase(prisma, storage, {
       mode,
       allowNonSeedData: confirmation === databaseName,
     }).catch((error: unknown) => {
@@ -186,13 +229,14 @@ export async function runSeedCli(
     );
   } finally {
     await prisma.$disconnect();
+    if (!injectedStorage) await storage.close();
   }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await runSeedCli().catch((error: unknown) => {
-    // A refusal is an expected outcome: print the instructions, not a stack trace.
-    if (!(error instanceof UnsafeSeedResetError)) throw error;
+    // A refusal or a missing storage is an expected outcome: print what to do, not a stack trace.
+    if (!(error instanceof UnsafeSeedResetError || error instanceof SeedStorageError)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;
   });

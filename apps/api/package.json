@@ -13,9 +13,12 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "avatars:generate": "tsx prisma/scripts/generate-avatars.ts"
   },
   "devDependencies": {
+    "@dicebear/core": "9.4.3",
+    "@dicebear/notionists": "9.4.3",
     "@types/node": "22.20.5",
     "pino-pretty": "13.2.0",
     "prisma": "7.10.1",
