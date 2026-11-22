@@ -18,6 +18,13 @@ describe('loadEnv', () => {
       TRUST_PROXY: false,
       RATE_LIMIT_GLOBAL_MAX: 300,
       RATE_LIMIT_AUTH_MAX: 10,
+      S3_ENDPOINT: 'http://localhost:9000',
+      S3_PUBLIC_ENDPOINT: 'http://localhost:9000',
+      S3_REGION: 'us-east-1',
+      S3_BUCKET: 'chirp-media',
+      S3_ACCESS_KEY_ID: 'chirp',
+      S3_SECRET_ACCESS_KEY: 'chirpsecret',
+      S3_FORCE_PATH_STYLE: true,
     });
   });
 
@@ -34,6 +41,13 @@ describe('loadEnv', () => {
       TRUST_PROXY: 'true',
       RATE_LIMIT_GLOBAL_MAX: '600',
       RATE_LIMIT_AUTH_MAX: '5',
+      S3_ENDPOINT: 'http://storage:9000/',
+      S3_PUBLIC_ENDPOINT: 'https://media.chirp.example',
+      S3_REGION: 'eu-west-1',
+      S3_BUCKET: 'chirp-prod-media',
+      S3_ACCESS_KEY_ID: 'AKIAEXAMPLE',
+      S3_SECRET_ACCESS_KEY: 'example-secret',
+      S3_FORCE_PATH_STYLE: 'false',
     });
 
     expect(env).toEqual({
@@ -48,6 +62,14 @@ describe('loadEnv', () => {
       TRUST_PROXY: true,
       RATE_LIMIT_GLOBAL_MAX: 600,
       RATE_LIMIT_AUTH_MAX: 5,
+      // Trailing slashes are dropped so object URLs can be joined with "/".
+      S3_ENDPOINT: 'http://storage:9000',
+      S3_PUBLIC_ENDPOINT: 'https://media.chirp.example',
+      S3_REGION: 'eu-west-1',
+      S3_BUCKET: 'chirp-prod-media',
+      S3_ACCESS_KEY_ID: 'AKIAEXAMPLE',
+      S3_SECRET_ACCESS_KEY: 'example-secret',
+      S3_FORCE_PATH_STYLE: false,
     });
   });
 
@@ -83,6 +105,22 @@ describe('loadEnv', () => {
   it('rejects web origins that are not http(s) URLs', () => {
     expect(() => loadEnv({ DATABASE_URL, WEB_ORIGINS: 'localhost:5173' })).toThrow(/WEB_ORIGINS/);
     expect(() => loadEnv({ DATABASE_URL, WEB_ORIGINS: ' , ' })).toThrow(/WEB_ORIGINS/);
+  });
+
+  it('rejects storage endpoints that are not http(s) URLs', () => {
+    expect(() => loadEnv({ DATABASE_URL, S3_ENDPOINT: 'storage:9000' })).toThrow(/S3_ENDPOINT/);
+    expect(() => loadEnv({ DATABASE_URL, S3_PUBLIC_ENDPOINT: 'ftp://media' })).toThrow(
+      /S3_PUBLIC_ENDPOINT/,
+    );
+  });
+
+  it('rejects empty storage credentials and malformed flags', () => {
+    expect(() => loadEnv({ DATABASE_URL, S3_SECRET_ACCESS_KEY: '' })).toThrow(
+      /S3_SECRET_ACCESS_KEY/,
+    );
+    expect(() => loadEnv({ DATABASE_URL, S3_FORCE_PATH_STYLE: 'yes' })).toThrow(
+      /S3_FORCE_PATH_STYLE/,
+    );
   });
 
   it('rejects an out-of-range port', () => {
