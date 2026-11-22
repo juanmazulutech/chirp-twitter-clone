@@ -6,6 +6,7 @@ import { Prisma } from '../src/generated/prisma/client';
 import { buildTestApp } from './app';
 import { resetDatabase } from './database';
 import { createFollow } from './factories/follows';
+import { createLike } from './factories/likes';
 import { createTweet } from './factories/tweets';
 import { createUser } from './factories/users';
 
@@ -120,10 +121,33 @@ describe('database schema', () => {
     },
   );
 
+  it('rejects a duplicate like', async () => {
+    const ana = await createUser(app.prisma);
+    const tweet = await createTweet(app.prisma, ana);
+    await createLike(app.prisma, ana, tweet);
+
+    await expectUniqueViolation(createLike(app.prisma, ana, tweet), 'likes_pkey');
+  });
+
+  it.each(['user who liked', 'tweet'] as const)(
+    'deletes a like when the %s is deleted',
+    async (side) => {
+      const ana = await createUser(app.prisma);
+      const tweet = await createTweet(app.prisma, await createUser(app.prisma));
+      await createLike(app.prisma, ana, tweet);
+
+      if (side === 'tweet') await app.prisma.tweet.delete({ where: { id: tweet.id } });
+      else await app.prisma.user.delete({ where: { id: ana.id } });
+
+      expect(await app.prisma.like.count()).toBe(0);
+    },
+  );
+
   it('starts every test from empty tables', async () => {
     expect(await app.prisma.user.count()).toBe(0);
     expect(await app.prisma.session.count()).toBe(0);
     expect(await app.prisma.tweet.count()).toBe(0);
     expect(await app.prisma.follow.count()).toBe(0);
+    expect(await app.prisma.like.count()).toBe(0);
   });
 });
