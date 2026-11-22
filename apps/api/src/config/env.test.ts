@@ -25,6 +25,7 @@ describe('loadEnv', () => {
       S3_ACCESS_KEY_ID: 'chirp',
       S3_SECRET_ACCESS_KEY: 'chirpsecret',
       S3_FORCE_PATH_STYLE: true,
+      UPLOAD_MAX_BYTES: 5_242_880,
     });
   });
 
@@ -48,6 +49,7 @@ describe('loadEnv', () => {
       S3_ACCESS_KEY_ID: 'AKIAEXAMPLE',
       S3_SECRET_ACCESS_KEY: 'example-secret',
       S3_FORCE_PATH_STYLE: 'false',
+      UPLOAD_MAX_BYTES: '1048576',
     });
 
     expect(env).toEqual({
@@ -70,6 +72,7 @@ describe('loadEnv', () => {
       S3_ACCESS_KEY_ID: 'AKIAEXAMPLE',
       S3_SECRET_ACCESS_KEY: 'example-secret',
       S3_FORCE_PATH_STYLE: false,
+      UPLOAD_MAX_BYTES: 1_048_576,
     });
   });
 
@@ -121,6 +124,13 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ DATABASE_URL, S3_FORCE_PATH_STYLE: 'yes' })).toThrow(
       /S3_FORCE_PATH_STYLE/,
     );
+  });
+
+  it('rejects an upload limit above the shared 5 MB maximum', () => {
+    expect(() => loadEnv({ DATABASE_URL, UPLOAD_MAX_BYTES: '5242881' })).toThrow(
+      /UPLOAD_MAX_BYTES/,
+    );
+    expect(() => loadEnv({ DATABASE_URL, UPLOAD_MAX_BYTES: '0' })).toThrow(/UPLOAD_MAX_BYTES/);
   });
 
   it('rejects an out-of-range port', () => {

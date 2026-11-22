@@ -5,5 +5,6 @@ export * from './schemas/follows';
 export * from './schemas/likes';
 export * from './schemas/pagination';
 export * from './schemas/tweets';
+export * from './schemas/uploads';
 export * from './schemas/users';
 export * from './text';
