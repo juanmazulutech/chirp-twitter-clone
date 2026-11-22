@@ -21,8 +21,11 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  sessions Session[]
-  tweets   Tweet[]
+  sessions  Session[]
+  tweets    Tweet[]
+  // Follows where this user is the follower, and where they are the one followed.
+  following Follow[]  @relation("FollowFollower")
+  followers Follow[]  @relation("FollowFollowing")
 
   @@map("users")
 }
@@ -53,4 +56,19 @@ model Tweet {
   // Serves profile tweets and the home timeline's keyset pagination (ADR-11, ADR-12).
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
   @@map("tweets")
+}
+
+model Follow {
+  followerId  String   @map("follower_id") @db.Uuid
+  followingId String   @map("following_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  // The migration adds CHECK (follower_id <> following_id): Prisma cannot express it.
+
+  // The primary key serves "whom does X follow" (timeline); this index serves follower lists and counts.
+  @@id([followerId, followingId])
+  @@index([followingId, createdAt(sort: Desc)])
+  @@map("follows")
 }

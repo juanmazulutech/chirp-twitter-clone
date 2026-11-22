@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 
 import authRoutes from './auth/routes';
+import followsRoutes from './follows/routes';
 import healthRoutes from './health/routes';
 import tweetsRoutes from './tweets/routes';
 
@@ -12,6 +13,7 @@ const modules: FastifyPluginAsync = async (app) => {
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(tweetsRoutes);
+  await app.register(followsRoutes);
 };
 
 export default modules;

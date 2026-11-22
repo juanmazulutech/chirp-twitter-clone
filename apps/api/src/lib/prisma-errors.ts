@@ -12,3 +12,10 @@ export function violatesUniqueColumn(
 ): boolean {
   return JSON.stringify(error.meta ?? {}).includes(column);
 }
+
+/** True when a write referenced a row that no longer exists (Prisma error P2003). */
+export function isForeignKeyViolation(
+  error: unknown,
+): error is Prisma.PrismaClientKnownRequestError {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003';
+}

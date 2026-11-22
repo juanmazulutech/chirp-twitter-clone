@@ -5,6 +5,7 @@ import type { App } from '../src/app';
 import { Prisma } from '../src/generated/prisma/client';
 import { buildTestApp } from './app';
 import { resetDatabase } from './database';
+import { createFollow } from './factories/follows';
 import { createTweet } from './factories/tweets';
 import { createUser } from './factories/users';
 
@@ -92,9 +93,37 @@ describe('database schema', () => {
     ).resolves.toBeDefined();
   });
 
+  it('rejects a duplicate follow', async () => {
+    const ana = await createUser(app.prisma);
+    const bruno = await createUser(app.prisma);
+    await createFollow(app.prisma, ana, bruno);
+
+    await expectUniqueViolation(createFollow(app.prisma, ana, bruno), 'follows_pkey');
+  });
+
+  it('rejects a self-follow through the CHECK constraint', async () => {
+    const ana = await createUser(app.prisma);
+
+    await expect(createFollow(app.prisma, ana, ana)).rejects.toThrow(/follows_no_self_follow/);
+  });
+
+  it.each(['follower', 'followed user'] as const)(
+    'deletes a follow when the %s is deleted',
+    async (side) => {
+      const ana = await createUser(app.prisma);
+      const bruno = await createUser(app.prisma);
+      await createFollow(app.prisma, ana, bruno);
+
+      await app.prisma.user.delete({ where: { id: side === 'follower' ? ana.id : bruno.id } });
+
+      expect(await app.prisma.follow.count()).toBe(0);
+    },
+  );
+
   it('starts every test from empty tables', async () => {
     expect(await app.prisma.user.count()).toBe(0);
     expect(await app.prisma.session.count()).toBe(0);
     expect(await app.prisma.tweet.count()).toBe(0);
+    expect(await app.prisma.follow.count()).toBe(0);
   });
 });
