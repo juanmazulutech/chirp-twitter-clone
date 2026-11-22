@@ -36,29 +36,61 @@ export const newestFirst: [{ createdAt: 'desc' }, { id: 'desc' }] = [
 ];
 
 /**
+ * `newestFirst` for rows whose tie-breaker is another unique column, such as a join table's
+ * user id (follow lists order by `(createdAt, followerId)`).
+ */
+export function newestFirstBy<Column extends string>(tieBreaker: Column) {
+  return [{ createdAt: 'desc' as const }, { [tieBreaker]: 'desc' as const }] as [
+    { createdAt: 'desc' },
+    Record<Column, 'desc'>,
+  ];
+}
+
+/**
  * Rows strictly after the cursor in `newestFirst` order. It carries its own `OR`, so callers
  * combine it with their filters through `AND` rather than spreading both into one object.
  */
 export function keysetAfter(cursor: Cursor | undefined) {
-  if (!cursor) return {};
-  return {
-    OR: [
-      { createdAt: { lt: cursor.createdAt } },
-      { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-    ],
-  };
+  return keysetAfterBy(cursor, 'id');
 }
 
-/** Turns `limit + 1` fetched rows into a page: the extra row only signals that more exist. */
+/** `keysetAfter` for `newestFirstBy(tieBreaker)`: the cursor's `id` holds that column's value. */
+export function keysetAfterBy<Column extends string>(
+  cursor: Cursor | undefined,
+  tieBreaker: Column,
+) {
+  if (!cursor) return {};
+  const tie = { createdAt: cursor.createdAt, [tieBreaker]: { lt: cursor.id } } as {
+    createdAt: Date;
+  } & Record<Column, { lt: string }>;
+  return { OR: [{ createdAt: { lt: cursor.createdAt } }, tie] };
+}
+
+/**
+ * Turns `limit + 1` fetched rows into a page: the extra row only signals that more exist.
+ * Rows that are not `{ createdAt, id }` themselves say where they sit through `position`.
+ */
 export function toPage<Row extends Cursor, Item>(
   rows: Row[],
   limit: number,
   serialize: (row: Row) => Item,
+): Page<Item>;
+export function toPage<Row, Item>(
+  rows: Row[],
+  limit: number,
+  serialize: (row: Row) => Item,
+  position: (row: Row) => Cursor,
+): Page<Item>;
+export function toPage<Row, Item>(
+  rows: Row[],
+  limit: number,
+  serialize: (row: Row) => Item,
+  position: (row: Row) => Cursor = (row) => row as Cursor,
 ): Page<Item> {
   const pageRows = rows.slice(0, limit);
   const last = pageRows.at(-1);
   return {
     items: pageRows.map(serialize),
-    nextCursor: rows.length > limit && last ? encodeCursor(last) : null,
+    nextCursor: rows.length > limit && last !== undefined ? encodeCursor(position(last)) : null,
   };
 }

@@ -97,22 +97,77 @@ function describedBy(field: FieldContextValue, extra?: string): string | undefin
   return ids.length > 0 ? ids.join(' ') : undefined;
 }
 
-export function FieldInput({ className = '', ...props }: ComponentProps<'input'>) {
-  const field = useField('FieldInput');
+/**
+ * Live character counting shared by inputs and textareas: follows `value` when controlled
+ * and the typed text otherwise, in Unicode code points (emoji count as one).
+ */
+function useCharacterCount<Element extends HTMLInputElement | HTMLTextAreaElement>(
+  maxCharacters: number | undefined,
+  value: ComponentProps<'input'>['value'],
+  defaultValue: ComponentProps<'input'>['defaultValue'],
+  onChange: ((event: ChangeEvent<Element>) => void) | undefined,
+) {
+  const [uncontrolledText, setUncontrolledText] = useState(String(defaultValue ?? ''));
+  const text = value === undefined ? uncontrolledText : String(value);
+  const remaining = maxCharacters === undefined ? undefined : maxCharacters - countCharacters(text);
+
+  function handleChange(event: ChangeEvent<Element>) {
+    if (value === undefined) setUncontrolledText(event.target.value);
+    onChange?.(event);
+  }
+
+  return { remaining, handleChange };
+}
+
+function FieldCounter({ id, remaining }: { id: string; remaining: number | undefined }) {
+  if (remaining === undefined) return null;
   return (
-    <input
-      id={field.inputId}
-      aria-invalid={field.error ? true : undefined}
-      aria-describedby={describedBy(field)}
-      className={`${controlClasses} h-11 ${className}`}
-      {...props}
-    />
+    <p
+      id={id}
+      className={`self-end text-xs tabular-nums ${remaining < 0 ? 'font-semibold text-danger' : 'text-ink-muted'}`}
+    >
+      {remaining < 0
+        ? `${-remaining} over the limit`
+        : `${remaining} ${remaining === 1 ? 'character' : 'characters'} left`}
+    </p>
   );
 }
 
-interface TextareaProps extends ComponentProps<'textarea'> {
+interface CountedProps {
   /** Shows a live counter in Unicode code points (emoji count as one). */
   maxCharacters?: number;
+}
+
+export function FieldInput({
+  maxCharacters,
+  className = '',
+  value,
+  defaultValue,
+  onChange,
+  ...props
+}: ComponentProps<'input'> & CountedProps) {
+  const field = useField('FieldInput');
+  const { remaining, handleChange } = useCharacterCount(
+    maxCharacters,
+    value,
+    defaultValue,
+    onChange,
+  );
+  return (
+    <>
+      <input
+        id={field.inputId}
+        aria-invalid={field.error || (remaining !== undefined && remaining < 0) ? true : undefined}
+        aria-describedby={describedBy(field, remaining === undefined ? undefined : field.counterId)}
+        className={`${controlClasses} h-11 ${className}`}
+        value={value}
+        defaultValue={value === undefined ? defaultValue : undefined}
+        onChange={handleChange}
+        {...props}
+      />
+      <FieldCounter id={field.counterId} remaining={remaining} />
+    </>
+  );
 }
 
 export function FieldTextarea({
@@ -122,17 +177,14 @@ export function FieldTextarea({
   defaultValue,
   onChange,
   ...props
-}: TextareaProps) {
+}: ComponentProps<'textarea'> & CountedProps) {
   const field = useField('FieldTextarea');
-  const [uncontrolledText, setUncontrolledText] = useState(String(defaultValue ?? ''));
-  const text = value === undefined ? uncontrolledText : String(value);
-  const remaining = maxCharacters === undefined ? undefined : maxCharacters - countCharacters(text);
-
-  function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    if (value === undefined) setUncontrolledText(event.target.value);
-    onChange?.(event);
-  }
-
+  const { remaining, handleChange } = useCharacterCount(
+    maxCharacters,
+    value,
+    defaultValue,
+    onChange,
+  );
   return (
     <>
       <textarea
@@ -145,16 +197,7 @@ export function FieldTextarea({
         onChange={handleChange}
         {...props}
       />
-      {remaining === undefined ? null : (
-        <p
-          id={field.counterId}
-          className={`self-end text-xs tabular-nums ${remaining < 0 ? 'font-semibold text-danger' : 'text-ink-muted'}`}
-        >
-          {remaining < 0
-            ? `${-remaining} over the limit`
-            : `${remaining} ${remaining === 1 ? 'character' : 'characters'} left`}
-        </p>
-      )}
+      <FieldCounter id={field.counterId} remaining={remaining} />
     </>
   );
 }

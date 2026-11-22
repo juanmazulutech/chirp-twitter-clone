@@ -1,4 +1,12 @@
-import type { CreateTweetBody, ErrorResponse, Page, SessionUser, Tweet } from '@chirp/shared';
+import type {
+  CreateTweetBody,
+  ErrorResponse,
+  FollowListUser,
+  Page,
+  SessionUser,
+  Tweet,
+  UserProfile,
+} from '@chirp/shared';
 import { http, HttpResponse } from 'msw';
 
 import { sessionUser, tweetFixture } from '../fixtures';
@@ -30,6 +38,49 @@ export function tweetCreated(onBody: (body: CreateTweetBody) => void = () => {})
   });
 }
 
+/** Serves `pages` in order: the first without a cursor, then `page-N` for each next one. */
+function pagesFrom<Item>(
+  pages: Item[][],
+  request: Request,
+  onCursor: (cursor: string | null) => void,
+) {
+  const cursor = new URL(request.url).searchParams.get('cursor');
+  onCursor(cursor);
+  const index = cursor === null ? 0 : Number(cursor.replace('page-', ''));
+  const page: Page<Item> = {
+    items: pages[index] ?? [],
+    nextCursor: index + 1 < pages.length ? `page-${index + 1}` : null,
+  };
+  return HttpResponse.json(page);
+}
+
+/** `GET /api/users/:username` answering with `profile` (for its own username). */
+export function profileFound(profile: UserProfile) {
+  return http.get(`/api/users/${profile.username}`, () => HttpResponse.json(profile));
+}
+
+/** `GET /api/users/:username/tweets` serving `pages` like `timelinePages`. */
+export function userTweetsPages(
+  username: string,
+  pages: Tweet[][] = [[]],
+  onCursor: (cursor: string | null) => void = () => {},
+) {
+  return http.get(`/api/users/${username}/tweets`, ({ request }) =>
+    pagesFrom(pages, request, onCursor),
+  );
+}
+
+/** `GET /api/users/:username/followers` or `/following` serving `pages` like `timelinePages`. */
+export function followListPages(
+  username: string,
+  list: 'followers' | 'following',
+  pages: FollowListUser[][] = [[]],
+) {
+  return http.get(`/api/users/${username}/${list}`, ({ request }) =>
+    pagesFrom(pages, request, () => {}),
+  );
+}
+
 /**
  * `GET /api/timeline` serving `pages` in order: the first without a cursor, then each
  * page's `nextCursor` leads to the one after it. `onCursor` sees every cursor requested.
@@ -38,16 +89,7 @@ export function timelinePages(
   pages: Tweet[][] = [[]],
   onCursor: (cursor: string | null) => void = () => {},
 ) {
-  return http.get('/api/timeline', ({ request }) => {
-    const cursor = new URL(request.url).searchParams.get('cursor');
-    onCursor(cursor);
-    const index = cursor === null ? 0 : Number(cursor.replace('page-', ''));
-    const page: Page<Tweet> = {
-      items: pages[index] ?? [],
-      nextCursor: index + 1 < pages.length ? `page-${index + 1}` : null,
-    };
-    return HttpResponse.json(page);
-  });
+  return http.get('/api/timeline', ({ request }) => pagesFrom(pages, request, onCursor));
 }
 
 /**

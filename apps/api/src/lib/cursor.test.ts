@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeCursor, encodeCursor, keysetAfter, toPage } from './cursor';
+import {
+  decodeCursor,
+  encodeCursor,
+  keysetAfter,
+  keysetAfterBy,
+  newestFirstBy,
+  toPage,
+} from './cursor';
 import { ValidationError } from './errors';
 
 const cursor = {
@@ -44,6 +51,19 @@ describe('keysetAfter', () => {
   });
 });
 
+describe('keysetAfterBy and newestFirstBy', () => {
+  it('break ties on the given column instead of id', () => {
+    expect(newestFirstBy('followerId')).toEqual([{ createdAt: 'desc' }, { followerId: 'desc' }]);
+    expect(keysetAfterBy(cursor, 'followerId')).toEqual({
+      OR: [
+        { createdAt: { lt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, followerId: { lt: cursor.id } },
+      ],
+    });
+    expect(keysetAfterBy(undefined, 'followerId')).toEqual({});
+  });
+});
+
 describe('toPage', () => {
   const rows = [1, 2, 3].map((n) => ({
     createdAt: new Date(Date.UTC(2026, 10, 21, 0, 0, 3 - n)),
@@ -64,5 +84,18 @@ describe('toPage', () => {
 
   it('returns an empty last page', () => {
     expect(toPage([], 20, (row) => row)).toEqual({ items: [], nextCursor: null });
+  });
+
+  it('takes the cursor from rows that are not positions themselves', () => {
+    const follows = rows.map((row) => ({ at: row.createdAt, userId: row.id }));
+
+    const page = toPage(
+      follows,
+      1,
+      (row) => row.userId,
+      (row) => ({ createdAt: row.at, id: row.userId }),
+    );
+
+    expect(decodeCursor(page.nextCursor ?? '')).toEqual(rows[0]);
   });
 });

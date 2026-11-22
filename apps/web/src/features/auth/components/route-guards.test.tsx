@@ -4,8 +4,9 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { apiRequest } from '@/lib/api-client';
-import { authResponse } from '@/test/fixtures';
+import { authResponse, profileFixture } from '@/test/fixtures';
 import { apiError } from '@/test/msw/errors';
+import { followListPages, profileFound } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { startSignedOut } from '@/test/msw/session';
 import { renderRoute } from '@/test/render';
@@ -28,6 +29,10 @@ async function signIn(user: ReturnType<typeof userEvent.setup>, session: { signI
 describe('ProtectedRoute', () => {
   it('sends a signed-out visitor to sign-in, then back to the page they asked for', async () => {
     const session = startSignedOut();
+    server.use(
+      profileFound(profileFixture({ username: 'ana_codes', displayName: 'Ana Torres' })),
+      followListPages('ana_codes', 'followers'),
+    );
     const user = userEvent.setup();
     const { router } = renderRoute('/ana_codes/followers?from=link');
 
@@ -38,7 +43,7 @@ describe('ProtectedRoute', () => {
     await signIn(user, session);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'People following @ana_codes' }),
+      await screen.findByRole('heading', { level: 1, name: 'Ana Torres' }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/ana_codes/followers');
     expect(router.state.location.search).toBe('?from=link');

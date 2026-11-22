@@ -1,6 +1,9 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { profileFixture } from '@/test/fixtures';
+import { followListPages, profileFound, userTweetsPages } from '@/test/msw/handlers';
+import { server } from '@/test/msw/server';
 import { startSignedOut } from '@/test/msw/session';
 import { renderRoute } from '@/test/render';
 
@@ -11,10 +14,16 @@ describe('routes', () => {
     ['/home', 'Home'],
     ['/search', 'Search'],
     ['/notifications', 'Notifications'],
-    ['/ana_codes', '@ana_codes'],
-    ['/ana_codes/followers', 'People following @ana_codes'],
-    ['/ana_codes/following', 'People @ana_codes follows'],
+    ['/ana_codes', 'Ana Torres'],
+    ['/ana_codes/followers', 'Ana Torres'],
+    ['/ana_codes/following', 'Ana Torres'],
   ])('renders %s inside the app shell', async (path, heading) => {
+    server.use(
+      profileFound(profileFixture({ username: 'ana_codes', displayName: 'Ana Torres' })),
+      userTweetsPages('ana_codes'),
+      followListPages('ana_codes', 'followers'),
+      followListPages('ana_codes', 'following'),
+    );
     renderRoute(path);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();

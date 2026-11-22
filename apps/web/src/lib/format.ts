@@ -41,3 +41,11 @@ export function formatPostmark(
 
   return { day, time, label };
 }
+
+/** e.g. "November 2026", for "Joined November 2026". */
+export function formatMonthYear(
+  date: Date,
+  { locale = 'en', timeZone }: { locale?: string; timeZone?: string } = {},
+): string {
+  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone }).format(date);
+}

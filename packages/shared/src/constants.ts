@@ -25,6 +25,8 @@ export const RESERVED_USERNAMES: readonly string[] = [
 ];
 
 export const DISPLAY_NAME_MAX_LENGTH = 50;
+/** Measured in Unicode code points, like chirps; matches the `varchar(160)` column. */
+export const BIO_MAX_LENGTH = 160;
 export const EMAIL_MAX_LENGTH = 254;
 
 export const PASSWORD_MIN_LENGTH = 8;

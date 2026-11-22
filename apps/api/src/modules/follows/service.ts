@@ -1,8 +1,10 @@
-import type { FollowState } from '@chirp/shared';
+import type { FollowListUser, FollowState, Page, PageQuery } from '@chirp/shared';
 
 import type { PrismaClient } from '../../generated/prisma/client';
+import { decodeCursor, keysetAfterBy, newestFirstBy, toPage } from '../../lib/cursor';
 import { NotFoundError, ValidationError } from '../../lib/errors';
 import { isForeignKeyViolation } from '../../lib/prisma-errors';
+import { followListUserRowSelect, toFollowListUser } from '../../lib/serializers';
 
 export interface FollowsServiceDependencies {
   prisma: PrismaClient;
@@ -44,5 +46,61 @@ export function createFollowsService({ prisma }: FollowsServiceDependencies) {
     return stateOf(followingId, false);
   }
 
-  return { follow, unfollow };
+  /**
+   * Everyone who follows `username`, most recent follow first. Pages break ties on the
+   * follower's id, so the cursor is `(follow.createdAt, followerId)`.
+   */
+  async function followers(
+    viewerId: string,
+    username: string,
+    { cursor, limit }: PageQuery,
+  ): Promise<Page<FollowListUser>> {
+    // Decoded first, so a bad cursor is a 400 whether or not the user exists.
+    const after = cursor === undefined ? undefined : decodeCursor(cursor);
+    const followingId = await findUserId(username);
+    const rows = await prisma.follow.findMany({
+      where: { AND: [{ followingId }, keysetAfterBy(after, 'followerId')] },
+      orderBy: newestFirstBy('followerId'),
+      take: limit + 1,
+      select: {
+        createdAt: true,
+        followerId: true,
+        follower: { select: followListUserRowSelect(viewerId) },
+      },
+    });
+    return toPage(
+      rows,
+      limit,
+      (row) => toFollowListUser(row.follower),
+      (row) => ({ createdAt: row.createdAt, id: row.followerId }),
+    );
+  }
+
+  /** Everyone `username` follows, most recent follow first; cursor `(createdAt, followingId)`. */
+  async function following(
+    viewerId: string,
+    username: string,
+    { cursor, limit }: PageQuery,
+  ): Promise<Page<FollowListUser>> {
+    const after = cursor === undefined ? undefined : decodeCursor(cursor);
+    const followerId = await findUserId(username);
+    const rows = await prisma.follow.findMany({
+      where: { AND: [{ followerId }, keysetAfterBy(after, 'followingId')] },
+      orderBy: newestFirstBy('followingId'),
+      take: limit + 1,
+      select: {
+        createdAt: true,
+        followingId: true,
+        following: { select: followListUserRowSelect(viewerId) },
+      },
+    });
+    return toPage(
+      rows,
+      limit,
+      (row) => toFollowListUser(row.following),
+      (row) => ({ createdAt: row.createdAt, id: row.followingId }),
+    );
+  }
+
+  return { follow, unfollow, followers, following };
 }

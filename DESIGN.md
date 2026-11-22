@@ -448,6 +448,22 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Like toggle:** a 36px round icon button (20px Heart) pulled 8px left so the heart lines up with the text, then the count ("12 likes") in meta. At rest faded ink, the heart turning airmail red on hover with the paper wash. Liked: the heart **filled** in airmail red and the count in ink at 600, with `aria-pressed="true"`, so the state never lives in colour alone. Named "Like" in both states. It changes at once and rolls back with an error toast if the server refuses.
 - **Delete action:** a ghost `icon-sm` (36px) button with an 18px Trash icon, named "Delete chirp". It opens a confirmation modal ("Delete chirp?", what will happen, then Cancel as ghost and Delete as the outlined danger button, which takes focus). Delete shows its loading state; a failure keeps the dialog open with a form alert; success closes the dialog and then shows the "Your chirp was deleted" toast.
 
+### Profile header
+- A section named "Profile" on the sheet under the page heading (which carries the display name), 16px padding, 12px gaps, hairline below.
+- Top row: the large (80px) avatar at the start, the action at the end: **Follow** for other people (secondary, 44px); on your own profile **Edit profile** (secondary, with a 16px pencil icon), which opens the edit modal.
+- Then the display name (title size, 600) over the @handle (meta, faded ink); the bio in body text (capped at 65ch, line breaks kept), omitted when empty; "Joined November 2026" in meta faded ink after a 16px calendar icon; the counts as two links ("**12** Following", "**8** Followers", figures in ink at 600 and tabular, words in faded ink, underlined on hover) leading to the follow lists.
+- **Follow button:** secondary. "Follow" with a UserPlus icon; once following, "Following" with a UserCheck icon and `aria-pressed="true"`, so the state is in the words, the icon and the accessible state, never in colour. It changes at once (the follower count with it) and rolls back with an error toast if the server refuses.
+- **Unknown account:** the page heading "Account not found", then an empty state ("This account doesn’t exist", what to do) with a secondary "Search people" button link.
+
+### Edit profile modal
+- The standard modal titled "Edit profile": the large avatar beside a faded meta note ("Profile pictures are coming soon.") where the picture control will go, then the **Name** field (single line, a live code-point counter under it, focused on open) and the **Bio** field (three-row textarea with its counter and the hint "A few words about you, shown on your profile."). Over the limit, the counter turns danger at 600 and the field is marked invalid.
+- Actions: Cancel (ghost) and **Save** (primary, the screen's one red action), disabled until something changed and loading while it saves. Field problems sit on their fields; anything else in a form alert at the top. Cancel drops unsaved edits. Saving closes the dialog, then shows the "Your profile is saved" toast, and the new name appears at once in the header, the session and, after a refetch, every chirp and list.
+
+### Follow lists
+- **Tabs:** "Followers" and "Following" share one page under the display-name heading: two equal-width links on the sheet with a hairline below, 12px above each label. The current one is marked four ways: `aria-current="page"`, a bold label (700 against 500), airmail blue, and a 3px airmail blue bar under the label. Hover takes the paper wash. Switching replaces the history entry.
+- **Person row:** full bleed like a chirp row (12px × 16px padding, hairline below): the 44px avatar, then the display name (meta at 600, a link to the profile) over the @handle (faded meta), both truncating; the small Follow button at the end, absent on your own row.
+- **States:** the shared infinite list: a spinner while the first page loads, an alert with "Try again" when it fails, "That’s everyone." under the last person; empty lists say who will appear there.
+
 ### Avatar
 - A circle in three sizes: small 32px, default 44px, large 80px (profile header). It shows the user's picture, or, without one (or if it fails to load), white initials at 600 on one of the six avatar hues, derived from the user id. Up to two initials from the display name; "?" when there are none.
 - **Decorative by default** (`aria-hidden`, empty alt): beside a visible name, the name carries the identity and is not read twice. An avatar that stands alone takes an opt-in label and is then announced as an image with that name.
