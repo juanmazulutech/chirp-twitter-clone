@@ -143,6 +143,22 @@ describe('database schema', () => {
     },
   );
 
+  // Undeclared in schema.prisma, a trigram index is dropped by the next `migrate dev`; this
+  // fails if such a migration slips through (ADR-04).
+  it('keeps the trigram indexes that serve user search', async () => {
+    const indexes = await app.prisma.$queryRaw<Array<{ indexname: string; indexdef: string }>>`
+      SELECT indexname, indexdef FROM pg_indexes
+      WHERE tablename = 'users' AND indexname LIKE '%_trgm_idx'
+      ORDER BY indexname
+    `;
+
+    expect(indexes.map((index) => index.indexname)).toEqual([
+      'users_display_name_trgm_idx',
+      'users_username_trgm_idx',
+    ]);
+    for (const index of indexes) expect(index.indexdef).toMatch(/USING gin .*gin_trgm_ops/);
+  });
+
   it('starts every test from empty tables', async () => {
     expect(await app.prisma.user.count()).toBe(0);
     expect(await app.prisma.session.count()).toBe(0);

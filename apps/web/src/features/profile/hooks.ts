@@ -11,6 +11,7 @@ import { useRef } from 'react';
 
 import { useSession } from '@/features/auth/hooks';
 import { authKeys } from '@/features/auth/keys';
+import { searchKeys } from '@/features/search/keys';
 import { tweetKeys } from '@/features/tweets/keys';
 import { notify } from '@/lib/notify';
 
@@ -66,7 +67,8 @@ export function useFollowList(username: string, list: FollowList) {
 
 /**
  * Writes whether the viewer follows `username` into every cached place that shows it: their
- * profile (with its follower count, via `updateProfile`) and their row in any follow list.
+ * profile (with its follower count, via `updateProfile`) and their row in any follow list or
+ * search result.
  */
 function updateCachedFollow(
   queryClient: QueryClient,
@@ -78,9 +80,12 @@ function updateCachedFollow(
   queryClient.setQueryData<UserProfile>(profileKeys.detail(username), (profile) =>
     profile ? updateProfile(profile) : profile,
   );
-  queryClient.setQueriesData({ queryKey: profileKeys.all }, (data: unknown) =>
-    isFollowListPages(data) ? withFollowInPages(data, username, following) : data,
-  );
+  // Follow lists and search results show the same rows.
+  for (const queryKey of [profileKeys.all, searchKeys.all]) {
+    queryClient.setQueriesData({ queryKey }, (data: unknown) =>
+      isFollowListPages(data) ? withFollowInPages(data, username, following) : data,
+    );
+  }
 }
 
 /**
@@ -99,6 +104,7 @@ export function useFollowUser(username: string) {
       const toggle = latestToggle.current;
       // A fetch already on its way would land with the old state on top of this one.
       await queryClient.cancelQueries({ queryKey: profileKeys.all });
+      await queryClient.cancelQueries({ queryKey: searchKeys.all });
       updateCachedFollow(queryClient, username, following);
       return { toggle };
     },

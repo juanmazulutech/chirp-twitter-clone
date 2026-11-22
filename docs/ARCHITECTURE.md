@@ -309,7 +309,7 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | POST | `/auth/login` | — | `{ email, password }` | `200 { user: UserSummary }` + cookie | generic 401; rate limited |
 | POST | `/auth/logout` | — | — | `204` | idempotent: deletes the current session (if any) and clears the cookie |
 | GET | `/auth/me` | 🔒 | — | `200 { user: SessionUser }` | includes the private email; public profiles with counts come from `GET /users/:username` |
-| GET | `/users/search` | 🔒 | `?q=&cursor=&limit=` | `200 Page<UserSummary>` | `q` 1–50 chars; matches username or display name |
+| GET | `/users/search` | 🔒 | `?q=&cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | `q` 1–50 chars after trimming and dropping a leading `@`; matches username or display name; exact username, then username prefix, then the rest |
 | GET | `/users/:username` | 🔒 | — | `200 UserProfile` | 404 |
 | PATCH | `/users/me` | 🔒 | `{ displayName?, bio?, avatarKey?: string \| null }` | `200 UserProfile` | `avatarKey` ownership verified |
 | GET | `/users/:username/tweets` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | |
