@@ -4,6 +4,8 @@ import {
   followStateSchema,
   pageSchema,
   tweetSchema,
+  type UpdateProfileBody,
+  type UserProfile,
   userProfileSchema,
 } from '@chirp/shared';
 
@@ -49,4 +51,9 @@ export function getFollowList(
     schema: followListPageSchema,
     signal,
   });
+}
+
+/** Changes the signed-in user's display name and bio; only the fields sent change. */
+export function updateProfile(body: UpdateProfileBody): Promise<UserProfile> {
+  return apiRequest('/users/me', { method: 'PATCH', body, schema: userProfileSchema });
 }

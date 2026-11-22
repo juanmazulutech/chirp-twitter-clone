@@ -1,4 +1,4 @@
-import type { FollowListUser, Page, Tweet, UserProfile } from '@chirp/shared';
+import type { FollowListUser, Page, SessionUser, Tweet, UserProfile } from '@chirp/shared';
 import {
   type InfiniteData,
   type QueryClient,
@@ -10,10 +10,11 @@ import {
 import { useRef } from 'react';
 
 import { useSession } from '@/features/auth/hooks';
+import { authKeys } from '@/features/auth/keys';
 import { tweetKeys } from '@/features/tweets/keys';
 import { notify } from '@/lib/notify';
 
-import { getFollowList, getProfile, getUserTweets, setFollow } from './api';
+import { getFollowList, getProfile, getUserTweets, setFollow, updateProfile } from './api';
 import { isFollowListPages, withFollow, withFollowInPages } from './follow-cache';
 import { type FollowList, profileKeys } from './keys';
 
@@ -120,6 +121,29 @@ export function useFollowUser(username: string) {
       void queryClient.invalidateQueries({ queryKey: tweetKeys.timeline });
       // The viewer's own profile and following list changed too (the key prefixes both).
       if (user) void queryClient.invalidateQueries({ queryKey: profileKeys.detail(user.username) });
+    },
+  });
+}
+
+/**
+ * Saves the viewer's display name and bio. The profile and the session take the server's
+ * answer at once; chirps and lists that show the old name are refetched.
+ */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateProfile,
+    onSuccess: (profile) => {
+      queryClient.setQueryData(profileKeys.detail(profile.username), profile);
+      queryClient.setQueryData<SessionUser | null>(authKeys.session, (session) =>
+        session ? { ...session, displayName: profile.displayName, bio: profile.bio } : session,
+      );
+      void queryClient.invalidateQueries({ queryKey: tweetKeys.all });
+      // Follow lists show the name too; the profile just set is fresh, so it is skipped.
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.all,
+        predicate: (query) => query.queryKey.length > 2,
+      });
     },
   });
 }

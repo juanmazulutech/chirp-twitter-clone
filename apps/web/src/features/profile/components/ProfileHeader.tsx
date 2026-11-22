@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatMonthYear } from '@/lib/format';
 
+import { EditProfileButton } from './EditProfileButton';
 import { FollowButton } from './FollowButton';
 
 function countLabel(count: number, one: string, many: string) {
@@ -27,8 +28,9 @@ export function ProfileHeader({ profile }: { profile: UserProfile }) {
     >
       <div className="flex items-start justify-between gap-3">
         <Avatar name={profile.displayName} userId={profile.id} src={profile.avatarUrl} size="lg" />
-        {/* Your own profile gets "Edit profile" here with the edit modal (C34). */}
-        {profile.isMe ? null : (
+        {profile.isMe ? (
+          <EditProfileButton profile={profile} />
+        ) : (
           <FollowButton username={profile.username} isFollowing={profile.isFollowing} />
         )}
       </div>

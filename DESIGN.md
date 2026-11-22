@@ -450,10 +450,14 @@ What a list shows when there is nothing in it yet, and what to do about it.
 
 ### Profile header
 - A section named "Profile" on the sheet under the page heading (which carries the display name), 16px padding, 12px gaps, hairline below.
-- Top row: the large (80px) avatar at the start, the action at the end: **Follow** for other people (secondary, 44px), nothing on your own profile until "Edit profile" (C34).
+- Top row: the large (80px) avatar at the start, the action at the end: **Follow** for other people (secondary, 44px); on your own profile **Edit profile** (secondary, with a 16px pencil icon), which opens the edit modal.
 - Then the display name (title size, 600) over the @handle (meta, faded ink); the bio in body text (capped at 65ch, line breaks kept), omitted when empty; "Joined November 2026" in meta faded ink after a 16px calendar icon; the counts as two links ("**12** Following", "**8** Followers", figures in ink at 600 and tabular, words in faded ink, underlined on hover) leading to the follow lists.
 - **Follow button:** secondary. "Follow" with a UserPlus icon; once following, "Following" with a UserCheck icon and `aria-pressed="true"`, so the state is in the words, the icon and the accessible state, never in colour. It changes at once (the follower count with it) and rolls back with an error toast if the server refuses.
 - **Unknown account:** the page heading "Account not found", then an empty state ("This account doesn’t exist", what to do) with a secondary "Search people" button link.
+
+### Edit profile modal
+- The standard modal titled "Edit profile": the large avatar beside a faded meta note ("Profile pictures are coming soon.") where the picture control will go, then the **Name** field (single line, a live code-point counter under it, focused on open) and the **Bio** field (three-row textarea with its counter and the hint "A few words about you, shown on your profile."). Over the limit, the counter turns danger at 600 and the field is marked invalid.
+- Actions: Cancel (ghost) and **Save** (primary, the screen's one red action), disabled until something changed and loading while it saves. Field problems sit on their fields; anything else in a form alert at the top. Cancel drops unsaved edits. Saving closes the dialog, then shows the "Your profile is saved" toast, and the new name appears at once in the header, the session and, after a refetch, every chirp and list.
 
 ### Follow lists
 - **Tabs:** "Followers" and "Following" share one page under the display-name heading: two equal-width links on the sheet with a hairline below, 12px above each label. The current one is marked four ways: `aria-current="page"`, a bold label (700 against 500), airmail blue, and a 3px airmail blue bar under the label. Hover takes the paper wash. Switching replaces the history entry.
