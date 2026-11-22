@@ -4,5 +4,6 @@ export * from './schemas/errors';
 export * from './schemas/follows';
 export * from './schemas/pagination';
 export * from './schemas/tweets';
+export * from './schemas/uploads';
 export * from './schemas/users';
 export * from './text';

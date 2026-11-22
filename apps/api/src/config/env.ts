@@ -1,3 +1,4 @@
+import { IMAGE_MAX_BYTES } from '@chirp/shared';
 import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -49,6 +50,8 @@ export const envSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().min(1).default('chirpsecret'),
   // Local S3-compatible servers need path-style URLs (http://host/bucket/key).
   S3_FORCE_PATH_STYLE: booleanString.default(true),
+  // Largest image a presigned upload accepts; can only lower the shared 5 MB limit.
+  UPLOAD_MAX_BYTES: z.coerce.number().int().min(1).max(IMAGE_MAX_BYTES).default(IMAGE_MAX_BYTES),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -5,6 +5,7 @@ import followsRoutes from './follows/routes';
 import healthRoutes from './health/routes';
 import timelineRoutes from './timeline/routes';
 import tweetsRoutes from './tweets/routes';
+import uploadsRoutes from './uploads/routes';
 
 /**
  * Registers every feature module under the `/api` prefix.
@@ -16,6 +17,7 @@ const modules: FastifyPluginAsync = async (app) => {
   await app.register(tweetsRoutes);
   await app.register(followsRoutes);
   await app.register(timelineRoutes);
+  await app.register(uploadsRoutes);
 };
 
 export default modules;

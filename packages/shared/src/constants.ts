@@ -33,3 +33,8 @@ export const PASSWORD_MAX_LENGTH = 72;
 /** Page sizes for every cursor-paginated list (ADR-11). */
 export const PAGE_SIZE_DEFAULT = 20;
 export const PAGE_SIZE_MAX = 50;
+
+/** Image types accepted for uploads; SVG is excluded (script injection when opened directly, ADR-14). */
+export const IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
+/** Largest accepted image (ADR-14); the API may lower it with `UPLOAD_MAX_BYTES`. */
+export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
