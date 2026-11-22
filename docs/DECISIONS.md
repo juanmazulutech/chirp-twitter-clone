@@ -132,13 +132,18 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 
   ```ts
   where: {
-    ...filters,
-    ...(cursor && {
-      OR: [
-        { createdAt: { lt: cursor.createdAt } },
-        { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-      ],
-    }),
+    // AND, not spread: filters with their own OR (the timeline's) would be overwritten.
+    AND: [
+      filters,
+      cursor
+        ? {
+            OR: [
+              { createdAt: { lt: cursor.createdAt } },
+              { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+            ],
+          }
+        : {},
+    ],
   },
   orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
   take: limit + 1,
@@ -147,7 +152,8 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Context:** offset pagination degrades with table size and duplicates or skips rows when new tweets arrive while scrolling. The `id` only breaks ties between identical timestamps, so it just needs to be comparable — UUIDs are.
 - **Why not Prisma's native `cursor: { id }`:** it requires the cursor row to still exist; deleting that tweet mid-scroll breaks pagination. The explicit cursor depends on no row.
 - **Precision:** Prisma stores `timestamp(3)` (milliseconds), the same precision as a JS `Date`, so cursors round-trip exactly.
-- **Limits:** default page size 20, maximum 50.
+- **Limits:** default page size 20, maximum 50; a `limit` outside 1–50 is rejected with 400 rather than clamped.
+- **Implementation:** `src/lib/cursor.ts` (`encodeCursor`, `decodeCursor`, `keysetAfter`, `newestFirst`, `toPage`); a malformed cursor is a 400 `VALIDATION_ERROR` on the `cursor` field.
 
 ## ADR-12 · Timeline: fan-out on read
 

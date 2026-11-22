@@ -1,11 +1,19 @@
 import type { SessionUser, Tweet as TweetDto, UserSummary } from '@chirp/shared';
 
-import type { Tweet, User } from '../generated/prisma/client';
+import type { Prisma, Tweet, User } from '../generated/prisma/client';
 
 type UserSummaryRow = Pick<User, 'id' | 'username' | 'displayName'>;
 
 /** A tweet row with the author fields its DTO embeds. */
 export type TweetRow = Pick<Tweet, 'id' | 'content' | 'createdAt'> & { author: UserSummaryRow };
+
+/** Selects exactly the columns of a `TweetRow`, for every query that returns tweets. */
+export const tweetRowSelect = {
+  id: true,
+  content: true,
+  createdAt: true,
+  author: { select: { id: true, username: true, displayName: true } },
+} as const satisfies Prisma.TweetSelect;
 
 /** Database rows become API DTOs only here, so internal fields never leak by accident. */
 export function toUserSummary(user: UserSummaryRow): UserSummary {

@@ -29,3 +29,7 @@ export const EMAIL_MAX_LENGTH = 254;
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 72;
+
+/** Page sizes for every cursor-paginated list (ADR-11). */
+export const PAGE_SIZE_DEFAULT = 20;
+export const PAGE_SIZE_MAX = 50;

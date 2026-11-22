@@ -2,19 +2,11 @@ import type { CreateTweetBody, Tweet } from '@chirp/shared';
 
 import type { PrismaClient } from '../../generated/prisma/client';
 import { ForbiddenError, NotFoundError } from '../../lib/errors';
-import { toTweet } from '../../lib/serializers';
+import { toTweet, tweetRowSelect } from '../../lib/serializers';
 
 export interface TweetsServiceDependencies {
   prisma: PrismaClient;
 }
-
-/** Only the columns a tweet DTO needs, author included. */
-const tweetSelect = {
-  id: true,
-  content: true,
-  createdAt: true,
-  author: { select: { id: true, username: true, displayName: true } },
-} as const;
 
 export type TweetsService = ReturnType<typeof createTweetsService>;
 
@@ -22,13 +14,13 @@ export function createTweetsService({ prisma }: TweetsServiceDependencies) {
   async function create(authorId: string, { content }: CreateTweetBody): Promise<Tweet> {
     const tweet = await prisma.tweet.create({
       data: { authorId, content },
-      select: tweetSelect,
+      select: tweetRowSelect,
     });
     return toTweet(tweet);
   }
 
   async function get(id: string): Promise<Tweet> {
-    const tweet = await prisma.tweet.findUnique({ where: { id }, select: tweetSelect });
+    const tweet = await prisma.tweet.findUnique({ where: { id }, select: tweetRowSelect });
     if (!tweet) throw new NotFoundError('Tweet');
     return toTweet(tweet);
   }
