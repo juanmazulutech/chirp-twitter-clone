@@ -1,8 +1,9 @@
 import type { Page, PageQuery, Tweet, UpdateProfileBody, UserProfile } from '@chirp/shared';
+import type { FastifyBaseLogger } from 'fastify';
 
 import type { PrismaClient } from '../../generated/prisma/client';
 import { decodeCursor, keysetAfter, newestFirst, toPage } from '../../lib/cursor';
-import { NotFoundError } from '../../lib/errors';
+import { NotFoundError, ValidationError } from '../../lib/errors';
 import {
   toTweet,
   toUserProfile,
@@ -13,29 +14,62 @@ import type { StorageService } from '../../lib/storage';
 
 export interface UsersServiceDependencies {
   prisma: PrismaClient;
-  storage: Pick<StorageService, 'publicUrl'>;
+  storage: StorageService;
+  /** Records failures that must not fail the request (a replaced picture left behind). */
+  log: Pick<FastifyBaseLogger, 'warn'>;
 }
 
 export type UsersService = ReturnType<typeof createUsersService>;
 
-export function createUsersService({ prisma, storage }: UsersServiceDependencies) {
+const UNUSABLE_AVATAR = 'This picture can’t be used. Upload it again.';
+
+function unusableAvatar(): ValidationError {
+  return new ValidationError(UNUSABLE_AVATAR, { fieldErrors: { avatarKey: [UNUSABLE_AVATAR] } });
+}
+
+export function createUsersService({ prisma, storage, log }: UsersServiceDependencies) {
+  const publicUrl = (key: string) => storage.publicUrl(key);
+
   async function profile(viewerId: string, username: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { username },
       select: userProfileRowSelect(viewerId),
     });
     if (!user) throw new NotFoundError('User');
-    return toUserProfile(user, viewerId);
+    return toUserProfile(user, viewerId, publicUrl);
   }
 
-  /** Only the fields sent change; an empty body returns the profile untouched. */
+  /**
+   * Only the fields sent change; an empty body returns the profile untouched. A new picture
+   * must be the user's own avatar upload and must have arrived, like chirp images (ADR-14);
+   * the picture it replaces (or that `null` removes) is deleted best-effort.
+   */
   async function updateProfile(userId: string, changes: UpdateProfileBody): Promise<UserProfile> {
+    const { avatarKey } = changes;
+    if (typeof avatarKey === 'string') {
+      if (!avatarKey.startsWith(`users/${userId}/avatar/`)) throw unusableAvatar();
+      if (!(await storage.exists(avatarKey))) throw unusableAvatar();
+    }
+
+    const before = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { avatarKey: true },
+    });
     const user = await prisma.user.update({
       where: { id: userId },
       data: changes,
       select: userProfileRowSelect(userId),
     });
-    return toUserProfile(user, userId);
+
+    const replaced = before.avatarKey;
+    if (avatarKey !== undefined && replaced !== null && replaced !== avatarKey) {
+      try {
+        await storage.delete(replaced);
+      } catch (error) {
+        log.warn({ err: error, key: replaced }, 'Could not delete a replaced profile picture');
+      }
+    }
+    return toUserProfile(user, userId, publicUrl);
   }
 
   /** One user's chirps, newest first, with the viewer's likes (ADR-11, ADR-13). */
@@ -55,7 +89,7 @@ export function createUsersService({ prisma, storage }: UsersServiceDependencies
       take: limit + 1,
       select: tweetRowSelect(viewerId),
     });
-    return toPage(rows, limit, (row) => toTweet(row, (key) => storage.publicUrl(key)));
+    return toPage(rows, limit, (row) => toTweet(row, publicUrl));
   }
 
   return { profile, updateProfile, tweets };

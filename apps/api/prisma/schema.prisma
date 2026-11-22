@@ -17,6 +17,8 @@ model User {
   username     String   @unique @db.VarChar(15)
   displayName  String   @map("display_name") @db.VarChar(50)
   bio          String   @default("") @db.VarChar(160)
+  // Object key of the uploaded profile picture (ADR-14); null shows initials.
+  avatarKey    String?  @map("avatar_key")
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

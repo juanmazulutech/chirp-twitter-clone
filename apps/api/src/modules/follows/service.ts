@@ -5,14 +5,18 @@ import { decodeCursor, keysetAfterBy, newestFirstBy, toPage } from '../../lib/cu
 import { NotFoundError, ValidationError } from '../../lib/errors';
 import { isForeignKeyViolation } from '../../lib/prisma-errors';
 import { followListUserRowSelect, toFollowListUser } from '../../lib/serializers';
+import type { StorageService } from '../../lib/storage';
 
 export interface FollowsServiceDependencies {
   prisma: PrismaClient;
+  storage: Pick<StorageService, 'publicUrl'>;
 }
 
 export type FollowsService = ReturnType<typeof createFollowsService>;
 
-export function createFollowsService({ prisma }: FollowsServiceDependencies) {
+export function createFollowsService({ prisma, storage }: FollowsServiceDependencies) {
+  const publicUrl = (key: string) => storage.publicUrl(key);
+
   async function findUserId(username: string): Promise<string> {
     const user = await prisma.user.findUnique({ where: { username }, select: { id: true } });
     if (!user) throw new NotFoundError('User');
@@ -71,7 +75,7 @@ export function createFollowsService({ prisma }: FollowsServiceDependencies) {
     return toPage(
       rows,
       limit,
-      (row) => toFollowListUser(row.follower),
+      (row) => toFollowListUser(row.follower, publicUrl),
       (row) => ({ createdAt: row.createdAt, id: row.followerId }),
     );
   }
@@ -97,7 +101,7 @@ export function createFollowsService({ prisma }: FollowsServiceDependencies) {
     return toPage(
       rows,
       limit,
-      (row) => toFollowListUser(row.following),
+      (row) => toFollowListUser(row.following, publicUrl),
       (row) => ({ createdAt: row.createdAt, id: row.followingId }),
     );
   }

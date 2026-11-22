@@ -1,25 +1,16 @@
 import type { CreateTweetBody, PresignUploadBody } from '@chirp/shared';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { apiError } from '@/test/msw/errors';
 import { tweetCreated } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
+import { pngFile as png, storageAccepts, storageResponse } from '@/test/msw/storage';
 import { renderRoute } from '@/test/render';
 
-const UPLOAD_URL = 'http://storage.test/chirp-media/users/me/tweet/abc.png';
 const KEY = 'users/me/tweet/abc.png';
-
-/** The bucket's CORS answer for the web origin, as `storage-init` configures it. */
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'PUT',
-  'Access-Control-Allow-Headers': 'content-type',
-};
-
-const png = (bytes = 8) => new File([new Uint8Array(bytes)], 'photo.png', { type: 'image/png' });
 
 /** A response the test releases when it is ready, to look at the UI while a request is open. */
 function gate() {
@@ -28,25 +19,6 @@ function gate() {
     release = resolve;
   });
   return { opened, release };
-}
-
-/** Presign and storage as they behave for real; `put` can delay or fail the upload. */
-function storageAccepts({
-  onPresign = () => {},
-  put = () => new HttpResponse(null, { status: 200, headers: CORS_HEADERS }),
-}: {
-  onPresign?: (body: PresignUploadBody) => void;
-  put?: () => Response | Promise<Response>;
-} = {}) {
-  server.use(
-    http.post('/api/uploads/presign', async ({ request }) => {
-      onPresign((await request.json()) as PresignUploadBody);
-      return HttpResponse.json({ uploadUrl: UPLOAD_URL, key: KEY });
-    }),
-    // The upload is cross-origin, so the browser asks the bucket first (CORS preflight).
-    http.options(UPLOAD_URL, () => new HttpResponse(null, { status: 204, headers: CORS_HEADERS })),
-    http.put(UPLOAD_URL, put),
-  );
 }
 
 async function renderComposer(options: Parameters<typeof userEvent.setup>[0] = {}) {
@@ -70,7 +42,7 @@ describe('Composer images', () => {
   it('uploads a picked image, previews it and posts it with the chirp', async () => {
     const presigned: PresignUploadBody[] = [];
     const posted: CreateTweetBody[] = [];
-    storageAccepts({ onPresign: (body) => presigned.push(body) });
+    storageAccepts({ key: KEY, onPresign: (body) => presigned.push(body) });
     server.use(tweetCreated((body) => posted.push(body)));
     const { user, textbox, composer, fileInput, submit } = await renderComposer();
 
@@ -93,9 +65,10 @@ describe('Composer images', () => {
   it('holds the chirp back while the image is still uploading', async () => {
     const upload = gate();
     storageAccepts({
+      key: KEY,
       put: async () => {
         await upload.opened;
-        return new HttpResponse(null, { status: 200, headers: CORS_HEADERS });
+        return storageResponse(200);
       },
     });
     const { user, textbox, composer, fileInput, submit } = await renderComposer();
@@ -118,7 +91,7 @@ describe('Composer images', () => {
 
   it('posts without the image once it is removed', async () => {
     const posted: CreateTweetBody[] = [];
-    storageAccepts();
+    storageAccepts({ key: KEY });
     server.use(tweetCreated((body) => posted.push(body)));
     const { user, textbox, composer, fileInput, submit } = await renderComposer();
     await user.upload(fileInput, png());
@@ -133,7 +106,7 @@ describe('Composer images', () => {
 
   it('refuses a file type the API would refuse, without asking it', async () => {
     const presigned: PresignUploadBody[] = [];
-    storageAccepts({ onPresign: (body) => presigned.push(body) });
+    storageAccepts({ key: KEY, onPresign: (body) => presigned.push(body) });
     // The picker's `accept` filters types in browsers; drag-and-drop and some pickers do not.
     const { user, composer, fileInput } = await renderComposer({ applyAccept: false });
 
@@ -149,7 +122,7 @@ describe('Composer images', () => {
 
   it('refuses an image over 5 MB before uploading it', async () => {
     const presigned: PresignUploadBody[] = [];
-    storageAccepts({ onPresign: (body) => presigned.push(body) });
+    storageAccepts({ key: KEY, onPresign: (body) => presigned.push(body) });
     const { user, composer, fileInput } = await renderComposer();
 
     await user.upload(fileInput, png(5 * 1024 * 1024 + 1));
@@ -159,7 +132,7 @@ describe('Composer images', () => {
   });
 
   it('explains a failed upload and keeps the chirp unpostable until the image is removed', async () => {
-    storageAccepts({ put: () => new HttpResponse(null, { status: 403, headers: CORS_HEADERS }) });
+    storageAccepts({ key: KEY, put: () => storageResponse(403) });
     const { user, textbox, composer, fileInput, submit } = await renderComposer();
     await user.type(textbox, 'Broken pic');
 
@@ -187,7 +160,7 @@ describe('Composer images', () => {
   });
 
   it('shows the API’s reason when it refuses the attached image', async () => {
-    storageAccepts();
+    storageAccepts({ key: KEY });
     server.use(
       http.post('/api/tweets', () =>
         apiError(400, 'VALIDATION_ERROR', 'This image can’t be used. Upload it again.', {
