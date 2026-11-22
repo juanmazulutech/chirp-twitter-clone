@@ -46,6 +46,15 @@ describe('usernameSchema', () => {
     expect(result.error?.issues[0]?.message).toBe('This username is not available');
   });
 
+  it.each([
+    ['', 'Choose a username'],
+    ['ab', 'Use at least 3 characters'],
+    ['a'.repeat(16), 'Use at most 15 characters'],
+    ['ana.dev', 'Use only letters, numbers and underscores'],
+  ])('explains what is wrong with "%s" first', (value, message) => {
+    expect(usernameSchema.safeParse(value).error?.issues[0]?.message).toBe(message);
+  });
+
   it('accepts names that only contain a reserved word', () => {
     expect(usernameSchema.safeParse('home_cook').success).toBe(true);
   });
@@ -76,6 +85,13 @@ describe('newPasswordSchema', () => {
   it('rejects fewer than 8 or more than 72 characters', () => {
     expect(newPasswordSchema.safeParse('a'.repeat(7)).success).toBe(false);
     expect(newPasswordSchema.safeParse('a'.repeat(73)).success).toBe(false);
+  });
+
+  it.each([
+    ['', 'Choose a password'],
+    ['short', 'Use at least 8 characters'],
+  ])('explains what is wrong with "%s" first', (value, message) => {
+    expect(newPasswordSchema.safeParse(value).error?.issues[0]?.message).toBe(message);
   });
 
   it('keeps spaces, which are part of the password', () => {

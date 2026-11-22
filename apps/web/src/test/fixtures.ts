@@ -10,3 +10,13 @@ export const sessionUser: SessionUser = {
   bio: 'Writes code, reads poetry.',
   createdAt: '2026-11-01T09:30:00.000Z',
 };
+
+/** What `POST /auth/login` and `/auth/register` answer with for `sessionUser`. */
+export const authResponse = {
+  user: {
+    id: sessionUser.id,
+    username: sessionUser.username,
+    displayName: sessionUser.displayName,
+    avatarUrl: sessionUser.avatarUrl,
+  },
+};

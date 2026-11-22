@@ -1,16 +1,22 @@
-import { PagePlaceholder } from '@/app/layout/PagePlaceholder';
-import { ButtonLink } from '@/components/ui/Button';
+import { Link } from 'react-router';
+
+import { AuthLayout } from '../components/AuthLayout';
+import { LoginForm } from '../components/LoginForm';
 
 export function LoginPage() {
   return (
-    <main className="mx-auto min-h-dvh max-w-md bg-sheet sm:my-12 sm:min-h-0 sm:rounded-card sm:border sm:border-hairline">
-      <PagePlaceholder
-        heading="Signing in is on its way"
-        title="Sign in"
-        description="Sign in with your email and password."
-      >
-        <ButtonLink to="/register">Create an account</ButtonLink>
-      </PagePlaceholder>
-    </main>
+    <AuthLayout
+      title="Sign in to Chirp"
+      footer={
+        <>
+          New to Chirp?{' '}
+          <Link to="/register" className="font-medium text-airmail-blue underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <LoginForm />
+    </AuthLayout>
   );
 }

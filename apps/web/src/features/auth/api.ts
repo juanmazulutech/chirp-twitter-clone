@@ -1,4 +1,11 @@
-import { sessionResponseSchema, type SessionUser } from '@chirp/shared';
+import {
+  type AuthResponse,
+  authResponseSchema,
+  type LoginBody,
+  type RegisterBody,
+  sessionResponseSchema,
+  type SessionUser,
+} from '@chirp/shared';
 
 import { apiRequest, isApiError } from '@/lib/api-client';
 
@@ -11,4 +18,14 @@ export async function fetchSession(signal?: AbortSignal): Promise<SessionUser | 
     if (isApiError(error, 401)) return null;
     throw error;
   }
+}
+
+/** Starts a session; the API sets the session cookie. */
+export function login(body: LoginBody): Promise<AuthResponse> {
+  return apiRequest('/auth/login', { method: 'POST', body, schema: authResponseSchema });
+}
+
+/** Creates the account and signs it in. */
+export function register(body: RegisterBody): Promise<AuthResponse> {
+  return apiRequest('/auth/register', { method: 'POST', body, schema: authResponseSchema });
 }

@@ -29,14 +29,16 @@ describe('routes', () => {
   });
 
   it.each([
-    ['/login', 'Sign in'],
+    ['/login', 'Sign in to Chirp'],
     ['/register', 'Create your account'],
   ])('renders %s without the app shell', async (path, heading) => {
     renderRoute(path);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
-    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    // The wordmark header stays; the signed-in navigation and compose button do not.
+    expect(screen.getByRole('banner')).toHaveTextContent('Chirp');
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New chirp' })).not.toBeInTheDocument();
   });
 
   it('names the browser tab after the page', async () => {

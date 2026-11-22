@@ -29,16 +29,17 @@ export const usernameSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .regex(
-    USERNAME_PATTERN,
-    `Use ${USERNAME_MIN_LENGTH}–${USERNAME_MAX_LENGTH} letters, numbers or underscores`,
-  )
+  // One message per problem, so an error never just repeats the field's hint.
+  .min(1, 'Choose a username')
+  .min(USERNAME_MIN_LENGTH, `Use at least ${USERNAME_MIN_LENGTH} characters`)
+  .max(USERNAME_MAX_LENGTH, `Use at most ${USERNAME_MAX_LENGTH} characters`)
+  .regex(USERNAME_PATTERN, 'Use only letters, numbers and underscores')
   .refine((value) => !RESERVED_USERNAMES.includes(value), 'This username is not available');
 
 export const displayNameSchema = z
   .string()
   .trim()
-  .refine((value) => countCharacters(value) > 0, 'Enter a display name')
+  .refine((value) => countCharacters(value) > 0, 'Enter your name')
   .refine(
     (value) => countCharacters(value) <= DISPLAY_NAME_MAX_LENGTH,
     `Use at most ${DISPLAY_NAME_MAX_LENGTH} characters`,
@@ -47,6 +48,7 @@ export const displayNameSchema = z
 /** Rules for choosing a password. Never trimmed: spaces are part of the password. */
 export const newPasswordSchema = z
   .string()
+  .refine((value) => value.length > 0, 'Choose a password')
   .refine(
     (value) => countCharacters(value) >= PASSWORD_MIN_LENGTH,
     `Use at least ${PASSWORD_MIN_LENGTH} characters`,

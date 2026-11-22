@@ -222,6 +222,22 @@ components:
     textColor: "{colors.airmail-blue}"
     rounded: "{rounded.full}"
     padding: "8px 16px"
+  auth-column:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "32px"
+    width: "28rem"
+  form-alert:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.danger}"
+    rounded: "{rounded.field}"
+    padding: "10px 12px"
+  password-toggle:
+    textColor: "{colors.ink-muted}"
+    width: "44px"
+  password-toggle-hover:
+    textColor: "{colors.ink}"
 ---
 
 # Design System: Chirp
@@ -289,7 +305,7 @@ Six fixed mid-dark hues (`avatar-1` … `avatar-6`: green, rust, violet, steel b
 **Character:** One grotesque family doing every job: slightly wide and sturdy, like the sans of a stamped form, tightened at the top of the hierarchy and opened up only in the postmark.
 
 ### Hierarchy
-- **Headline** (700, 1.5rem, 2rem, -0.02em): page titles ("Home", "Search", "Page not found").
+- **Headline** (700, 1.5rem, 2rem, -0.02em): page titles ("Home", "Search", "Page not found", "Sign in to Chirp").
 - **Wordmark** (700, 1.25rem, 1.75rem, -0.02em): the "Chirp" wordmark in the header.
 - **Title** (600, 1.125rem, 1.75rem): section headings, modal titles, empty-state titles, the route-error heading; also the size of the rail's navigation labels (500, 700 for the current page).
 - **Body** (400, 0.9375rem, 1.25rem): chirp text, modal body, toast messages; display names sit at 600 in the meta size. Long prose is capped at 65ch.
@@ -318,7 +334,9 @@ The shell is three columns centred on the paper ground: the left rail, the feed 
 - **Overlays:** modals centre in the viewport at up to 32rem wide, keeping 1rem clear on each side of a phone. Toasts stack bottom centre, lifted 80px on phones to clear the 64px bottom navigation.
 - **Scroll:** the page always reserves its scrollbar gutter (`scrollbar-gutter: stable`), so moving between short and long pages never shifts the layout sideways. While a modal is open the gutter is traded for padding of the same width (`lockPageScroll`), so the scrim covers the whole window, including where a classic scrollbar sat, and the content stays put.
 
-The shell lives in `apps/web/src/app/layout/`; the primitives and the chirp row are also rendered at `/styleguide`.
+- **Signed-out frame (sign in, create account):** no rail, no bottom navigation, no side panel. A full-width sheet header (56px, the wordmark, the chevron beneath it) sits over one column of form. On phones the column is the sheet itself, full bleed, filling the rest of the viewport with a 16px gutter and 32px top and bottom padding. From 640px it becomes a 28rem (`max-w-md`) bordered sheet card on the paper, 48px below the header and 32px gutters; the header's wordmark lines up with the column's edge. Inside, 24px separates the headline, the form and a footer line that sits under a hairline (24px above its text) and links to the other screen.
+
+The shell lives in `apps/web/src/app/layout/`; the signed-out frame in `apps/web/src/features/auth/components/AuthLayout.tsx`; the primitives and the chirp row are also rendered at `/styleguide`.
 
 ### Named Rules
 **The Full Bleed Feed Rule.** Feed rows run edge to edge on the sheet and are separated by hairlines. They are never cards, and never cards inside cards.
@@ -340,8 +358,8 @@ Three things leave the page. Toasts and the phone's floating compose button floa
 Three radii do all the work: the circle, the softly rounded card and the gently rounded field.
 
 - **Circles** (`rounded.full`): avatars (32, 44 and 80px), the postmark ring (56px), every button (a pill at 44px or 36px tall, or a 48px circle when it holds only an icon), the modal's 36px close button, the rail's navigation items and the bottom navigation's 56×32px current-page pill.
-- **Cards** (`rounded.card`, 0.875rem): panels, modals and toasts: containers that are not feed rows. Cards stay in the 12–16px range; pills are reserved for controls.
-- **Fields** (`rounded.field`, 0.5rem): text inputs and textareas, a tighter corner than the card so a form reads as writing space, not as another panel.
+- **Cards** (`rounded.card`, 0.875rem): panels, modals, toasts and the signed-out column from 640px: containers that are not feed rows. Cards stay in the 12–16px range; pills are reserved for controls.
+- **Fields** (`rounded.field`, 0.5rem): text inputs, textareas and the form alert, a tighter corner than the card so a form reads as writing space, not as another panel.
 - **The chevron edge:** a 4px band of repeating 135° stripes (10px red, 6px sheet, 10px blue, 6px sheet), the airmail envelope border.
 
 ### Named Rules
@@ -374,6 +392,25 @@ A labelled control, accessible by construction: label, control, hint and error a
 - **Focus:** the global focus ring.
 - **Error:** the control's border turns danger and it is marked invalid; the message below is danger text at 500 led by a 16px alert icon, so it never relies on colour alone. A textarea over its limit is marked invalid too.
 - **Disabled:** 50% opacity, not-allowed cursor.
+
+### Password field
+A password input that can show what was typed, which saves retyping on phones.
+- The field's input with a toggle inside its right edge: a 44px-wide, full-height button (the input reserves 48px of right padding for it) holding a 20px Eye icon, EyeOff while the password is shown; faded ink, ink on hover.
+- Its name stays "Show password" in both states; `aria-pressed` carries whether it is on, so the state never lives in the icon alone.
+- `PasswordInput` in `apps/web/src/features/auth/components/`; it is wrapped in a `Field` like any input.
+
+### Form alert
+A problem with the whole form rather than one field: wrong credentials, too many attempts, no connection.
+- `FormAlert` (`apps/web/src/components/ui/FormAlert.tsx`): the sheet with a 1px danger border, the field radius, 10px × 12px padding; meta-size danger text at 500 led by a 16px alert-circle icon, 8px apart.
+- `role="alert"`, so it is announced when it appears. It sits at the top of the form, above the first field, and clears when the form is submitted again or the demo account is filled in.
+- Field problems stay on their fields (the first one takes focus); the alert carries only what no single field owns (`applyServerError`, `apps/web/src/lib/form-errors.ts`).
+
+### Auth forms
+- **Sign in** ("Sign in to Chirp"): Email, then Password with the show toggle; no hints. Then, 12px apart, the full-width red "Sign in" and a full-width secondary "Use the demo account", which fills both fields and moves focus to Password without submitting, so the visitor still presses "Sign in". Footer: "New to Chirp? Create an account".
+- **Create account** ("Create your account"): Name, Username, Email, Password, each with a hint that says what it is for ("Shown on your profile and chirps. You can change it later."; "3–15 letters, numbers or underscores. Your profile lives at /username."; "For signing in. Never shown on your profile."; "At least 8 characters."), then the full-width red "Create account". Footer: "Already have an account? Sign in".
+- Fields sit 20px apart and validate once touched; the primary button shows its spinner while the request runs (the demo button is disabled meanwhile).
+- **Errors** name the problem once and never repeat the hint: "Choose a username", "Use at least 3 characters", "Choose a password", "Enter your name". Form-level copy says what to do: "That email and password don’t match. Check both and try again." (it never says which one was wrong), "Too many attempts. Wait a minute and try again.", "Something went wrong. Try again in a moment."
+- **Hand-off:** signing in opens `/home`; creating an account opens `/search` with the toast "Welcome to Chirp. Follow a few people to fill your timeline."
 
 ### Modal
 A letter laid on the desk: the page dims, one sheet sits on top.
@@ -466,6 +503,7 @@ Every chirp is stamped with the moment it was sent.
 - **Do** keep a busy button at full colour with its spinner; fade only buttons that are genuinely disabled.
 - **Do** draw icons from Lucide at a 1.75 stroke.
 - **Do** mark the current page with `aria-current`, a bolder label and the paper pill as well as airmail blue.
+- **Do** write each error as one message that names the problem and what to do ("Use at least 3 characters"), never repeating the field's hint; put problems no single field owns in the form alert at the top of the form.
 
 ### Don't:
 - **Don't** add a second chevron edge or use the chevron as a frame; there is exactly one, under the header.
