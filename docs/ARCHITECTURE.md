@@ -455,12 +455,12 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 
 Target state once every feature is in place; each phase extends the seed with the data its feature needs.
 
-- Deterministic and hand-written (`prisma/seed-data/`): every persona has a coherent name, username and bio, and later stages (tweets, follows, likes) build on those themes. Fixed join dates keep runs identical. No random data generator is needed at this size.
+- Deterministic and hand-written (`prisma/seed-data/`): every persona has a coherent name, username and bio, and later stages (tweets, follows, likes) build on those themes. Fixed join dates keep runs identical. The only generated stage is cross-likes, picked by a seeded generator from the follow graph (`seed-data/likes.ts`), so they too are identical on every run.
 - **12 users** with coherent personas (developer, designer, photographer, runner, chef…), matching bios and DiceBear avatars.
 - **Demo account:** `demo@chirp.dev` / `Password123!` (username `demo`). Every seed user shares the password `Password123!`; their emails are listed in the README.
 - 8–15 tweets per user, written to match the persona, spread over the last 30 days.
 - Follow graph: `demo` follows 8 users; every user follows 4–9 others; no self-follows.
-- Cross-likes: each user likes 10–30 tweets from people they follow.
+- Cross-likes: each user likes 10–30 tweets from people they follow, timed after both the chirp and the liker's join date.
 - Notifications consistent with the generated follows and likes (never self-notifications), with some unread for `demo`.
 - Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
 - Every account gets its own argon2 hash; a test signs in with the documented demo credentials so documentation and data cannot drift.

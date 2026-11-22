@@ -29,7 +29,7 @@ export function createTimelineService({ prisma }: TimelineServiceDependencies) {
       },
       orderBy: newestFirst,
       take: limit + 1,
-      select: tweetRowSelect,
+      select: tweetRowSelect(viewerId),
     });
     return toPage(rows, limit, toTweet);
   }

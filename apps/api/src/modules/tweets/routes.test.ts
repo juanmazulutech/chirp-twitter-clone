@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildTestApp } from '../../../test/app';
 import { loginAs } from '../../../test/auth';
 import { resetDatabase } from '../../../test/database';
+import { createLike } from '../../../test/factories/likes';
 import { createTweet } from '../../../test/factories/tweets';
 import { createUser } from '../../../test/factories/users';
 import type { App } from '../../app';
@@ -122,6 +123,25 @@ describe('tweets routes', () => {
         content: 'first chirp',
         createdAt: tweet.createdAt.toISOString(),
         author: { id: ana.id, username: 'ana' },
+      });
+    });
+
+    it('reports the like count and whether the viewer liked it', async () => {
+      const viewer = await createUser(app.prisma);
+      const tweet = await createTweet(app.prisma, await createUser(app.prisma));
+      await createLike(app.prisma, await createUser(app.prisma), tweet);
+      const cookie = await loginAs(app, viewer);
+
+      expect((await getTweet(tweet.id, cookie)).json()).toMatchObject({
+        likeCount: 1,
+        likedByMe: false,
+      });
+
+      await createLike(app.prisma, viewer, tweet);
+
+      expect((await getTweet(tweet.id, cookie)).json()).toMatchObject({
+        likeCount: 2,
+        likedByMe: true,
       });
     });
 

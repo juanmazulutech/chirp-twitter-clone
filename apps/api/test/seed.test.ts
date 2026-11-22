@@ -9,6 +9,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { runSeedCli, seedDatabase } from '../prisma/seed';
 import { seedFollows } from '../prisma/seed-data/follows';
+import {
+  pickSeedLikes,
+  SEED_LIKES_MAX,
+  SEED_LIKES_MIN,
+  seedLikeDate,
+} from '../prisma/seed-data/likes';
 import { seedTweetDate, seedTweets } from '../prisma/seed-data/tweets';
 import {
   DEMO_USERNAME,
@@ -88,6 +94,9 @@ describe('seed', () => {
     expect(await app.prisma.user.findUnique({ where: { username: 'leftover' } })).toBeNull();
     expect(await app.prisma.tweet.count()).toBe(Object.values(seedTweets).flat().length);
     expect(await app.prisma.follow.count()).toBe(Object.values(seedFollows).flat().length);
+    expect(await app.prisma.like.count()).toBe(
+      Object.values(pickSeedLikes(seedFollows, seedTweets)).flat().length,
+    );
   });
 
   describe('chirps', () => {
@@ -177,12 +186,74 @@ describe('seed', () => {
     });
   });
 
+  describe('cross-likes', () => {
+    const likes = pickSeedLikes(seedFollows, seedTweets);
+
+    it('has every persona like 10–30 distinct chirps, only by people they follow', () => {
+      expect(Object.keys(likes).sort()).toEqual(Object.keys(seedFollows).sort());
+      for (const [liker, refs] of Object.entries(likes)) {
+        expect(refs.length).toBeGreaterThanOrEqual(SEED_LIKES_MIN);
+        expect(refs.length).toBeLessThanOrEqual(SEED_LIKES_MAX);
+        const keys = refs.map(({ author, index }) => `${author}#${index}`);
+        expect(new Set(keys).size).toBe(keys.length);
+        for (const { author, index } of refs) {
+          expect(seedFollows[liker]).toContain(author);
+          expect(seedTweets[author]?.[index]).toBeDefined();
+        }
+      }
+    });
+
+    it('picks the same likes on every run', () => {
+      expect(pickSeedLikes(seedFollows, seedTweets)).toEqual(likes);
+    });
+
+    it('does not give every persona the same number of likes', () => {
+      expect(new Set(Object.values(likes).map((refs) => refs.length)).size).toBeGreaterThan(1);
+    });
+
+    it('stores likes after the chirp was posted and the liker joined, never in the future', async () => {
+      const now = new Date('2026-11-21T12:00:00.000Z');
+      const result = await seedDatabase(app.prisma, { now });
+
+      const rows = await app.prisma.like.findMany({ include: { tweet: true, user: true } });
+      expect(rows).toHaveLength(result.likes);
+      for (const like of rows) {
+        expect(like.tweet.authorId).not.toBe(like.userId);
+        expect(like.createdAt.getTime()).toBeGreaterThan(like.tweet.createdAt.getTime());
+        expect(like.createdAt.getTime()).toBeGreaterThan(like.user.createdAt.getTime());
+        expect(like.createdAt.getTime()).toBeLessThanOrEqual(now.getTime());
+      }
+    });
+
+    it('clamps a like date to now', () => {
+      const now = new Date('2026-11-21T12:00:00.000Z');
+      const posted = new Date('2026-11-21T11:59:00.000Z');
+
+      expect(seedLikeDate(now, posted, new Date('2026-01-01'), 60)).toEqual(now);
+    });
+
+    it('shows like counts and the demo account’s own likes on its first timeline page', async () => {
+      await seedDatabase(app.prisma);
+      const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/timeline',
+        headers: { cookie: await loginAs(app, demo) },
+      });
+
+      const page = pageSchema(tweetSchema).parse(response.json());
+      expect(page.items.some((tweet) => tweet.likedByMe)).toBe(true);
+      expect(page.items.filter((tweet) => tweet.likeCount > 0).length).toBeGreaterThan(10);
+    });
+  });
+
   it('leaves a database with data untouched in if-empty mode', async () => {
     await createUser(app.prisma, { username: 'existing' });
 
     const result = await seedDatabase(app.prisma, { mode: 'if-empty' });
 
-    expect(result).toEqual({ seeded: false, users: 0, tweets: 0, follows: 0 });
+    expect(result).toEqual({ seeded: false, users: 0, tweets: 0, follows: 0, likes: 0 });
     expect(await app.prisma.user.count()).toBe(1);
   });
 
@@ -206,7 +277,7 @@ describe('seed', () => {
       const output = await run(['node', 'seed.ts']);
 
       expect(output).toContain(`demo@${SEED_EMAIL_DOMAIN} / ${SEED_PASSWORD}`);
-      expect(output).toMatch(/\d+ chirps and \d+ follows/);
+      expect(output).toMatch(/\d+ chirps, \d+ follows and \d+ likes/);
       expect(await app.prisma.user.count()).toBe(seedPersonas.length);
     });
 
