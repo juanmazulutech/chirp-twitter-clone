@@ -5,6 +5,7 @@ import { buildTestApp } from '../../../test/app';
 import { loginAs } from '../../../test/auth';
 import { resetDatabase } from '../../../test/database';
 import { createFollow } from '../../../test/factories/follows';
+import { createLike } from '../../../test/factories/likes';
 import { createTweet } from '../../../test/factories/tweets';
 import { createUser } from '../../../test/factories/users';
 import type { App } from '../../app';
@@ -70,6 +71,28 @@ describe('GET /api/timeline', () => {
     expect(page.items.map((tweet) => tweet.id)).toEqual([recent.id, middle.id, old.id]);
     expect(page.items[0]?.author.username).toBe('bruno');
     expect(page.nextCursor).toBeNull();
+  });
+
+  it('reports like counts and the viewer’s own likes on every tweet', async () => {
+    const ana = await createUser(app.prisma);
+    const bruno = await createUser(app.prisma);
+    await createFollow(app.prisma, ana, bruno);
+    const liked = await tweetAt(bruno, 10);
+    const likedByOthers = await tweetAt(bruno, 20);
+    const unliked = await tweetAt(ana, 30);
+    await createLike(app.prisma, ana, liked);
+    await createLike(app.prisma, bruno, liked);
+    await createLike(app.prisma, bruno, likedByOthers);
+
+    const page = await fetchPage(await loginAs(app, ana));
+
+    expect(
+      page.items.map(({ id, likeCount, likedByMe }) => ({ id, likeCount, likedByMe })),
+    ).toEqual([
+      { id: liked.id, likeCount: 2, likedByMe: true },
+      { id: likedByOthers.id, likeCount: 1, likedByMe: false },
+      { id: unliked.id, likeCount: 0, likedByMe: false },
+    ]);
   });
 
   it('does not show tweets of people who follow the viewer', async () => {

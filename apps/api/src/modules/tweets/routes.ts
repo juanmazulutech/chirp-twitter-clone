@@ -23,7 +23,7 @@ const tweetsRoutes: FastifyPluginAsyncZod = async (app) => {
       onRequest: app.requireAuth,
       schema: { params: tweetParamsSchema, response: { 200: tweetSchema } },
     },
-    async (request) => tweets.get(request.params.id),
+    async (request) => tweets.get(request.params.id, currentUser(request).id),
   );
 
   app.delete(

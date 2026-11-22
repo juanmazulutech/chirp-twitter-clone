@@ -3,14 +3,15 @@ import { Link } from 'react-router';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { Postmark } from '@/components/ui/Postmark';
+import { useSession } from '@/features/auth/hooks';
 
-function likesLabel(count: number): string {
-  return count === 1 ? '1 like' : `${count.toLocaleString('en')} likes`;
-}
+import { DeleteTweetButton } from './DeleteTweetButton';
+import { LikeButton } from './LikeButton';
 
 /** One chirp in a feed: who sent it, what it says, and the postmark of when. */
 export function TweetCard({ tweet }: { tweet: Tweet }) {
   const { author } = tweet;
+  const { user } = useSession();
 
   return (
     <article
@@ -32,7 +33,10 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
         <p className="mt-1 text-[0.9375rem] leading-5 wrap-anywhere whitespace-pre-wrap text-ink">
           {tweet.content}
         </p>
-        <p className="mt-2 text-sm text-ink-muted tabular-nums">{likesLabel(tweet.likeCount)}</p>
+        <div className="mt-1 flex items-center justify-between">
+          <LikeButton tweet={tweet} />
+          {user?.id === author.id ? <DeleteTweetButton tweetId={tweet.id} /> : null}
+        </div>
       </div>
       <Postmark dateTime={tweet.createdAt} className="absolute top-2.5 right-3.5" />
     </article>

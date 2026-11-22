@@ -4,16 +4,30 @@ import type { Prisma, Tweet, User } from '../generated/prisma/client';
 
 type UserSummaryRow = Pick<User, 'id' | 'username' | 'displayName'>;
 
-/** A tweet row with the author fields its DTO embeds. */
-export type TweetRow = Pick<Tweet, 'id' | 'content' | 'createdAt'> & { author: UserSummaryRow };
+/**
+ * A tweet row with the author fields its DTO embeds, its like count and, in `likes`,
+ * the viewer's own like when there is one.
+ */
+export type TweetRow = Pick<Tweet, 'id' | 'content' | 'createdAt'> & {
+  author: UserSummaryRow;
+  _count: { likes: number };
+  likes: Array<{ userId: string }>;
+};
 
-/** Selects exactly the columns of a `TweetRow`, for every query that returns tweets. */
-export const tweetRowSelect = {
-  id: true,
-  content: true,
-  createdAt: true,
-  author: { select: { id: true, username: true, displayName: true } },
-} as const satisfies Prisma.TweetSelect;
+/**
+ * Selects exactly the columns of a `TweetRow` for `viewerId`, in every query that returns
+ * tweets. Counts are aggregated in the same query rather than stored (ADR-13).
+ */
+export function tweetRowSelect(viewerId: string) {
+  return {
+    id: true,
+    content: true,
+    createdAt: true,
+    author: { select: { id: true, username: true, displayName: true } },
+    _count: { select: { likes: true } },
+    likes: { where: { userId: viewerId }, select: { userId: true }, take: 1 },
+  } as const satisfies Prisma.TweetSelect;
+}
 
 /** Database rows become API DTOs only here, so internal fields never leak by accident. */
 export function toUserSummary(user: UserSummaryRow): UserSummary {
@@ -43,8 +57,7 @@ export function toTweet(tweet: TweetRow): TweetDto {
     imageUrl: null,
     createdAt: tweet.createdAt.toISOString(),
     author: toUserSummary(tweet.author),
-    // Likes arrive in C27; the contract is fixed now so clients never change shape.
-    likeCount: 0,
-    likedByMe: false,
+    likeCount: tweet._count.likes,
+    likedByMe: tweet.likes.length > 0,
   };
 }
