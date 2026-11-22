@@ -316,7 +316,7 @@ The shell is three columns centred on the paper ground: the left rail, the feed 
 - **Header:** lives inside the feed column at every width and sticks to the top as the column scrolls; the rail and side panel are sticky full-height columns of their own.
 - **Rhythm:** 16px side gutter, 12px vertical row padding, 12px gap between avatar and content. A chirp row reserves 64px on the right of its text column so the postmark never collides with the text.
 - **Overlays:** modals centre in the viewport at up to 32rem wide, keeping 1rem clear on each side of a phone. Toasts stack bottom centre, lifted 80px on phones to clear the 64px bottom navigation.
-- **Scroll:** the page always reserves its scrollbar gutter (`scrollbar-gutter: stable`), so locking scroll behind a modal never shifts the layout sideways.
+- **Scroll:** the page always reserves its scrollbar gutter (`scrollbar-gutter: stable`), so moving between short and long pages never shifts the layout sideways. While a modal is open the gutter is traded for padding of the same width (`lockPageScroll`), so the scrim covers the whole window, including where a classic scrollbar sat, and the content stays put.
 
 The shell lives in `apps/web/src/app/layout/`; the primitives and the chirp row are also rendered at `/styleguide`.
 
@@ -383,7 +383,7 @@ A letter laid on the desk: the page dims, one sheet sits on top.
 - **Close button:** top right (12px in), a 36px circle with an X icon in faded ink; hover takes the paper wash and ink.
 - **Parts:** a title (title size, 600, slightly tightened) that names the dialog, the body in body size and faded ink, and the actions right-aligned with 12px between them, wrapping on narrow screens.
 - **Closes on:** Escape, the close button, or a genuine backdrop click (a drag that starts inside the dialog does not count).
-- **Scroll:** the page behind is locked while it is open; the stable scrollbar gutter keeps the layout still.
+- **Scroll:** the page behind is locked while it is open; its scrollbar gutter becomes padding of the same width, so the scrim reaches the window's edge and the layout stays still.
 
 ### Toast
 A short note that confirms or apologises, then leaves.

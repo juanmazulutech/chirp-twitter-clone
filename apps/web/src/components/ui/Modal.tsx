@@ -10,6 +10,8 @@ import {
   useRef,
 } from 'react';
 
+import { lockPageScroll } from './scroll-lock';
+
 const ModalContext = createContext<{ titleId: string } | null>(null);
 
 interface ModalProps {
@@ -44,11 +46,7 @@ export function Modal({ open, onClose, children }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     // Native modals do not stop the page behind them from scrolling.
-    const { overflow } = document.documentElement.style;
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.documentElement.style.overflow = overflow;
-    };
+    return lockPageScroll();
   }, [open]);
 
   function rememberPressTarget(event: PointerEvent<HTMLDialogElement>) {
