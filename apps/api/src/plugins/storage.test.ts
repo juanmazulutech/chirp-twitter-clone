@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildTestApp } from '../../test/app';
-import { testDatabaseUrl } from '../../test/env';
+import { TEST_STORAGE_ENV, testDatabaseUrl } from '../../test/env';
 import { type App, buildApp } from '../app';
 import { loadEnv } from '../config/env';
 import { MemoryStorage } from '../lib/memory-storage';
@@ -43,7 +43,7 @@ describe('buildApp storage', () => {
     const config = loadEnv({
       LOG_LEVEL: 'silent',
       DATABASE_URL: testDatabaseUrl(),
-      S3_PUBLIC_ENDPOINT: 'http://media.chirp.test',
+      ...TEST_STORAGE_ENV,
     });
 
     app = await buildApp(config);

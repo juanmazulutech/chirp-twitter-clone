@@ -38,7 +38,7 @@ import { MemoryStorage } from '../src/lib/memory-storage';
 import { buildTestApp } from './app';
 import { loginAs } from './auth';
 import { resetDatabase } from './database';
-import { testDatabaseUrl } from './env';
+import { TEST_STORAGE_ENV, testDatabaseUrl } from './env';
 import { createUser } from './factories/users';
 
 describe('seed', () => {
@@ -392,7 +392,7 @@ describe('seed', () => {
       const output: string[] = [];
       await runSeedCli(
         argv,
-        { DATABASE_URL: testDatabaseUrl(), ...env },
+        { DATABASE_URL: testDatabaseUrl(), ...TEST_STORAGE_ENV, ...env },
         (line) => output.push(line),
         new MemoryStorage(),
       );

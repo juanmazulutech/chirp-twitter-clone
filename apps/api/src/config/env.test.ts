@@ -3,10 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { EnvValidationError, loadEnv } from './env';
 
 const DATABASE_URL = 'postgresql://chirp:chirp@localhost:5433/chirp';
+/** The variables without defaults; every other one is optional. */
+const REQUIRED = {
+  DATABASE_URL,
+  S3_ENDPOINT: 'http://localhost:9000',
+  S3_PUBLIC_ENDPOINT: 'http://localhost:9000',
+  S3_ACCESS_KEY_ID: 'chirp',
+  S3_SECRET_ACCESS_KEY: 'chirpsecret',
+};
 
 describe('loadEnv', () => {
   it('applies defaults to optional variables', () => {
-    expect(loadEnv({ DATABASE_URL })).toEqual({
+    expect(loadEnv(REQUIRED)).toEqual({
       API_HOST: '0.0.0.0',
       API_PORT: 3000,
       LOG_LEVEL: 'info',
@@ -77,11 +85,30 @@ describe('loadEnv', () => {
   });
 
   it('ignores unrelated variables', () => {
-    expect(loadEnv({ DATABASE_URL, PATH: '/usr/bin' })).not.toHaveProperty('PATH');
+    expect(loadEnv({ ...REQUIRED, PATH: '/usr/bin' })).not.toHaveProperty('PATH');
   });
 
   it('requires a database URL', () => {
-    expect(() => loadEnv({})).toThrow(/DATABASE_URL: Required/);
+    expect(() => loadEnv({ ...REQUIRED, DATABASE_URL: undefined })).toThrow(
+      /DATABASE_URL: Required/,
+    );
+  });
+
+  it.each(['S3_ENDPOINT', 'S3_PUBLIC_ENDPOINT', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'])(
+    'requires %s instead of falling back to the local development storage',
+    (name) => {
+      expect(() => loadEnv({ ...REQUIRED, [name]: undefined })).toThrow(
+        new RegExp(`${name}: Required`),
+      );
+    },
+  );
+
+  it('lists every missing required variable at once', () => {
+    const load = () => loadEnv({});
+
+    expect(load).toThrow(/DATABASE_URL: Required/);
+    expect(load).toThrow(/S3_ENDPOINT: Required/);
+    expect(load).toThrow(/S3_SECRET_ACCESS_KEY: Required/);
   });
 
   it('rejects a database URL that is not PostgreSQL', () => {
@@ -92,7 +119,7 @@ describe('loadEnv', () => {
 
   it('reports every invalid variable in a single error', () => {
     const load = () =>
-      loadEnv({ DATABASE_URL, API_PORT: 'not-a-port', LOG_LEVEL: 'loud', LOG_PRETTY: 'yes' });
+      loadEnv({ ...REQUIRED, API_PORT: 'not-a-port', LOG_LEVEL: 'loud', LOG_PRETTY: 'yes' });
 
     expect(load).toThrow(EnvValidationError);
     expect(load).toThrow(/API_PORT/);
@@ -101,39 +128,39 @@ describe('loadEnv', () => {
   });
 
   it('rejects a session lifetime outside 1–365 days', () => {
-    expect(() => loadEnv({ DATABASE_URL, SESSION_TTL_DAYS: '0' })).toThrow(/SESSION_TTL_DAYS/);
-    expect(() => loadEnv({ DATABASE_URL, SESSION_TTL_DAYS: '366' })).toThrow(/SESSION_TTL_DAYS/);
+    expect(() => loadEnv({ ...REQUIRED, SESSION_TTL_DAYS: '0' })).toThrow(/SESSION_TTL_DAYS/);
+    expect(() => loadEnv({ ...REQUIRED, SESSION_TTL_DAYS: '366' })).toThrow(/SESSION_TTL_DAYS/);
   });
 
   it('rejects web origins that are not http(s) URLs', () => {
-    expect(() => loadEnv({ DATABASE_URL, WEB_ORIGINS: 'localhost:5173' })).toThrow(/WEB_ORIGINS/);
-    expect(() => loadEnv({ DATABASE_URL, WEB_ORIGINS: ' , ' })).toThrow(/WEB_ORIGINS/);
+    expect(() => loadEnv({ ...REQUIRED, WEB_ORIGINS: 'localhost:5173' })).toThrow(/WEB_ORIGINS/);
+    expect(() => loadEnv({ ...REQUIRED, WEB_ORIGINS: ' , ' })).toThrow(/WEB_ORIGINS/);
   });
 
   it('rejects storage endpoints that are not http(s) URLs', () => {
-    expect(() => loadEnv({ DATABASE_URL, S3_ENDPOINT: 'storage:9000' })).toThrow(/S3_ENDPOINT/);
-    expect(() => loadEnv({ DATABASE_URL, S3_PUBLIC_ENDPOINT: 'ftp://media' })).toThrow(
-      /S3_PUBLIC_ENDPOINT/,
+    expect(() => loadEnv({ ...REQUIRED, S3_ENDPOINT: 'storage:9000' })).toThrow(
+      /S3_ENDPOINT: Must be an http\(s\) URL/,
+    );
+    expect(() => loadEnv({ ...REQUIRED, S3_PUBLIC_ENDPOINT: 'ftp://media' })).toThrow(
+      /S3_PUBLIC_ENDPOINT: Must be an http\(s\) URL/,
     );
   });
 
   it('rejects empty storage credentials and malformed flags', () => {
-    expect(() => loadEnv({ DATABASE_URL, S3_SECRET_ACCESS_KEY: '' })).toThrow(
-      /S3_SECRET_ACCESS_KEY/,
+    expect(() => loadEnv({ ...REQUIRED, S3_SECRET_ACCESS_KEY: '' })).toThrow(
+      /S3_SECRET_ACCESS_KEY: Must not be empty/,
     );
-    expect(() => loadEnv({ DATABASE_URL, S3_FORCE_PATH_STYLE: 'yes' })).toThrow(
+    expect(() => loadEnv({ ...REQUIRED, S3_FORCE_PATH_STYLE: 'yes' })).toThrow(
       /S3_FORCE_PATH_STYLE/,
     );
   });
 
   it('rejects an upload limit above the shared 5 MB maximum', () => {
-    expect(() => loadEnv({ DATABASE_URL, UPLOAD_MAX_BYTES: '5242881' })).toThrow(
-      /UPLOAD_MAX_BYTES/,
-    );
-    expect(() => loadEnv({ DATABASE_URL, UPLOAD_MAX_BYTES: '0' })).toThrow(/UPLOAD_MAX_BYTES/);
+    expect(() => loadEnv({ ...REQUIRED, UPLOAD_MAX_BYTES: '5242881' })).toThrow(/UPLOAD_MAX_BYTES/);
+    expect(() => loadEnv({ ...REQUIRED, UPLOAD_MAX_BYTES: '0' })).toThrow(/UPLOAD_MAX_BYTES/);
   });
 
   it('rejects an out-of-range port', () => {
-    expect(() => loadEnv({ DATABASE_URL, API_PORT: '70000' })).toThrow(/API_PORT/);
+    expect(() => loadEnv({ ...REQUIRED, API_PORT: '70000' })).toThrow(/API_PORT/);
   });
 });

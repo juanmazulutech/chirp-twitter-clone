@@ -23,3 +23,14 @@ export function testDatabaseUrl(env: Record<string, string | undefined> = proces
 
   return url;
 }
+
+/**
+ * Storage settings for configurations built in tests. They are required in env.ts and the
+ * suite injects `MemoryStorage`, so these only need to be valid, never reachable.
+ */
+export const TEST_STORAGE_ENV = {
+  S3_ENDPOINT: 'http://storage.chirp.test',
+  S3_PUBLIC_ENDPOINT: 'http://media.chirp.test',
+  S3_ACCESS_KEY_ID: 'test-access-key',
+  S3_SECRET_ACCESS_KEY: 'test-secret-key',
+} as const;
