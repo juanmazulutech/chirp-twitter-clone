@@ -1,3 +1,4 @@
+import type { Tweet } from '@chirp/shared';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -13,8 +14,8 @@ import {
   FieldTextarea,
 } from '@/components/ui/Field';
 import { Modal, ModalActions, ModalBody, ModalTitle } from '@/components/ui/Modal';
-import { Postmark } from '@/components/ui/Postmark';
 import { Spinner } from '@/components/ui/Spinner';
+import { TweetCard } from '@/features/tweets/components/TweetCard';
 import { notify } from '@/lib/notify';
 
 // Development-only reference of the Postmarked world: the tokens, type and signature
@@ -39,22 +40,31 @@ const typeScale = [
   { name: 'Caption', className: 'text-xs text-ink-muted' },
 ];
 
-const sampleChirps = [
+const sampleChirps: Tweet[] = [
   {
-    initials: 'AT',
-    name: 'Ana Torres',
-    handle: 'ana_codes',
-    text: 'Shipped keyboard focus styles for the whole design system today. Tab through it and tell me what breaks.',
-    sentAt: '2026-11-21T21:42:00.000Z',
-    likes: 12,
+    id: 'sample-ana',
+    content:
+      'Shipped keyboard focus styles for the whole design system today. Tab through it and tell me what breaks.',
+    imageUrl: null,
+    createdAt: '2026-11-21T21:42:00.000Z',
+    author: { id: 'ana_codes', username: 'ana_codes', displayName: 'Ana Torres', avatarUrl: null },
+    likeCount: 12,
+    likedByMe: false,
   },
   {
-    initials: 'KW',
-    name: 'Kenji Watanabe',
-    handle: 'kenji_cooks',
-    text: "Day 3 of the new sourdough starter. It smells like green apples, which I'm choosing to take as a good sign.",
-    sentAt: '2026-11-21T21:26:00.000Z',
-    likes: 27,
+    id: 'sample-kenji',
+    content:
+      "Day 3 of the new sourdough starter. It smells like green apples, which I'm choosing to take as a good sign.",
+    imageUrl: null,
+    createdAt: '2026-11-21T21:26:00.000Z',
+    author: {
+      id: 'kenji_cooks',
+      username: 'kenji_cooks',
+      displayName: 'Kenji Watanabe',
+      avatarUrl: null,
+    },
+    likeCount: 27,
+    likedByMe: false,
   },
 ];
 
@@ -90,20 +100,8 @@ function ThemedChirps({ name, className }: { name: string; className: string }) 
       <h3 className="text-sm font-semibold">{name}</h3>
       <ol className="bg-sheet">
         {sampleChirps.map((chirp) => (
-          <li
-            key={chirp.handle}
-            className="relative grid grid-cols-[2.75rem_1fr] gap-3 border-b border-hairline px-4 py-3 last:border-b-0"
-          >
-            <Avatar name={chirp.name} userId={chirp.handle} />
-            <div className="pr-16">
-              <p className="text-sm">
-                <span className="font-semibold">{chirp.name}</span>{' '}
-                <span className="text-ink-muted">@{chirp.handle}</span>
-              </p>
-              <p className="mt-1 text-[0.9375rem] leading-5">{chirp.text}</p>
-              <p className="mt-2 text-sm text-ink-muted tabular-nums">{chirp.likes} likes</p>
-            </div>
-            <Postmark dateTime={chirp.sentAt} className="absolute top-2.5 right-3.5" />
+          <li key={chirp.id} className="border-b border-hairline last:border-b-0">
+            <TweetCard tweet={chirp} />
           </li>
         ))}
       </ol>

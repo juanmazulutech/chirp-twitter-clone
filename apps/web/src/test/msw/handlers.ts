@@ -1,4 +1,4 @@
-import type { CreateTweetBody, ErrorResponse, SessionUser } from '@chirp/shared';
+import type { CreateTweetBody, ErrorResponse, Page, SessionUser, Tweet } from '@chirp/shared';
 import { http, HttpResponse } from 'msw';
 
 import { sessionUser, tweetFixture } from '../fixtures';
@@ -30,5 +30,28 @@ export function tweetCreated(onBody: (body: CreateTweetBody) => void = () => {})
   });
 }
 
-/** Handlers every test starts with: the app shell asks for the session on every screen. */
-export const baseHandlers = [signedIn()];
+/**
+ * `GET /api/timeline` serving `pages` in order: the first without a cursor, then each
+ * page's `nextCursor` leads to the one after it. `onCursor` sees every cursor requested.
+ */
+export function timelinePages(
+  pages: Tweet[][] = [[]],
+  onCursor: (cursor: string | null) => void = () => {},
+) {
+  return http.get('/api/timeline', ({ request }) => {
+    const cursor = new URL(request.url).searchParams.get('cursor');
+    onCursor(cursor);
+    const index = cursor === null ? 0 : Number(cursor.replace('page-', ''));
+    const page: Page<Tweet> = {
+      items: pages[index] ?? [],
+      nextCursor: index + 1 < pages.length ? `page-${index + 1}` : null,
+    };
+    return HttpResponse.json(page);
+  });
+}
+
+/**
+ * Handlers every test starts with: the app shell asks for the session on every screen,
+ * and the home page for a timeline (empty unless a test serves one).
+ */
+export const baseHandlers = [signedIn(), timelinePages()];

@@ -5,8 +5,9 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { tweetFixture } from '@/test/fixtures';
+import { scrollToEnd } from '@/test/intersection-observer';
 import { apiError } from '@/test/msw/errors';
-import { tweetCreated } from '@/test/msw/handlers';
+import { timelinePages, tweetCreated } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
@@ -96,18 +97,14 @@ describe('Composer', () => {
     expect(textbox).toHaveValue('');
   });
 
-  it('puts the new chirp on top of a loaded timeline', async () => {
-    server.use(tweetCreated());
-    const { user, textbox, submit, queryClient } = await renderHome();
+  it('puts the new chirp on top of a loaded timeline, leaving later pages alone', async () => {
     const older = tweetFixture();
     const nextPage = tweetFixture();
-    queryClient.setQueryData<TimelineData>(tweetKeys.timeline, {
-      pages: [
-        { items: [older], nextCursor: 'next' },
-        { items: [nextPage], nextCursor: null },
-      ],
-      pageParams: [undefined, 'next'],
-    });
+    server.use(timelinePages([[older], [nextPage]]), tweetCreated());
+    const { user, textbox, submit, queryClient } = await renderHome();
+    await screen.findByText(older.content);
+    scrollToEnd();
+    await screen.findByText(nextPage.content);
 
     await user.type(textbox, 'Fresh off the press');
     await user.click(submit);
@@ -123,10 +120,16 @@ describe('Composer', () => {
 
   it('leaves a timeline that was never loaded alone', async () => {
     server.use(tweetCreated());
-    const { user, textbox, submit, queryClient } = await renderHome();
+    const user = userEvent.setup();
+    const { queryClient } = renderRoute('/search');
+    await screen.findByRole('heading', { level: 1, name: 'Search' });
 
-    await user.type(textbox, 'No timeline yet');
-    await user.click(submit);
+    const [composeButton] = screen.getAllByRole('button', { name: 'New chirp' });
+    if (!composeButton) throw new Error('expected a compose button');
+    await user.click(composeButton);
+    const dialog = screen.getByRole('dialog', { name: 'New chirp' });
+    await user.type(within(dialog).getByRole('textbox', { name: PROMPT }), 'No timeline yet');
+    await user.click(within(dialog).getByRole('button', { name: 'Chirp' }));
     await screen.findByText('Your chirp is posted');
 
     expect(queryClient.getQueryData(tweetKeys.timeline)).toBeUndefined();

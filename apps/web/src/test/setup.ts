@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { useComposerStore } from '@/features/tweets/store';
 
+import { installIntersectionObserver } from './intersection-observer';
 import { server } from './msw/server';
 
 // jsdom does not implement <dialog> methods; real browsers do (verified in captures).
@@ -18,6 +19,8 @@ if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
     this.dispatchEvent(new Event('close'));
   };
 }
+
+installIntersectionObserver();
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 
