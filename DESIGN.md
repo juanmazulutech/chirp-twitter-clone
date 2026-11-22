@@ -310,7 +310,7 @@ Mobile-first and familiar. The base layout targets a 390px phone and must remain
 
 The shell is three columns centred on the paper ground: the left rail, the feed column, the side panel. Only the feed column is on the sheet.
 
-- **Phone (base):** the feed column fills the width on the sheet. Its 56px sticky header (the wordmark) carries the chevron beneath it. A fixed 64px bottom navigation sits on the sheet with a hairline above it and pads itself for the home indicator (`safe-area-inset-bottom`); the main content pads its bottom by the same amount so nothing hides under it. The round red compose button floats 16px from the right edge and 16px above the bottom navigation.
+- **Phone (base):** the feed column fills the width on the sheet. Its 56px sticky header (your avatar and the wordmark) carries the chevron beneath it. A fixed 64px bottom navigation sits on the sheet with a hairline above it and pads itself for the home indicator (`safe-area-inset-bottom`); the main content pads its bottom by the same amount so nothing hides under it. The round red compose button floats 16px from the right edge and 16px above the bottom navigation.
 - **Tablet (640px, `sm`):** the bottom navigation and floating compose button go away. An icon-only left rail appears (12px side padding, 64px from the top), and the feed column caps at 600px (`max-w-150`) with hairlines on both sides; the paper ground shows around it.
 - **Desktop (1024px, `lg`):** the rail widens to a labelled 15rem column, and a 20rem side panel (24px side padding, 64px from the top) holds the people search.
 - **Header:** lives inside the feed column at every width and sticks to the top as the column scrolls; the rail and side panel are sticky full-height columns of their own.
@@ -413,10 +413,10 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Decorative by default** (`aria-hidden`, empty alt): beside a visible name, the name carries the identity and is not read twice. An avatar that stands alone takes an opt-in label and is then announced as an image with that name.
 
 ### Header
-- 56px on the sheet with the wordmark (16px side padding) linking home, followed by the chevron edge. Sticky at the top of the feed column at every width; never spans the rail or the side panel.
+- 56px on the sheet with the wordmark (16px side padding) linking home, followed by the chevron edge. On phones, once the session is known, your small (32px) avatar sits before the wordmark, 12px apart, as the link to your profile (named "Your profile"); from 640px the rail's Profile item does that job. Sticky at the top of the feed column at every width; never spans the rail or the side panel.
 
 ### Navigation
-Two renderings of one list of destinations (Home, Search; Profile joins with the session, Notifications with its feature), both labelled "Primary", so phone and desktop always offer the same places.
+Two renderings of one list of destinations (Home, Search, and Profile, your own profile, which appears once the session is known; Notifications joins with its feature). Profile stays current on your profile's follower and following lists too, both labelled "Primary", so phone and desktop always offer the same places.
 - **Current page:** marked four ways, never by colour alone: `aria-current="page"`, a bolder label (700 against 500), a paper-tinted pill, and airmail blue. Icons are 24px.
 - **Left rail (from 640px):** on tablets, 48px circles holding only the icon (named by `aria-label`), 4px apart, ink at rest with the paper wash on hover. From 1024px each item becomes a 48px-tall full-width pill with 16px padding, the icon and a title-size label 16px apart. The compose button sits 16px below the list.
 - **Bottom navigation (phone):** a fixed 64px bar on the sheet with a hairline top, one equal-width item per destination: the icon in a 56×32px pill (paper when current) over a caption-size label, 4px apart; faded ink at rest. Its focus ring is drawn 4px inside the item, because the bar sits on the screen edge where an outer ring would be clipped.

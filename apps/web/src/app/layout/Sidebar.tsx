@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 
 import { RailComposeButton } from './ComposeButton';
-import { navItems } from './nav-items';
+import { useNavItems } from './nav-items';
 
 /**
  * The left rail from 640px: icons only on tablets, icons and labels from 1024px.
@@ -9,6 +9,7 @@ import { navItems } from './nav-items';
  * as by airmail blue, so it never relies on colour alone.
  */
 export function Sidebar() {
+  const navItems = useNavItems();
   return (
     <aside className="sticky top-0 hidden h-dvh shrink-0 flex-col items-center gap-4 px-3 pt-16 pb-6 sm:flex lg:w-60 lg:items-stretch">
       <nav aria-label="Primary">

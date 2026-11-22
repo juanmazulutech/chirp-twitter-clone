@@ -1,7 +1,12 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import { authKeys } from '@/features/auth/keys';
+import { ApiError, apiRequest } from '@/lib/api-client';
+import { signedOut } from '@/test/msw/handlers';
+import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
 /** jsdom applies no CSS, so the rail and the bottom bar are both present; each is checked. */
@@ -13,6 +18,7 @@ describe('AppShell', () => {
   it('lists the same destinations in the rail and the bottom navigation', async () => {
     renderRoute('/home');
     await screen.findByRole('heading', { level: 1, name: 'Home' });
+    await screen.findAllByRole('link', { name: 'Profile' });
 
     const navs = primaryNavs();
     expect(navs).toHaveLength(2);
@@ -21,8 +27,63 @@ describe('AppShell', () => {
         within(nav)
           .getAllByRole('link')
           .map((link) => link.textContent),
-      ).toEqual(['Home', 'Search']);
+      ).toEqual(['Home', 'Search', 'Profile']);
     }
+  });
+
+  it('links Profile and the header avatar to the signed-in user', async () => {
+    renderRoute('/home');
+
+    for (const link of await screen.findAllByRole('link', { name: 'Profile' })) {
+      expect(link).toHaveAttribute('href', '/ana_codes');
+    }
+    expect(screen.getByRole('link', { name: 'Your profile' })).toHaveAttribute(
+      'href',
+      '/ana_codes',
+    );
+  });
+
+  it('marks Profile as current on your own profile and its lists', async () => {
+    renderRoute('/ana_codes/followers');
+    await screen.findByRole('heading', { level: 1, name: 'People following @ana_codes' });
+
+    for (const link of await screen.findAllByRole('link', { name: 'Profile' })) {
+      expect(link).toHaveAttribute('aria-current', 'page');
+    }
+  });
+
+  it('shows no profile links while signed out', async () => {
+    server.use(signedOut());
+    const { queryClient } = renderRoute('/home');
+    await screen.findByRole('heading', { level: 1, name: 'Home' });
+    await waitFor(() => {
+      expect(queryClient.getQueryState(authKeys.session)?.status).toBe('success');
+    });
+
+    expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Your profile' })).not.toBeInTheDocument();
+  });
+
+  it('signs out everywhere when any request answers 401', async () => {
+    server.use(
+      http.get('/api/private', () =>
+        HttpResponse.json(
+          { error: { code: 'UNAUTHENTICATED', message: 'Sign in to continue' } },
+          { status: 401 },
+        ),
+      ),
+    );
+    const { queryClient } = renderRoute('/home');
+    await screen.findAllByRole('link', { name: 'Profile' });
+
+    await expect(
+      queryClient.fetchQuery({ queryKey: ['private'], queryFn: () => apiRequest('/private') }),
+    ).rejects.toBeInstanceOf(ApiError);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole('link', { name: 'Your profile' })).not.toBeInTheDocument();
   });
 
   it('marks the current page in every navigation, not only with colour', async () => {

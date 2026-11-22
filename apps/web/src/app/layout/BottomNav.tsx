@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router';
 
-import { navItems } from './nav-items';
+import { useNavItems } from './nav-items';
 
 /** Phone navigation: a 64px bar in thumb reach, hidden once the left rail appears. */
 export function BottomNav() {
+  const navItems = useNavItems();
   return (
     <nav
       aria-label="Primary"

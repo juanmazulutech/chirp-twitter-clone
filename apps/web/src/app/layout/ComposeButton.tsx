@@ -1,7 +1,7 @@
 import { PenLine } from 'lucide-react';
 
 import { buttonClasses } from '@/components/ui/button-classes';
-import { useComposerStore } from '@/stores/composer-store';
+import { useComposerStore } from '@/features/tweets/store';
 
 /** The rail's primary action: a round icon on tablets, the labelled "Chirp" button on desktop. */
 export function RailComposeButton() {

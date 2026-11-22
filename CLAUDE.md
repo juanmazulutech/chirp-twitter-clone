@@ -67,10 +67,11 @@ Detail and examples: ARCHITECTURE.md §3.
 - Request and response schemas are defined here and used by both the API (validation) and the web app (forms, types).
 
 **Web (`apps/web`)**
-- Features live in `src/features/<feature>/`: `api.ts`, `hooks.ts`, `components/`, `pages/`, tests next to them. Generic UI goes in `src/components/ui/`.
+- Features are self-contained modules in `src/features/<feature>/`: `api.ts`, `keys.ts` (TanStack Query key factory), `hooks.ts`, `store.ts` (Zustand, only when the module has UI state), `components/`, `pages/`, tests next to them. Modules import each other's files directly (e.g. `@/features/tweets/keys`). Generic UI goes in `src/components/ui/`; `src/lib/` holds only domain-free infrastructure (`api-client`, `query-client`, `format`, `notify`).
 - No barrel files (`index.ts` that re-exports) inside `apps/web`: import from the source file. The only barrel is `@chirp/shared`'s entry point, the package's public API.
 - Route pages are code-split with React Router's route `lazy`, so each screen loads on demand.
-- Server data lives in TanStack Query only (keys from `src/lib/query-keys.ts`), including the current session. **Never copy server data into Zustand**; Zustand is for UI state (modals, toasts, drafts).
+- Server data lives in TanStack Query only (keys from each module's `keys.ts`), including the current session (`useSession` in `features/auth`). **Never copy server data into Zustand**; Zustand is for UI state (modals, drafts).
+- Requests go through `apiRequest` (`src/lib/api-client.ts`), which validates every response with its `@chirp/shared` schema and throws `ApiError`. A 401 from any request clears the session globally; never handle it per call.
 - Forms: `react-hook-form` + `zodResolver(<schema from @chirp/shared>)`.
 - Mobile-first: base classes target mobile; scale up with `sm:` (640px) and `lg:` (1024px).
 - Visual system: read `DESIGN.md` before any UI work. Use only the semantic token classes (`bg-paper`, `bg-sheet`, `text-ink`, `text-ink-muted`, `border-hairline`, `bg-airmail-red`, `text-airmail-blue`, `text-danger`, `bg-avatar-N`); never raw hex values. Red is only for the primary action and liked state; one chevron (`.airmail-edge`) under the header; no decorative shadows; feed rows are full-bleed with hairlines, never cards in cards; no state carried by colour alone.

@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalTitle } from '@/components/ui/Modal';
-import { useComposerStore } from '@/stores/composer-store';
+import { useComposerStore } from '@/features/tweets/store';
 
 /** The modal every compose button opens. The composer itself replaces the body in C25. */
 export function ComposerModal() {

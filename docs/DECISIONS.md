@@ -84,6 +84,8 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Decision:** everything that comes from the server lives in **TanStack Query**, including the current session (`useQuery(['auth', 'me'])`). **Zustand** holds client-only UI state: composer modal visibility, toasts, the composer draft.
 - **Rule:** never copy server data into Zustand — two sources of truth drift apart.
 - **Context:** TanStack Query provides caching, invalidation, retries, `useInfiniteQuery` for infinite scroll and optimistic mutations with rollback.
+- **Organisation (C18):** state is owned by feature modules. Each module keeps its query key factory in `keys.ts` and, when it has UI state, a small Zustand store in `store.ts` (the composer's lives in `features/tweets/store.ts`). Cross-module invalidation imports the other module's keys directly (likes invalidate `tweetKeys`). Chosen over a central `lib/query-keys.ts` and `src/stores/`: colocation is what TanStack Query's maintainers recommend for key factories and what Zustand recommends for stores, and a module can be read, moved or deleted as one folder.
+- **Session and 401 (C18):** `useSession` reads `GET /auth/me`; a 401 there means "signed out" (`null`), not an error. A 401 from any other query or mutation sets the session to `null` through the query client's caches (no refetch), so every screen reacts at once. 4xx responses are never retried.
 - **Revisit when:** complex shared client state appears → still Zustand; no Redux.
 
 ## ADR-08 · Styling: Tailwind, mobile-first

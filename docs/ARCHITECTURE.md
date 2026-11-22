@@ -73,15 +73,14 @@ chirp/
 │       │   ├── styles.css          design tokens: light-dark() day/night pairs → Tailwind theme
 │       │   ├── app/                routes.tsx · providers.tsx · StyleguidePage (dev only) · layout/ (AppShell, Sidebar, BottomNav, RightPanel)
 │       │   ├── features/
-│       │   │   ├── auth/           pages · components · hooks.ts · api.ts · *.test.tsx
-│       │   │   ├── tweets/         Composer, TweetCard, TweetList, HomePage…
+│       │   │   ├── auth/           api.ts · keys.ts · hooks.ts · session.ts · pages · components · *.test.tsx
+│       │   │   ├── tweets/         store.ts (composer) · Composer, TweetCard, TweetList, HomePage…
 │       │   │   ├── profile/        ProfilePage, FollowButton, FollowList, EditProfileModal…
 │       │   │   ├── search/
 │       │   │   ├── uploads/        useImageUpload
 │       │   │   └── notifications/
 │       │   ├── components/ui/      Button, Avatar, Input, Textarea, Modal, Spinner, Toast, EmptyState
-│       │   ├── stores/             Zustand stores (UI state only)
-│       │   ├── lib/                api-client.ts · query-client.ts · query-keys.ts · format.ts
+│       │   ├── lib/                domain-free infrastructure: api-client.ts · query-client.ts · format.ts · notify.ts
 │       │   └── test/               msw/ (handlers, server) · render.tsx · fixtures.ts
 │       ├── e2e/                    Playwright specs and global setup
 │       ├── nginx.conf
@@ -138,11 +137,15 @@ Tests sit next to the module (`*.test.ts`) and exercise routes through `app.inje
 
 | File | Responsibility |
 |---|---|
-| `features/<x>/api.ts` | typed fetch functions using `@chirp/shared` types |
-| `features/<x>/hooks.ts` | `useQuery` / `useInfiniteQuery` / `useMutation`, keys from `lib/query-keys.ts` |
+| `features/<x>/api.ts` | request functions built on `apiRequest`, each response validated with its `@chirp/shared` schema |
+| `features/<x>/keys.ts` | the module's query key factory (e.g. `tweetKeys.timeline()`); other modules import it to invalidate |
+| `features/<x>/hooks.ts` | `useQuery` / `useInfiniteQuery` / `useMutation` with the module's keys |
+| `features/<x>/store.ts` | Zustand store for the module's UI state, only when it has some |
 | `features/<x>/components/*` | presentational components |
 | `features/<x>/pages/*` | composition plus loading, empty and error states |
 | `*.test.tsx` | React Testing Library + MSW (network mocked at the fetch level, never hooks) |
+
+Each feature is a module: everything it owns lives in its folder, and modules import each other's files directly, never through a barrel. `lib/` holds only infrastructure with no domain knowledge.
 
 Forms use `react-hook-form` with `zodResolver(<shared schema>)`.
 

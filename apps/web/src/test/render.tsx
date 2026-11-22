@@ -1,8 +1,8 @@
-import { QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { createMemoryRouter, type RouteObject } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 
+import { createAppQueryClient } from '@/app/app-query-client';
 import { AppProviders } from '@/app/providers';
 import { routes as appRoutes } from '@/app/routes';
 
@@ -13,8 +13,13 @@ interface RenderRouteOptions {
 
 /** Renders the app at `path` with a fresh query client and an in-memory router. */
 export function renderRoute(path: string, { routes = appRoutes }: RenderRouteOptions = {}) {
-  // No retries: a failed request should surface immediately in tests.
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // The app's own client (global 401 handling included), minus retries: a failed request
+  // should surface immediately in tests.
+  const queryClient = createAppQueryClient();
+  queryClient.setDefaultOptions({
+    ...queryClient.getDefaultOptions(),
+    queries: { ...queryClient.getDefaultOptions().queries, retry: false },
+  });
   const router = createMemoryRouter(routes, { initialEntries: [path] });
 
   return {
