@@ -76,6 +76,7 @@ chirp/
 │       │   │   ├── auth/           api.ts · keys.ts · hooks.ts · session.ts · pages · components · *.test.tsx
 │       │   │   ├── tweets/         store.ts (composer) · Composer, TweetCard, TweetList, HomePage…
 │       │   │   ├── profile/        ProfilePage, FollowButton, FollowList, EditProfileModal…
+│       │   │   ├── appearance/     theme choice (system, light, dark): store.ts · AppearanceModal (no server data)
 │       │   │   ├── search/
 │       │   │   ├── uploads/        useImageUpload
 │       │   │   └── notifications/

@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Chirp: a calm, chronological microblog." />
     <meta name="color-scheme" content="light dark" />
+    <script>
+      // Applies a saved appearance before the first paint, so a light choice never flashes
+      // dark (or the reverse). Mirrors src/features/appearance/appearance.ts; keep the key in step.
+      try {
+        var appearance = localStorage.getItem('chirp.appearance.v1');
+        if (appearance === 'light' || appearance === 'dark') {
+          document.documentElement.style.colorScheme = appearance;
+        }
+      } catch (error) {
+        // Storage can be blocked; the system theme applies.
+      }
+    </script>
     <title>Chirp</title>
   </head>
   <body>

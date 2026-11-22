@@ -18,7 +18,7 @@ export function RailSignOutButton() {
       onClick={() => {
         logout.mutate();
       }}
-      className="mt-auto flex size-12 items-center justify-center gap-4 rounded-full text-lg font-medium text-ink-muted transition-colors duration-150 hover:bg-paper hover:text-ink aria-busy:cursor-wait lg:h-12 lg:w-full lg:justify-start lg:px-4"
+      className="flex size-12 items-center justify-center gap-4 rounded-full text-lg font-medium text-ink-muted transition-colors duration-150 hover:bg-paper hover:text-ink aria-busy:cursor-wait lg:h-12 lg:w-full lg:justify-start lg:px-4"
     >
       <LogOut aria-hidden="true" className="size-6 shrink-0" strokeWidth={1.75} />
       <span className="hidden lg:inline">Sign out</span>
@@ -39,7 +39,7 @@ export function HeaderSignOutButton() {
         logout.mutate();
       }}
       // The 48px target overhangs the header's 16px padding, so the icon lines up with it.
-      className="-mr-3 ml-auto sm:hidden"
+      className="-mr-3 sm:hidden"
     >
       <LogOut aria-hidden="true" className="size-6" strokeWidth={1.75} />
     </Button>

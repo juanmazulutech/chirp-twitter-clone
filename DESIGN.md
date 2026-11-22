@@ -253,7 +253,7 @@ Chirp runs in Operate mode. The world lends type, palette, density and one signa
 The surface is dense in the way a phone feed must be (a 44px avatar, 15px body, 12px row padding) but never crowded; the postmark is the only ornament inside a chirp, and the chevron is the only ornament on the page.
 
 **Key Characteristics:**
-- Airmail paper and navy ink by day, a navy envelope by night, both following `prefers-color-scheme` through `light-dark()`.
+- Airmail paper and navy ink by day, a navy envelope by night, both following `prefers-color-scheme` through `light-dark()`. A viewer can pin either one per device (Appearance: System, Light, Dark), which sets `color-scheme` on the root; a script in `index.html` applies the saved choice before the first paint.
 - Airmail red for the one primary action and the liked state; airmail blue for links, selection, focus and the postmark ring.
 - One chevron hairline, under the header, and nowhere else.
 - Flat: hairline dividers, no decorative shadows; one soft float shadow only for things that hover above the page.
@@ -421,6 +421,12 @@ A letter laid on the desk: the page dims, one sheet sits on top.
 - **Parts:** a title (title size, 600, slightly tightened) that names the dialog, the body in body size and faded ink, and the actions right-aligned with 12px between them, wrapping on narrow screens.
 - **Closes on:** Escape, the close button, or a genuine backdrop click (a drag that starts inside the dialog does not count).
 - **Scroll:** the page behind is locked while it is open; its scrollbar gutter becomes padding of the same width, so the scrim reaches the window's edge and the layout stays still.
+
+### Appearance choice
+The Appearance dialog (rail foot above Sign out; phone header beside it) uses the Modal with a native radio group.
+- **Options:** full-width rows with a hairline border and the field radius, 12px × 16px padding: a 20px icon in faded ink (Monitor, Sun, Moon), the label in 600 ink and a one-line description in faded ink, and the radio at the trailing edge.
+- **Radio:** drawn from the palette, not the browser's: a 20px circle with a 2px field-border ring on the sheet; checked, the ring thickens to 6px of airmail blue. The checked row also takes the paper wash and an airmail-blue border, so the choice never rests on colour alone.
+- **Behaviour:** a choice applies at once (the page behind the scrim previews it), focus opens on the current choice, and Done only closes the dialog.
 
 ### Toast
 A short note that confirms or apologises, then leaves.

@@ -4,6 +4,7 @@ import { cleanup } from '@testing-library/react';
 import { toast } from 'sonner';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
+import { useAppearanceStore } from '@/features/appearance/store';
 import { useComposerStore } from '@/features/tweets/store';
 
 import { installIntersectionObserver } from './intersection-observer';
@@ -38,6 +39,10 @@ afterEach(() => {
   cleanup();
   // Zustand stores are module singletons; each test starts from the initial UI state.
   useComposerStore.setState(useComposerStore.getInitialState());
+  useAppearanceStore.setState(useAppearanceStore.getInitialState());
+  // The theme choice lives in storage and on <html>, both shared by every test in a file.
+  localStorage.clear();
+  document.documentElement.style.colorScheme = '';
   // Sonner keeps its toasts in a module-level store that outlives the unmounted Toaster;
   // without this, one test's toast reappears in the next.
   toast.dismiss();
