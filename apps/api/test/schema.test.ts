@@ -5,9 +5,10 @@ import type { App } from '../src/app';
 import { Prisma } from '../src/generated/prisma/client';
 import { buildTestApp } from './app';
 import { resetDatabase } from './database';
+import { createTweet } from './factories/tweets';
 import { createUser } from './factories/users';
 
-describe('users and sessions schema', () => {
+describe('database schema', () => {
   let app: App;
 
   beforeAll(async () => {
@@ -73,8 +74,27 @@ describe('users and sessions schema', () => {
     expect(await app.prisma.session.count()).toBe(0);
   });
 
+  it("deletes a user's tweets when the user is deleted", async () => {
+    const user = await createUser(app.prisma);
+    await createTweet(app.prisma, user);
+
+    await app.prisma.user.delete({ where: { id: user.id } });
+
+    expect(await app.prisma.tweet.count()).toBe(0);
+  });
+
+  it('rejects tweet content longer than 280 code points', async () => {
+    const user = await createUser(app.prisma);
+
+    await expect(createTweet(app.prisma, user, { content: 'a'.repeat(281) })).rejects.toThrow();
+    await expect(
+      createTweet(app.prisma, user, { content: '🐦'.repeat(280) }),
+    ).resolves.toBeDefined();
+  });
+
   it('starts every test from empty tables', async () => {
     expect(await app.prisma.user.count()).toBe(0);
     expect(await app.prisma.session.count()).toBe(0);
+    expect(await app.prisma.tweet.count()).toBe(0);
   });
 });

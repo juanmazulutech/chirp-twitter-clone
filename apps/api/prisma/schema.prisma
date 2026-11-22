@@ -22,6 +22,7 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   sessions Session[]
+  tweets   Tweet[]
 
   @@map("users")
 }
@@ -38,4 +39,18 @@ model Session {
 
   @@index([userId])
   @@map("sessions")
+}
+
+model Tweet {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  // varchar(n) counts code points in PostgreSQL, matching `countCharacters` in @chirp/shared.
+  content   String   @db.VarChar(280)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Serves profile tweets and the home timeline's keyset pagination (ADR-11, ADR-12).
+  @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
+  @@map("tweets")
 }

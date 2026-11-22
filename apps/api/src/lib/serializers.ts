@@ -1,9 +1,14 @@
-import type { SessionUser, UserSummary } from '@chirp/shared';
+import type { SessionUser, Tweet as TweetDto, UserSummary } from '@chirp/shared';
 
-import type { User } from '../generated/prisma/client';
+import type { Tweet, User } from '../generated/prisma/client';
+
+type UserSummaryRow = Pick<User, 'id' | 'username' | 'displayName'>;
+
+/** A tweet row with the author fields its DTO embeds. */
+export type TweetRow = Pick<Tweet, 'id' | 'content' | 'createdAt'> & { author: UserSummaryRow };
 
 /** Database rows become API DTOs only here, so internal fields never leak by accident. */
-export function toUserSummary(user: Pick<User, 'id' | 'username' | 'displayName'>): UserSummary {
+export function toUserSummary(user: UserSummaryRow): UserSummary {
   return {
     id: user.id,
     username: user.username,
@@ -19,5 +24,19 @@ export function toSessionUser(user: User): SessionUser {
     email: user.email,
     bio: user.bio,
     createdAt: user.createdAt.toISOString(),
+  };
+}
+
+export function toTweet(tweet: TweetRow): TweetDto {
+  return {
+    id: tweet.id,
+    content: tweet.content,
+    // Tweet images arrive with media uploads (Phase 7).
+    imageUrl: null,
+    createdAt: tweet.createdAt.toISOString(),
+    author: toUserSummary(tweet.author),
+    // Likes arrive in C27; the contract is fixed now so clients never change shape.
+    likeCount: 0,
+    likedByMe: false,
   };
 }
