@@ -29,6 +29,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 | [21](#adr-21--evolutionary-schema-one-migration-per-feature) | Evolutionary schema: one migration per feature | Accepted |
 | [22](#adr-22--ai-assisted-development-workflow) | AI-assisted development workflow | Accepted |
 | [23](#adr-23--the-seed-never-resets-data-it-did-not-create) | The seed never resets data it did not create | Accepted |
+| [24](#adr-24--replies-are-tweets-with-a-parent) | Replies are tweets with a parent | Accepted |
 
 ---
 
@@ -198,7 +199,8 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 ## ADR-15 · Notifications: transactional creation, polling delivery
 
 - **Decision:**
-  - Types: `FOLLOW` (actor → followed user) and `LIKE` (actor → tweet author, with `tweetId`).
+  - Types: `FOLLOW` (actor → followed user), `LIKE` (actor → tweet author, with `tweetId`) and `REPLY` (actor → author of the chirp replied to, with `tweetId` = the reply; amended with ADR-24).
+  - A reply notifies only the direct parent's author, not everyone earlier in the thread.
   - Created **in the same transaction** as the triggering action — consistent without a queue.
   - Users are never notified about their own actions (liking your own tweet).
   - Undoing the action (unlike / unfollow) **deletes** its notification.
@@ -261,3 +263,20 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Why the data and not the host:** a host or `NODE_ENV` check misses the most common accident, a tunnel that makes production look local, and blocks legitimate resets of the Docker stack. The question that matters is whether the reset would destroy something the seed cannot recreate. Seed accounts and their activity (chirps posted while trying the demo account) are disposable by definition.
 - **Why name the database:** a yes/no flag left in a shell history or `.env` would disarm the guard everywhere. Naming the database scopes the confirmation to one target. `SEED_CONFIRM_RESET` is deliberately absent from `.env.example` and `env.ts`: it is a one-off confirmation for a single command, not configuration.
 - **Trade-offs:** after registering accounts by hand in development, resetting needs the confirmation. Production must also not create the demo accounts (known password) on first start; the Docker entrypoint's seed-when-empty step becomes opt-in in C51.
+
+## ADR-24 · Replies are tweets with a parent
+
+- **Decision:** a reply is a row in `tweets` with a nullable `parent_id` pointing at the chirp it answers. Replies can be answered too, so a thread is a tree; each reply knows only its parent.
+  - **Same rules as a chirp:** 1–280 code points, optional image, likes, deletion by its author. One table means one serializer, one select shape and one like path for both.
+  - **Counts and context in the DTO:** `replyCount` is aggregated with `_count.replies` like `likeCount` (ADR-13); `replyTo: { id, author }` lets a row say "Replying to @ana" without loading the parent's content.
+  - **Thread view:** `GET /tweets/:id/ancestors` walks up with a recursive CTE (`WITH RECURSIVE`, `$queryRaw`) capped at the 20 nearest ancestors and returns them root first through the usual select and serializer; `GET /tweets/:id/replies` lists direct replies oldest first, so a conversation reads top-down. Deeper replies are reached by opening a reply's own page, as on X.
+  - **Feeds stay top-level:** the home timeline and a profile's chirps list only `parent_id IS NULL`, so a busy conversation does not flood the timeline; replies are read in their thread (and, if time allows, in a profile "Replies" tab).
+  - **Deleting cascades:** deleting a chirp deletes the replies under it (`ON DELETE CASCADE`), and their likes and notifications with them.
+- **Context:** the challenge lists reply threads as a bonus. The model must keep the existing contracts (keyset pagination, aggregated counts, one tweet select) and cost one migration.
+- **Alternatives:**
+  - A separate `replies` table: duplicates content, images, likes and deletion for a row that behaves exactly like a chirp.
+  - A `conversation_id` (root id) on every row, as X does, to fetch a whole thread in one query: useful for rendering a full tree, unnecessary for a view that shows ancestors and one level of replies; it also has to be kept right when a root is deleted.
+  - `ON DELETE SET NULL` or tombstones ("This chirp was deleted"): keeps other people's replies, but a set-null reply would silently become a top-level chirp and appear in timelines, and tombstones need a soft-delete column honoured by every query.
+  - Materialized paths or `ltree`: fast subtree reads that this UI never needs.
+- **Consequences:** an author can remove a conversation by deleting its first chirp, including other people's replies. Thread depth is unbounded in writes; reading more than 20 levels up takes one more page view.
+- **Revisit when:** replies need to outlive their parent → soft-delete with tombstones; full-tree views or conversation muting are needed → add `conversation_id`.

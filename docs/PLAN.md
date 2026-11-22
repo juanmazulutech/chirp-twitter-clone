@@ -27,9 +27,9 @@ This is a living document. The commit sequence is our best current hypothesis, n
 
 **Required features:** registration, login and logout; protected routes; profiles (unique username, bio, avatar); tweets (create up to 280 characters, delete own); chronological timeline of followed users with infinite scroll; follow/unfollow; like/unlike with visible counts; followers and following lists; user search; mobile-first responsive design; realistic seed; README with runbook and `.env.example`.
 
-**Bonus features:** one-command Docker Compose stack; image attachments on tweets and avatar uploads (S3-compatible storage); notifications for follows and likes.
+**Bonus features:** one-command Docker Compose stack; image attachments on tweets and avatar uploads (S3-compatible storage); reply threads (replies to chirps and to replies, with a thread view); notifications for follows, likes and replies.
 
-**Out of scope** (documented as trade-offs): real-time delivery (SSE/WebSockets), replies and threads, retweets, direct messages, email verification, password reset, OAuth.
+**Out of scope** (documented as trade-offs): real-time delivery (SSE/WebSockets), retweets and quote chirps, direct messages, email verification, password reset, OAuth.
 
 **Constraints:** custom authentication (no third-party auth providers); a ~12-hour build budget; full, unsquashed commit history on `main`.
 
@@ -61,6 +61,7 @@ This is a living document. The commit sequence is our best current hypothesis, n
 | README, runbook, `.env.example` | 0, 10 | clean-clone runbook check |
 | Bonus: Docker one-command stack | 0, 10 | clean-clone `docker compose up --build` |
 | Bonus: image uploads | 7 | presign and attachment tests |
+| Bonus: reply threads | 7b | reply and thread endpoint tests (404 parent, ordering, ancestor cap, cascade), thread page and reply composer tests, E2E |
 | Bonus: notifications | 8 | notification rule tests |
 
 ## 4. Phases and commits
@@ -182,15 +183,31 @@ Estimates are focused hours including review. Each commit includes its tests and
 
 **Done when:** a tweet with an image and a new avatar both render after a reload, locally and against the storage container.
 
-### Phase 8 · Notifications — bonus (~1 h)
+### Phase 7b · Reply threads — bonus (~1.75 h)
 
-**Outcome:** users are notified when someone follows them or likes their tweets.
+**Outcome:** users reply to chirps and to other replies, and read a conversation on its own page: the chirps it answers above, the chirp itself, its replies below.
+
+Added after the plan was approved (see the [changelog](#9-plan-changelog)). Its commits are numbered after C53 so every existing reference stays valid, and they run **after C42 and before C43**, so notifications ship with the `REPLY` type from their first migration. Design: ADR-24.
 
 | # | Commit | Scope |
 |---|---|---|
-| C43 | `feat(notifications): create notifications on follow and like` | migration `notifications`; transactional create/delete in follow and like services; never self; idempotent; seed notifications; tests for every ADR-15 rule |
+| C54 | `feat(tweets): add replies to tweets` | migration `tweet_replies` (`tweets.parent_id`, self-reference with `ON DELETE CASCADE`, index `(parent_id, created_at, id)`); `POST /tweets/:id/replies` (same body and rules as `POST /tweets`, 404 on a missing parent, a parent deleted concurrently maps to 404); `Tweet` DTO gains `replyCount` (aggregated, ADR-13) and `replyTo: { id, author } \| null` in `tweetRowSelect`; home timeline and profile chirps list top-level chirps only; web fixtures and MSW handlers updated to the new DTO; tests (201/400/401/404, reply to a reply, self-reply, counts, cascade, timeline and profile exclusion) |
+| C55 | `feat(tweets): add replies list and thread ancestors endpoints` | `GET /tweets/:id/replies` (oldest first: `lib/cursor.ts` gains an ascending keyset), `GET /tweets/:id/ancestors` (recursive CTE, root first, the 20 nearest ancestors); tests (404, ordering and tie-breaking, no gaps or duplicates across pages, malformed cursor, depth cap, a deleted ancestor removes the branch) |
+| C56 | `feat(db): seed reply threads` | hand-written replies matching the personas: conversations two to four levels deep, self-threads, replies on `demo`'s chirps; timed after the chirp they answer |
+| C57 | `feat(web): add tweet detail page with thread view` | `/:username/status/:tweetId` (code-split): ancestors joined by a thread line, the focused chirp at full size, replies through `InfiniteList`; "Replying to @user" on reply rows; the postmark links each chirp to its page; 404 and deleted states; impeccable shape + review of the thread view and DESIGN.md update; tests |
+| C58 | `feat(web): add reply composer and reply counts` | `ReplyButton` with count on every `TweetCard` (opens the compose modal in reply mode: the store holds only the target id), inline reply composer on the detail page; on success `replyCount` is bumped in every cached `Page<Tweet>` (`tweet-cache.ts`) and the reply is appended to the thread; deleting the focused chirp returns to the previous page; tests (reply from the feed and the thread, counter and limit, 404 parent, failure) |
+
+**Done when:** replying to a seeded chirp from the home timeline raises its reply count, and the reply appears in the chirp's thread after a reload, at all three breakpoints.
+
+### Phase 8 · Notifications — bonus (~1 h)
+
+**Outcome:** users are notified when someone follows them, likes their tweets or replies to them.
+
+| # | Commit | Scope |
+|---|---|---|
+| C43 | `feat(notifications): create notifications on follow, like and reply` | migration `notifications` (types `FOLLOW`, `LIKE`, `REPLY`); transactional create/delete in follow, like and reply services; never self; idempotent; seed notifications; tests for every ADR-15 rule |
 | C44 | `feat(notifications): add list, unread count and mark as read endpoints` | three endpoints; tests |
-| C45 | `feat(web): add notifications page and unread badge` | `/notifications` (optional like grouping), badge in `Sidebar` / `BottomNav` polling every 30 s, mark read on open; tests |
+| C45 | `feat(web): add notifications page and unread badge` | `/notifications` (optional like grouping; a reply notification opens its thread), badge in `Sidebar` / `BottomNav` polling every 30 s, mark read on open; tests |
 
 **Done when:** liking `demo`'s tweet from another account raises `demo`'s badge, and undoing the like removes the notification.
 
@@ -202,7 +219,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 |---|---|---|
 | C46 | `chore(skills): add playwright and webapp testing skills` | reviewed skills |
 | C47 | `test(e2e): add playwright setup and authentication flow` | config, global setup (reset + seed `chirp_test`), auth flow spec |
-| C48 | `test(e2e): add compose tweet and follow flows` | compose → appears on timeline; follow → their tweets appear on home |
+| C48 | `test(e2e): add compose tweet, follow and reply flows` | compose → appears on timeline; follow → their tweets appear on home; reply → appears in the thread and the count rises |
 | C49 | `ci: run end-to-end tests` | E2E job (PostgreSQL, storage, Chromium) |
 | C50 | `fix(web): address responsive and accessibility audit findings` | `impeccable` audit + screenshots at 375 / 768 / 1280; fixes |
 
@@ -224,7 +241,7 @@ Estimates are focused hours including review. Each commit includes its tests and
 
 | Commit | Scope |
 |---|---|
-| `feat(web): add tweet detail page` | `/:username/status/:tweetId` |
+| `feat(users): add replies tab on profiles` | `GET /users/:username/replies` and a "Replies" tab next to the profile's chirps |
 | `feat(web): add who to follow panel` | right-panel suggestions on desktop |
 
 ## 5. Agent skills timeline
@@ -301,11 +318,12 @@ report described in the session protocol.
 | Running over the time budget | cut in the order below |
 
 **Cut order** (first to go → last):
-1. Optional commits (tweet detail, who to follow).
+1. Optional commits (profile replies tab, who to follow).
 2. Like grouping in notifications.
-3. Avatar uploads (C41); seed avatars stay.
-4. Notifications UI (C45); the API remains.
-5. **Never cut:** required features, tests, runbook.
+3. Thread ancestors (C55's `/ancestors`, C57's context above the chirp): the detail page shows the parent only, through `replyTo`.
+4. Avatar uploads (C41); seed avatars stay.
+5. Notifications UI (C45); the API remains.
+6. **Never cut:** required features, tests, runbook.
 
 ## 8. Status
 
@@ -319,6 +337,7 @@ report described in the session protocol.
 | 5 · Profiles and social graph | C30–C34 | ✅ Done |
 | 6 · Search | C35–C36 | ✅ Done |
 | 7 · Media | C37–C42 | ⏳ |
+| 7b · Reply threads | C54–C58 | ⏳ |
 | 8 · Notifications | C43–C45 | ⏳ |
 | 9 · End-to-end and quality | C46–C50 | ⏳ |
 | 10 · Delivery | C51–C53 | ⏳ |
@@ -373,3 +392,4 @@ report described in the session protocol.
 | 2026-11-22 | Fix after C38: `S3_ENDPOINT`, `S3_PUBLIC_ENDPOINT`, `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` lose their defaults and are required (like `DATABASE_URL`); region, bucket, path style and upload limit keep theirs; tests take placeholder values from `TEST_STORAGE_ENV`; C51's compose must set them for the `api` service | A deploy missing them would have started against `localhost:9000` with the published development credentials instead of failing at startup (CLAUDE.md: no secrets in code). Amends the C37 entry above |
 | 2026-11-22 | C35: `GET /users/search` returns `Page<FollowListUser>` (`UserSummary & { isFollowing }`) instead of ARCHITECTURE's `Page<UserSummary>`, so results render as `UserRow` with a follow button; the term is trimmed and a leading `@` dropped (`searchTermSchema`, 1–50 characters after cleanup); ranking is three tiers (exact username, username prefix, any other username or display-name match), newest accounts first within a tier, and pages keep the standard `(createdAt, id)` cursor: the cursor's user tells which tier to resume in (usernames are immutable; a deleted cursor user resumes in the last tier, which never repeats rows); `%`, `_` and `\` are escaped for LIKE because Prisma passes them through as wildcards; the trigram indexes are declared in `schema.prisma` as well as created in SQL (ADR-04 amended) and a schema test guards them; the module is `search` (ARCHITECTURE §2) | A follow button needs to know the current state; one cursor format for every list (CLAUDE.md), with relevance first as the plan asks; `_` is common in usernames, so `a_c` must not match `abc`; an undeclared trigram index is dropped by the next `migrate dev` |
 | 2026-11-22 | C36: the address (`/search?q=…`) stays the single source of truth: `SearchForm` is now a controlled field that writes the address 300 ms after typing pauses (at once on Enter), replacing the history entry while on `/search` and pushing one when it opens the results from another page; every copy of the form follows the address (derived during render, not in an effect), so back and forward restore the field and the results; the old remount-on-change (`key={query}`) would have dropped focus mid-typing; results key on the cleaned term, keep the previous results visible while the next term loads (`keepPreviousData`) and render as `UserRow` in the shared `InfiniteList`; `useFollowUser` also updates rows in cached search results; no request is made without a usable term | The plan's debounce, without a second state that could disagree with the address; a follow must agree wherever the person appears |
+| 2026-11-22 | New bonus phase 7b · Reply threads (C54–C58), run after C42 and before C43; replies removed from out of scope; C43 adds the `REPLY` notification type, C45 opens a reply's thread, C48 adds a reply flow; the optional tweet detail page becomes C57; a profile "Replies" tab joins the optional commits; new commits are numbered after C53 so existing references stay valid. ADR-24 added, ADR-15 amended | The author asked for replies. Placing the phase before notifications gives `NotificationType` all three values in its first migration instead of an enum change later |

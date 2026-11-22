@@ -173,6 +173,7 @@ The complete target model. Tables are introduced by the feature that needs them 
 enum NotificationType {
   FOLLOW
   LIKE
+  REPLY
 }
 
 model User {
@@ -215,13 +216,17 @@ model Tweet {
   authorId  String   @map("author_id") @db.Uuid
   content   String   @db.VarChar(280) // varchar length counts characters (code points) in Postgres
   imageKey  String?  @map("image_key")
+  parentId  String?  @map("parent_id") @db.Uuid // the chirp this one replies to; null for a top-level chirp
   createdAt DateTime @default(now()) @map("created_at")
 
   author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent        Tweet?         @relation("TweetReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Tweet[]        @relation("TweetReplies")
   likes         Like[]
   notifications Notification[]
 
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([parentId, createdAt, id])
   @@map("tweets")
 }
 
@@ -282,7 +287,8 @@ model Notification {
 | 5 | `user_search_trgm` (`pg_trgm` extension + GIN trigram indexes on `username`, `display_name`) | search (Phase 6) |
 | 6 | `tweet_image_key` (`tweets.image_key`) | tweet images (Phase 7) |
 | 7 | `user_avatar_key` (`users.avatar_key`) | avatar uploads (Phase 7) |
-| 8 | `notifications` | notifications (Phase 8) |
+| 8 | `tweet_replies` (`tweets.parent_id` + index) | reply threads (Phase 7b) |
+| 9 | `notifications` (with `REPLY`) | notifications (Phase 8) |
 
 ## 5. API contracts
 
@@ -294,8 +300,10 @@ All routes are prefixed with `/api` and exchange JSON. 🔒 = requires a session
 UserSummary  = { id, username, displayName, avatarUrl: string | null }
 SessionUser  = UserSummary & { email, bio, createdAt }            // the signed-in user, as seen by themselves
 UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, tweetsCount, isFollowing: boolean, isMe: boolean }
-Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean }
-Notification = { id, type: 'FOLLOW' | 'LIKE', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }
+Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean,
+                 replyCount, replyTo: { id, author: UserSummary } | null }   // reply fields from C54
+Notification = { id, type: 'FOLLOW' | 'LIKE' | 'REPLY', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }
+               // REPLY: `tweet` is the reply itself
 Page<T>      = { items: T[], nextCursor: string | null }
 ```
 
@@ -312,15 +320,18 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | GET | `/users/search` | 🔒 | `?q=&cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | `q` 1–50 chars after trimming and dropping a leading `@`; matches username or display name; exact username, then username prefix, then the rest |
 | GET | `/users/:username` | 🔒 | — | `200 UserProfile` | 404 |
 | PATCH | `/users/me` | 🔒 | `{ displayName?, bio?, avatarKey?: string \| null }` | `200 UserProfile` | `avatarKey` ownership verified |
-| GET | `/users/:username/tweets` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | |
+| GET | `/users/:username/tweets` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | top-level chirps only (ADR-24) |
 | GET | `/users/:username/followers` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | cursor on `(follow.createdAt, userId)` |
 | GET | `/users/:username/following` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | |
 | POST | `/users/:username/follow` | 🔒 | — | `200 { isFollowing: true, followersCount }` | idempotent; 400 on self-follow; notifies |
 | DELETE | `/users/:username/follow` | 🔒 | — | `200 { isFollowing: false, followersCount }` | idempotent; removes notification |
-| GET | `/timeline` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | followed users + self |
+| GET | `/timeline` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | followed users + self; top-level chirps only (ADR-24) |
 | POST | `/tweets` | 🔒 | `{ content, imageKey? }` | `201 Tweet` | 1–280 code points after trim; content required even with an image |
 | GET | `/tweets/:id` | 🔒 | — | `200 Tweet` | 404 |
-| DELETE | `/tweets/:id` | 🔒 | — | `204` | 403 if not the author; image deleted best-effort |
+| DELETE | `/tweets/:id` | 🔒 | — | `204` | 403 if not the author; image deleted best-effort; its replies cascade (ADR-24) |
+| POST | `/tweets/:id/replies` | 🔒 | `{ content, imageKey? }` | `201 Tweet` | same rules as `POST /tweets`; 404 on a missing parent; notifies the parent's author unless self |
+| GET | `/tweets/:id/replies` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | direct replies, **oldest first** (ascending keyset on `(createdAt, id)`); 404 |
+| GET | `/tweets/:id/ancestors` | 🔒 | — | `200 { items: Tweet[] }` | the chirps above it, root first, at most the 20 nearest; when capped, the first item's `replyTo` still points further up; 404 |
 | POST | `/tweets/:id/like` | 🔒 | — | `200 { liked: true, likeCount }` | idempotent; notifies author unless self |
 | DELETE | `/tweets/:id/like` | 🔒 | — | `200 { liked: false, likeCount }` | idempotent; removes notification |
 | POST | `/uploads/presign` | 🔒 | `{ purpose: 'tweet' \| 'avatar', contentType, size }` | `200 { uploadUrl, key }` | 400 on invalid type/size |
@@ -343,7 +354,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `/notifications` | notifications | signed in |
 | `/:username` | profile + tweets | signed in |
 | `/:username/followers`, `/:username/following` | follow lists | signed in |
-| `/:username/status/:tweetId` | tweet detail (optional) | signed in |
+| `/:username/status/:tweetId` | chirp detail: ancestors, the chirp, its replies and a reply composer (C57) | signed in |
 | `*` (any other path) | not found, inside the shell | signed in |
 
 Every page is code-split with the route's `lazy`. Static segments outrank `/:username`, so their names are reserved usernames (ADR-18).
@@ -362,6 +373,7 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 - Likes and follows are **optimistic** with rollback (`onMutate` / `onError` / `onSettled`).
 - Composer: a text counter in code points ("N characters left" / "N over the limit", tabular, tied to the field with `aria-describedby`); disabled when empty or over 280; ⌘/Ctrl+Enter posts; inline on home from `sm` up and in the compose modal everywhere; image attach with preview and progress.
 - A newly created tweet is inserted into the first timeline page in the cache (no full refetch).
+- A new reply bumps its parent's `replyCount` in every cached `Page<Tweet>` and is appended to the parent's loaded replies; it is not inserted into the home timeline, which lists top-level chirps only. The compose modal's store holds only the id of the chirp being answered; the chirp itself is read from the query cache.
 - Route guards (`ProtectedRoute`, `GuestRoute`, `SessionRedirect` in `features/auth/components/`) read the session query. A 401 from any request sets `['auth', 'me']` to `null`, so `ProtectedRoute` redirects to `/login` with the page in history state (`{ from }`, validated as an in-app path) and signing in returns there. Creating an account always opens `/search`; signing out opens `/login` with nothing to return to.
 - Signing in or out changes the session and then navigates; while those mutations run (`authKeys.signIn` / `authKeys.signOut`), the guards do not redirect. `AppRouter` renders navigations without React transitions so the new page commits before the mutation settles.
 - Signing in drops every cached query but the session; signing out drops them all, so one account's data never reaches the next.
@@ -375,8 +387,8 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 | Shared | Vitest | schema boundaries: 280 code points including emoji, username pattern, password rules |
 | API unit | Vitest | password hashing, token generation/hashing, cursor encode/decode (malformed → 400), serializers, service rules |
 | API integration | Vitest + `app.inject` + PostgreSQL `chirp_test` | every endpoint: success, 401, 403, 404, 409, validation; pagination (no duplicates or gaps across pages, tie-breaking by id); cascades; idempotency; notification rules |
-| Web integration | Vitest + React Testing Library + user-event + MSW | login (success/failure), registration, route protection, composing (counter, limit), infinite scroll, optimistic like with rollback, follow, search, notifications |
-| End-to-end | Playwright (Chromium) against the running stack | full auth flow (register → home → logout → login → protected route redirects when signed out); compose a tweet; follow a user and see their tweets on the home timeline |
+| Web integration | Vitest + React Testing Library + user-event + MSW | login (success/failure), registration, route protection, composing (counter, limit), infinite scroll, optimistic like with rollback, follow, search, replies and thread view, notifications |
+| End-to-end | Playwright (Chromium) against the running stack | full auth flow (register → home → logout → login → protected route redirects when signed out); compose a tweet; follow a user and see their tweets on the home timeline; reply to a chirp and see it in the thread |
 
 - **API helpers:** `buildTestApp()` (with `MemoryStorage`), factories (`createUser`, `createTweet`, `follow`, `like`), `loginAs(user)` returning a session cookie.
 - **Isolation:** `TRUNCATE … CASCADE` before each test; test files run serially.
@@ -463,7 +475,8 @@ Target state once every feature is in place; each phase extends the seed with th
 - 8–15 tweets per user, written to match the persona, spread over the last 30 days.
 - Follow graph: `demo` follows 8 users; every user follows 4–9 others; no self-follows.
 - Cross-likes: each user likes 10–30 tweets from people they follow, timed after both the chirp and the liker's join date.
-- Notifications consistent with the generated follows and likes (never self-notifications), with some unread for `demo`.
+- Reply threads: hand-written replies between personas who follow each other, two to four levels deep, including self-threads and replies on `demo`'s chirps, each timed after the chirp it answers.
+- Notifications consistent with the generated follows, likes and replies (never self-notifications), with some unread for `demo`.
 - Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`), but refuses when the database holds accounts the seed did not create unless `SEED_CONFIRM_RESET=<database name>` is set (ADR-23); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
 - Every account gets its own argon2 hash; a test signs in with the documented demo credentials so documentation and data cannot drift.
 - Requires the storage service (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.
