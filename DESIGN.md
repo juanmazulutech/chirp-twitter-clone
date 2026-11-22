@@ -455,6 +455,11 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Follow button:** secondary. "Follow" with a UserPlus icon; once following, "Following" with a UserCheck icon and `aria-pressed="true"`, so the state is in the words, the icon and the accessible state, never in colour. It changes at once (the follower count with it) and rolls back with an error toast if the server refuses.
 - **Unknown account:** the page heading "Account not found", then an empty state ("This account doesn’t exist", what to do) with a secondary "Search people" button link.
 
+### Search
+- **Field:** "Search people" with a 20px search icon inside its start (the input pads 40px for it), placeholder "Name or @username". On phones and tablets it sits under the "Search" heading; on desktop it lives in the side panel's card and the page shows only results.
+- **Live results:** results follow the field once typing pauses (300 ms) and at once on Enter; the address holds the search, so back and forward restore it. The previous results stay on screen while the next ones load, so the list never flashes a spinner per keystroke.
+- **Results:** person rows (as in the follow lists) under the shared list states, ending with "That’s everyone."; nothing typed shows "Find people to follow"; no match shows "No one matches “…”" with what to try instead.
+
 ### Edit profile modal
 - The standard modal titled "Edit profile": the large avatar beside a faded meta note ("Profile pictures are coming soon.") where the picture control will go, then the **Name** field (single line, a live code-point counter under it, focused on open) and the **Bio** field (three-row textarea with its counter and the hint "A few words about you, shown on your profile."). Over the limit, the counter turns danger at 600 and the field is marked invalid.
 - Actions: Cancel (ghost) and **Save** (primary, the screen's one red action), disabled until something changed and loading while it saves. Field problems sit on their fields; anything else in a form alert at the top. Cancel drops unsaved edits. Saving closes the dialog, then shows the "Your profile is saved" toast, and the new name appears at once in the header, the session and, after a refetch, every chirp and list.

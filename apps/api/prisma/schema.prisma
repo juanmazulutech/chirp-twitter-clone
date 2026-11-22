@@ -28,6 +28,10 @@ model User {
   following Follow[]  @relation("FollowFollower")
   followers Follow[]  @relation("FollowFollowing")
 
+  // Trigram indexes serve case-insensitive substring search (ILIKE '%q%') on both names. The
+  // migration enables `pg_trgm` first: Prisma does not manage extensions (ADR-04).
+  @@index([username(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_username_trgm_idx")
+  @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_display_name_trgm_idx")
   @@map("users")
 }
 
