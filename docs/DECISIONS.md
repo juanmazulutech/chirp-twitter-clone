@@ -28,6 +28,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 | [20](#adr-20--automated-quality-gates) | Automated quality gates | Accepted |
 | [21](#adr-21--evolutionary-schema-one-migration-per-feature) | Evolutionary schema: one migration per feature | Accepted |
 | [22](#adr-22--ai-assisted-development-workflow) | AI-assisted development workflow | Accepted |
+| [23](#adr-23--the-seed-never-resets-data-it-did-not-create) | The seed never resets data it did not create | Accepted |
 
 ---
 
@@ -252,3 +253,11 @@ Decisions are appended or amended as the project evolves; superseded decisions a
   - **Human review at every commit boundary:** the agent implements one planned commit, runs `npm run verify`, and stops; the author reviews the diff and commits it.
   - **Living plan:** deviations are recorded in the plan's changelog rather than silently absorbed.
 - **Context:** the challenge evaluates how AI tools are directed. Consistent patterns, small reviewed commits and tests in every commit are the evidence.
+
+## ADR-23 · The seed never resets data it did not create
+
+- **Decision:** the seed's reset mode (`npm run db:seed`) first counts accounts the seed did not create (a username or email outside the seed personas), inside the same transaction as the delete. If there are any, it refuses and deletes nothing, unless `SEED_CONFIRM_RESET` names the target database (`SEED_CONFIRM_RESET=chirp npm run db:seed`). A confirmation that names a different database is refused before connecting. `--if-empty` is unchanged.
+- **Context:** reset mode deletes every user, and everything cascades from users. Nothing in the command tied it to development: run with a production `DATABASE_URL` (a copied `.env`, a shell inside the API container, an SSH tunnel to `localhost`), it would wipe production.
+- **Why the data and not the host:** a host or `NODE_ENV` check misses the most common accident, a tunnel that makes production look local, and blocks legitimate resets of the Docker stack. The question that matters is whether the reset would destroy something the seed cannot recreate. Seed accounts and their activity (chirps posted while trying the demo account) are disposable by definition.
+- **Why name the database:** a yes/no flag left in a shell history or `.env` would disarm the guard everywhere. Naming the database scopes the confirmation to one target. `SEED_CONFIRM_RESET` is deliberately absent from `.env.example` and `env.ts`: it is a one-off confirmation for a single command, not configuration.
+- **Trade-offs:** after registering accounts by hand in development, resetting needs the confirmation. Production must also not create the demo accounts (known password) on first start; the Docker entrypoint's seed-when-empty step becomes opt-in in C51.
