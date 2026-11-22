@@ -1,0 +1,31 @@
+import type { Page, Tweet } from '@chirp/shared';
+import { type InfiniteData, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { createTweet } from './api';
+import { tweetKeys } from './keys';
+
+/** The cached home timeline: pages in order, each keyed by the cursor that fetched it. */
+export type TimelineData = InfiniteData<Page<Tweet>, string | undefined>;
+
+/** The new chirp goes on top of the first page; later pages are untouched. */
+function prependTweet(data: TimelineData, tweet: Tweet): TimelineData {
+  const [first, ...rest] = data.pages;
+  if (!first) return data;
+  return { ...data, pages: [{ ...first, items: [tweet, ...first.items] }, ...rest] };
+}
+
+/**
+ * Posts a chirp and puts it at the top of the cached timeline, so it appears without
+ * refetching every loaded page. A timeline that was never loaded stays unloaded.
+ */
+export function useCreateTweet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createTweet,
+    onSuccess: (tweet) => {
+      queryClient.setQueryData<TimelineData>(tweetKeys.timeline, (data) =>
+        data ? prependTweet(data, tweet) : data,
+      );
+    },
+  });
+}

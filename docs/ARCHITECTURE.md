@@ -360,7 +360,7 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 
 - Infinite scroll: `useInfiniteQuery` + an `IntersectionObserver` sentinel; explicit loading, empty, error and end-of-feed states.
 - Likes and follows are **optimistic** with rollback (`onMutate` / `onError` / `onSettled`).
-- Composer: code-point character counter with a progress ring; disabled when empty or over 280; image attach with preview and progress.
+- Composer: a text counter in code points ("N characters left" / "N over the limit", tabular, tied to the field with `aria-describedby`); disabled when empty or over 280; ⌘/Ctrl+Enter posts; inline on home from `sm` up and in the compose modal everywhere; image attach with preview and progress.
 - A newly created tweet is inserted into the first timeline page in the cache (no full refetch).
 - Route guards (`ProtectedRoute`, `GuestRoute`, `SessionRedirect` in `features/auth/components/`) read the session query. A 401 from any request sets `['auth', 'me']` to `null`, so `ProtectedRoute` redirects to `/login` with the page in history state (`{ from }`, validated as an in-app path) and signing in returns there. Creating an account always opens `/search`; signing out opens `/login` with nothing to return to.
 - Signing in or out changes the session and then navigates; while those mutations run (`authKeys.signIn` / `authKeys.signOut`), the guards do not redirect. `AppRouter` renders navigations without React transitions so the new page commits before the mutation settles.

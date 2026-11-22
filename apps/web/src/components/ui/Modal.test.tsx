@@ -93,6 +93,27 @@ describe('Modal', () => {
     expect(document.documentElement.style.overflow).toBe('');
   });
 
+  it('focuses the element marked data-autofocus when it opens', async () => {
+    const user = userEvent.setup();
+    function ComposeFlow() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <Button onClick={() => setOpen(true)}>Write</Button>
+          <Modal open={open} onClose={() => setOpen(false)}>
+            <ModalTitle>New chirp</ModalTitle>
+            <textarea aria-label="Chirp text" data-autofocus />
+          </Modal>
+        </>
+      );
+    }
+    render(<ComposeFlow />);
+
+    await user.click(screen.getByRole('button', { name: 'Write' }));
+
+    expect(screen.getByRole('textbox', { name: 'Chirp text' })).toHaveFocus();
+  });
+
   it('requires a Modal around its title', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(<ModalTitle>Orphan</ModalTitle>)).toThrow(

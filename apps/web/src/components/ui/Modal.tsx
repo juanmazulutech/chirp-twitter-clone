@@ -23,6 +23,7 @@ interface ModalProps {
 /**
  * A modal dialog on the native `<dialog>`: the browser traps focus, closes on
  * Escape and restores focus to the opener. Clicking the backdrop also closes it.
+ * An element marked `data-autofocus` receives focus when it opens.
  *
  *   <Modal open={open} onClose={close}>
  *     <ModalTitle>Delete chirp?</ModalTitle>
@@ -39,7 +40,12 @@ export function Modal({ open, onClose, children }: ModalProps) {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      // The browser focuses the first focusable element, the close button; a dialog whose job
+      // is typing marks its field with `data-autofocus` to receive focus instead.
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
 

@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 
 import { cleanup } from '@testing-library/react';
+import { toast } from 'sonner';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { useComposerStore } from '@/features/tweets/store';
@@ -24,6 +25,9 @@ afterEach(() => {
   cleanup();
   // Zustand stores are module singletons; each test starts from the initial UI state.
   useComposerStore.setState(useComposerStore.getInitialState());
+  // Sonner keeps its toasts in a module-level store that outlives the unmounted Toaster;
+  // without this, one test's toast reappears in the next.
+  toast.dismiss();
   server.resetHandlers();
 });
 
