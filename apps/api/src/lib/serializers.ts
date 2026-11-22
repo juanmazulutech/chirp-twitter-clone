@@ -1,4 +1,4 @@
-import type { SessionUser, Tweet as TweetDto, UserSummary } from '@chirp/shared';
+import type { SessionUser, Tweet as TweetDto, UserProfile, UserSummary } from '@chirp/shared';
 
 import type { Prisma, Tweet, User } from '../generated/prisma/client';
 
@@ -59,5 +59,39 @@ export function toTweet(tweet: TweetRow): TweetDto {
     author: toUserSummary(tweet.author),
     likeCount: tweet._count.likes,
     likedByMe: tweet.likes.length > 0,
+  };
+}
+
+/**
+ * A user row with its counts and, in `followers`, the viewer's own follow when there is one.
+ */
+export type UserProfileRow = Pick<User, 'id' | 'username' | 'displayName' | 'bio' | 'createdAt'> & {
+  _count: { followers: number; following: number; tweets: number };
+  followers: Array<{ followerId: string }>;
+};
+
+/** Selects exactly the columns of a `UserProfileRow` for `viewerId`. */
+export function userProfileRowSelect(viewerId: string) {
+  return {
+    id: true,
+    username: true,
+    displayName: true,
+    bio: true,
+    createdAt: true,
+    _count: { select: { followers: true, following: true, tweets: true } },
+    followers: { where: { followerId: viewerId }, select: { followerId: true }, take: 1 },
+  } as const satisfies Prisma.UserSelect;
+}
+
+export function toUserProfile(user: UserProfileRow, viewerId: string): UserProfile {
+  return {
+    ...toUserSummary(user),
+    bio: user.bio,
+    createdAt: user.createdAt.toISOString(),
+    followersCount: user._count.followers,
+    followingCount: user._count.following,
+    tweetsCount: user._count.tweets,
+    isFollowing: user.followers.length > 0,
+    isMe: user.id === viewerId,
   };
 }
