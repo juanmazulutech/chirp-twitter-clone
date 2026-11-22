@@ -95,6 +95,21 @@ describe('GET /api/timeline', () => {
     ]);
   });
 
+  it('lists top-level chirps only, with their reply counts', async () => {
+    const ana = await createUser(app.prisma);
+    const bruno = await createUser(app.prisma);
+    await createFollow(app.prisma, ana, bruno);
+    const chirp = await tweetAt(bruno, 30);
+    await createTweet(app.prisma, ana, { parentId: chirp.id, createdAt: minutesAgo(20) });
+    await createTweet(app.prisma, bruno, { parentId: chirp.id, createdAt: minutesAgo(10) });
+
+    const page = await fetchPage(await loginAs(app, ana));
+
+    expect(page.items.map(({ id, replyCount, replyTo }) => ({ id, replyCount, replyTo }))).toEqual([
+      { id: chirp.id, replyCount: 2, replyTo: null },
+    ]);
+  });
+
   it('does not show tweets of people who follow the viewer', async () => {
     const ana = await createUser(app.prisma);
     const fan = await createUser(app.prisma);

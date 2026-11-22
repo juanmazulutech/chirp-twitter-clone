@@ -1,4 +1,9 @@
-import { createTweetBodySchema, tweetParamsSchema, tweetSchema } from '@chirp/shared';
+import {
+  createReplyBodySchema,
+  createTweetBodySchema,
+  tweetParamsSchema,
+  tweetSchema,
+} from '@chirp/shared';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
 import { currentUser } from '../../plugins/session';
@@ -15,6 +20,22 @@ const tweetsRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request, reply) =>
       reply.code(201).send(await tweets.create(currentUser(request).id, request.body)),
+  );
+
+  app.post(
+    '/tweets/:id/replies',
+    {
+      onRequest: app.requireAuth,
+      schema: {
+        params: tweetParamsSchema,
+        body: createReplyBodySchema,
+        response: { 201: tweetSchema },
+      },
+    },
+    async (request, reply) =>
+      reply
+        .code(201)
+        .send(await tweets.reply(currentUser(request).id, request.params.id, request.body)),
   );
 
   app.get(

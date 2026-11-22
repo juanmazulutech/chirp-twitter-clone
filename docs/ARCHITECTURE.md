@@ -299,7 +299,7 @@ All routes are prefixed with `/api` and exchange JSON. 🔒 = requires a session
 ```ts
 UserSummary  = { id, username, displayName, avatarUrl: string | null }
 SessionUser  = UserSummary & { email, bio, createdAt }            // the signed-in user, as seen by themselves
-UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, tweetsCount, isFollowing: boolean, isMe: boolean }
+UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, tweetsCount, isFollowing: boolean, isMe: boolean }   // tweetsCount: top-level chirps only (C54)
 Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean,
                  replyCount, replyTo: { id, author: UserSummary } | null }   // reply fields from C54
 Notification = { id, type: 'FOLLOW' | 'LIKE' | 'REPLY', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }

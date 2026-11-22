@@ -50,6 +50,8 @@ const sampleChirps: Tweet[] = [
     author: { id: 'ana_codes', username: 'ana_codes', displayName: 'Ana Torres', avatarUrl: null },
     likeCount: 12,
     likedByMe: false,
+    replyCount: 0,
+    replyTo: null,
   },
   {
     id: 'sample-kenji',
@@ -65,6 +67,8 @@ const sampleChirps: Tweet[] = [
     },
     likeCount: 27,
     likedByMe: false,
+    replyCount: 0,
+    replyTo: null,
   },
 ];
 

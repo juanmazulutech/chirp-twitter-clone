@@ -26,6 +26,10 @@ export const createTweetBodySchema = z.object({
 });
 export type CreateTweetBody = z.infer<typeof createTweetBodySchema>;
 
+/** A reply follows the same rules as a top-level chirp; its parent comes from the path. */
+export const createReplyBodySchema = createTweetBodySchema;
+export type CreateReplyBody = CreateTweetBody;
+
 export const tweetParamsSchema = z.object({ id: z.uuid() });
 export type TweetParams = z.infer<typeof tweetParamsSchema>;
 
@@ -37,5 +41,8 @@ export const tweetSchema = z.object({
   author: userSummarySchema,
   likeCount: z.number().int().nonnegative(),
   likedByMe: z.boolean(),
+  replyCount: z.number().int().nonnegative(),
+  /** The chirp this one answers, enough to say "Replying to @ana"; null for a top-level chirp. */
+  replyTo: z.object({ id: z.uuid(), author: userSummarySchema }).nullable(),
 });
 export type Tweet = z.infer<typeof tweetSchema>;

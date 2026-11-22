@@ -22,12 +22,13 @@ const userSummarySelect = {
 } as const satisfies Prisma.UserSelect;
 
 /**
- * A tweet row with the author fields its DTO embeds, its like count and, in `likes`,
- * the viewer's own like when there is one.
+ * A tweet row with the author fields its DTO embeds, its like and reply counts, the chirp it
+ * answers (if any) and, in `likes`, the viewer's own like when there is one.
  */
 export type TweetRow = Pick<Tweet, 'id' | 'content' | 'imageKey' | 'createdAt'> & {
   author: UserSummaryRow;
-  _count: { likes: number };
+  parent: { id: string; author: UserSummaryRow } | null;
+  _count: { likes: number; replies: number };
   likes: Array<{ userId: string }>;
 };
 
@@ -42,7 +43,8 @@ export function tweetRowSelect(viewerId: string) {
     imageKey: true,
     createdAt: true,
     author: { select: userSummarySelect },
-    _count: { select: { likes: true } },
+    parent: { select: { id: true, author: { select: userSummarySelect } } },
+    _count: { select: { likes: true, replies: true } },
     likes: { where: { userId: viewerId }, select: { userId: true }, take: 1 },
   } as const satisfies Prisma.TweetSelect;
 }
@@ -76,6 +78,11 @@ export function toTweet(tweet: TweetRow, publicUrl: PublicUrl): TweetDto {
     author: toUserSummary(tweet.author, publicUrl),
     likeCount: tweet._count.likes,
     likedByMe: tweet.likes.length > 0,
+    replyCount: tweet._count.replies,
+    replyTo: tweet.parent && {
+      id: tweet.parent.id,
+      author: toUserSummary(tweet.parent.author, publicUrl),
+    },
   };
 }
 
@@ -84,6 +91,7 @@ export function toTweet(tweet: TweetRow, publicUrl: PublicUrl): TweetDto {
  */
 export type UserProfileRow = UserSummaryRow &
   Pick<User, 'bio' | 'createdAt'> & {
+    /** `tweets` counts top-level chirps only, the ones the profile lists (ADR-24). */
     _count: { followers: number; following: number; tweets: number };
     followers: Array<{ followerId: string }>;
   };
@@ -94,7 +102,9 @@ export function userProfileRowSelect(viewerId: string) {
     ...userSummarySelect,
     bio: true,
     createdAt: true,
-    _count: { select: { followers: true, following: true, tweets: true } },
+    _count: {
+      select: { followers: true, following: true, tweets: { where: { parentId: null } } },
+    },
     followers: { where: { followerId: viewerId }, select: { followerId: true }, take: 1 },
   } as const satisfies Prisma.UserSelect;
 }

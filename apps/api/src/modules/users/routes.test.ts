@@ -58,7 +58,9 @@ describe('users routes', () => {
       await createFollow(app.prisma, viewer, ana);
       await createFollow(app.prisma, await createUser(app.prisma), ana);
       await createFollow(app.prisma, ana, viewer);
-      await createTweet(app.prisma, ana);
+      const chirp = await createTweet(app.prisma, ana);
+      // Replies are not counted: the profile lists top-level chirps only (ADR-24).
+      await createTweet(app.prisma, ana, { parentId: chirp.id });
       await createTweet(app.prisma, viewer);
 
       const response = await getProfile('ana', await loginAs(app, viewer));
@@ -231,6 +233,20 @@ describe('users routes', () => {
         { id: old.id, likedByMe: true, likeCount: 1 },
       ]);
       expect(page.nextCursor).toBeNull();
+    });
+
+    it('leaves out the user’s replies', async () => {
+      const ana = await createUser(app.prisma, { username: 'ana' });
+      const chirp = await tweetAt(ana, 10);
+      const elsewhere = await tweetAt(await createUser(app.prisma), 20);
+      await createTweet(app.prisma, ana, { parentId: chirp.id });
+      await createTweet(app.prisma, ana, { parentId: elsewhere.id });
+
+      const page = tweetPage.parse((await getTweets('ana', await loginAs(app, ana))).json());
+
+      expect(page.items.map(({ id, replyCount }) => ({ id, replyCount }))).toEqual([
+        { id: chirp.id, replyCount: 1 },
+      ]);
     });
 
     it('shows anyone’s chirps, followed or not', async () => {
