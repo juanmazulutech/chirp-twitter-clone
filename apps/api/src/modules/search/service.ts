@@ -3,9 +3,11 @@ import type { FollowListUser, Page, UserSearchQuery } from '@chirp/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { type Cursor, decodeCursor, keysetAfter, newestFirst, toPage } from '../../lib/cursor';
 import { followListUserRowSelect, toFollowListUser } from '../../lib/serializers';
+import type { StorageService } from '../../lib/storage';
 
 export interface SearchServiceDependencies {
   prisma: PrismaClient;
+  storage: Pick<StorageService, 'publicUrl'>;
 }
 
 export type SearchService = ReturnType<typeof createSearchService>;
@@ -43,7 +45,7 @@ function tierOf(user: { username: string }, term: string): number {
   return user.username.startsWith(username) ? 1 : 2;
 }
 
-export function createSearchService({ prisma }: SearchServiceDependencies) {
+export function createSearchService({ prisma, storage }: SearchServiceDependencies) {
   /**
    * People whose username or display name contains `q`, best matches first and, within each
    * tier, newest accounts first. Pages use the usual `(createdAt, id)` cursor: the cursor's
@@ -79,7 +81,7 @@ export function createSearchService({ prisma }: SearchServiceDependencies) {
         })),
       );
     }
-    return toPage(rows, limit, toFollowListUser);
+    return toPage(rows, limit, (row) => toFollowListUser(row, (key) => storage.publicUrl(key)));
   }
 
   return { users };

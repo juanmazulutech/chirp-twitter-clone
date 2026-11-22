@@ -3,14 +3,16 @@ import type { Page, PageQuery, Tweet } from '@chirp/shared';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { decodeCursor, keysetAfter, newestFirst, toPage } from '../../lib/cursor';
 import { toTweet, tweetRowSelect } from '../../lib/serializers';
+import type { StorageService } from '../../lib/storage';
 
 export interface TimelineServiceDependencies {
   prisma: PrismaClient;
+  storage: Pick<StorageService, 'publicUrl'>;
 }
 
 export type TimelineService = ReturnType<typeof createTimelineService>;
 
-export function createTimelineService({ prisma }: TimelineServiceDependencies) {
+export function createTimelineService({ prisma, storage }: TimelineServiceDependencies) {
   /** The viewer's own tweets and those of everyone they follow, computed at read time (ADR-12). */
   async function home(viewerId: string, { cursor, limit }: PageQuery): Promise<Page<Tweet>> {
     const after = cursor === undefined ? undefined : decodeCursor(cursor);
@@ -31,7 +33,7 @@ export function createTimelineService({ prisma }: TimelineServiceDependencies) {
       take: limit + 1,
       select: tweetRowSelect(viewerId),
     });
-    return toPage(rows, limit, toTweet);
+    return toPage(rows, limit, (row) => toTweet(row, (key) => storage.publicUrl(key)));
   }
 
   return { home };

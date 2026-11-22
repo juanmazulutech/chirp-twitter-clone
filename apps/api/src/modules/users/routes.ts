@@ -12,7 +12,7 @@ import { currentUser } from '../../plugins/session';
 import { createUsersService } from './service';
 
 const usersRoutes: FastifyPluginAsyncZod = async (app) => {
-  const users = createUsersService({ prisma: app.prisma });
+  const users = createUsersService({ prisma: app.prisma, storage: app.storage, log: app.log });
 
   app.get(
     '/users/:username',

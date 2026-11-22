@@ -132,7 +132,7 @@ export function useFollowUser(username: string) {
 }
 
 /**
- * Saves the viewer's display name and bio. The profile and the session take the server's
+ * Saves the viewer's picture, display name and bio. The profile and the session take the server's
  * answer at once; chirps and lists that show the old name are refetched.
  */
 export function useUpdateProfile() {
@@ -142,10 +142,17 @@ export function useUpdateProfile() {
     onSuccess: (profile) => {
       queryClient.setQueryData(profileKeys.detail(profile.username), profile);
       queryClient.setQueryData<SessionUser | null>(authKeys.session, (session) =>
-        session ? { ...session, displayName: profile.displayName, bio: profile.bio } : session,
+        session
+          ? {
+              ...session,
+              displayName: profile.displayName,
+              bio: profile.bio,
+              avatarUrl: profile.avatarUrl,
+            }
+          : session,
       );
       void queryClient.invalidateQueries({ queryKey: tweetKeys.all });
-      // Follow lists show the name too; the profile just set is fresh, so it is skipped.
+      // Follow lists show the name and picture too; the profile just set is fresh, so it is skipped.
       void queryClient.invalidateQueries({
         queryKey: profileKeys.all,
         predicate: (query) => query.queryKey.length > 2,

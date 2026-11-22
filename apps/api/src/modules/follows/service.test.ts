@@ -38,7 +38,7 @@ describe('follows service', () => {
       },
     }) as unknown as PrismaClient;
 
-    const follows = createFollowsService({ prisma: racingPrisma });
+    const follows = createFollowsService({ prisma: racingPrisma, storage: app.storage });
 
     await expect(follows.follow(ana.id, 'bruno')).rejects.toBeInstanceOf(NotFoundError);
     expect(await app.prisma.follow.count()).toBe(0);
