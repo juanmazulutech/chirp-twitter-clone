@@ -82,6 +82,22 @@ export function followListPages(
 }
 
 /**
+ * `GET /api/users/search` answering with `results(term)` as one page; `onTerm` sees each `q`
+ * the client sent.
+ */
+export function userSearchResults(
+  results: (term: string) => FollowListUser[] = () => [],
+  onTerm: (term: string) => void = () => {},
+) {
+  return http.get('/api/users/search', ({ request }) => {
+    const term = new URL(request.url).searchParams.get('q') ?? '';
+    onTerm(term);
+    const page: Page<FollowListUser> = { items: results(term), nextCursor: null };
+    return HttpResponse.json(page);
+  });
+}
+
+/**
  * `GET /api/timeline` serving `pages` in order: the first without a cursor, then each
  * page's `nextCursor` leads to the one after it. `onCursor` sees every cursor requested.
  */

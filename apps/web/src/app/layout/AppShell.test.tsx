@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 import { authKeys } from '@/features/auth/keys';
 import { returnToPath } from '@/features/auth/return-to';
-import { profileFixture } from '@/test/fixtures';
-import { followListPages, profileFound, signedOut } from '@/test/msw/handlers';
+import { followListUserFixture, profileFixture } from '@/test/fixtures';
+import { followListPages, profileFound, signedOut, userSearchResults } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
@@ -185,6 +185,11 @@ describe('AppShell', () => {
   });
 
   it('searches people from the side panel', async () => {
+    server.use(
+      userSearchResults(() => [
+        followListUserFixture({ username: 'ana_codes', displayName: 'Ana' }),
+      ]),
+    );
     const user = userEvent.setup();
     const { router } = renderRoute('/home');
     await screen.findByRole('heading', { level: 1, name: 'Home' });
@@ -192,7 +197,7 @@ describe('AppShell', () => {
     const search = screen.getByRole('search', { name: 'Search people' });
     await user.type(within(search).getByRole('searchbox', { name: 'Search people' }), 'ana{Enter}');
 
-    expect(await screen.findByText('People matching “ana” will appear here.')).toBeInTheDocument();
+    expect(await screen.findByRole('list', { name: 'People matching “ana”' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/search');
     expect(router.state.location.search).toBe('?q=ana');
     for (const field of screen.getAllByRole('searchbox', { name: 'Search people' })) {
