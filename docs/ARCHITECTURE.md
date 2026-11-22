@@ -403,6 +403,8 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 
 ### 8.2 Environment variables (`.env.example`)
 
+`DATABASE_URL` and the storage endpoints and credentials have no defaults in `env.ts`: the API refuses to start without them, so a deploy cannot fall back to local values. Every other variable defaults to its example value.
+
 | Variable | Example | Description |
 |---|---|---|
 | `API_PORT` | `3000` | API port |
@@ -417,12 +419,12 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 | `RATE_LIMIT_AUTH_MAX` | `10` | attempts per minute on sign-in (per IP + email) and sign-up (per IP) |
 | `SESSION_TTL_DAYS` | `30` | session lifetime (sliding) |
 | `COOKIE_SECURE` | `false` | `true` behind HTTPS (also enables HSTS) |
-| `S3_ENDPOINT` | `http://localhost:9000` | storage endpoint used by the API (`http://storage:9000` inside Docker) |
-| `S3_PUBLIC_ENDPOINT` | `http://localhost:9000` | storage endpoint reachable by the browser |
+| `S3_ENDPOINT` | `http://localhost:9000` | **required**; storage endpoint used by the API (`http://storage:9000` inside Docker) |
+| `S3_PUBLIC_ENDPOINT` | `http://localhost:9000` | **required**; storage endpoint reachable by the browser |
 | `S3_REGION` | `us-east-1` | bucket region |
 | `S3_BUCKET` | `chirp-media` | bucket name |
-| `S3_ACCESS_KEY_ID` | `chirp` | storage access key (`STORAGE_ROOT_USER` locally) |
-| `S3_SECRET_ACCESS_KEY` | `chirpsecret` | storage secret key |
+| `S3_ACCESS_KEY_ID` | `chirp` | **required**; storage access key (`STORAGE_ROOT_USER` locally) |
+| `S3_SECRET_ACCESS_KEY` | `chirpsecret` | **required**; storage secret key |
 | `S3_FORCE_PATH_STYLE` | `true` | path-style URLs, required by local S3-compatible storage |
 | `UPLOAD_MAX_BYTES` | `5242880` | maximum image size (5 MB) |
 | `COMPOSE_PROJECT_NAME` | `chirp` | fixes container/volume names regardless of the folder name |

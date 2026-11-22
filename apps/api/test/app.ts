@@ -1,7 +1,7 @@
 import { type App, type AppConfig, buildApp } from '../src/app';
 import { loadEnv } from '../src/config/env';
 import { MemoryStorage } from '../src/lib/memory-storage';
-import { testDatabaseUrl } from './env';
+import { TEST_STORAGE_ENV, testDatabaseUrl } from './env';
 
 export interface TestAppOptions {
   /** Pass one to inspect stored objects from the test; a fresh one is used otherwise. */
@@ -19,6 +19,7 @@ export async function buildTestApp(
   const config = loadEnv({
     LOG_LEVEL: 'silent',
     DATABASE_URL: testDatabaseUrl(),
+    ...TEST_STORAGE_ENV,
     // High limits so suites can sign in repeatedly; rate limiting has its own tests.
     RATE_LIMIT_GLOBAL_MAX: '10000',
     RATE_LIMIT_AUTH_MAX: '10000',

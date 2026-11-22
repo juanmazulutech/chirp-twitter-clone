@@ -26,7 +26,7 @@ import type { App } from '../src/app';
 import { buildTestApp } from './app';
 import { loginAs } from './auth';
 import { resetDatabase } from './database';
-import { testDatabaseUrl } from './env';
+import { TEST_STORAGE_ENV, testDatabaseUrl } from './env';
 import { createUser } from './factories/users';
 
 describe('seed', () => {
@@ -300,8 +300,10 @@ describe('seed', () => {
     const databaseName = new URL(testDatabaseUrl()).pathname.slice(1);
     const run = async (argv: string[], env: Record<string, string> = {}) => {
       const output: string[] = [];
-      await runSeedCli(argv, { DATABASE_URL: testDatabaseUrl(), ...env }, (line) =>
-        output.push(line),
+      await runSeedCli(
+        argv,
+        { DATABASE_URL: testDatabaseUrl(), ...TEST_STORAGE_ENV, ...env },
+        (line) => output.push(line),
       );
       return output.join('');
     };
