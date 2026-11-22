@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 import { createMemoryRouter, type RouteObject } from 'react-router';
-import { RouterProvider } from 'react-router/dom';
 
 import { createAppQueryClient } from '@/app/app-query-client';
+import { AppRouter } from '@/app/AppRouter';
 import { AppProviders } from '@/app/providers';
 import { routes as appRoutes } from '@/app/routes';
 
@@ -27,7 +27,7 @@ export function renderRoute(path: string, { routes = appRoutes }: RenderRouteOpt
     queryClient,
     ...render(
       <AppProviders queryClient={queryClient}>
-        <RouterProvider router={router} />
+        <AppRouter router={router} />
       </AppProviders>,
     ),
   };

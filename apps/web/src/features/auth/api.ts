@@ -29,3 +29,8 @@ export function login(body: LoginBody): Promise<AuthResponse> {
 export function register(body: RegisterBody): Promise<AuthResponse> {
   return apiRequest('/auth/register', { method: 'POST', body, schema: authResponseSchema });
 }
+
+/** Ends the session on the server and clears the cookie; succeeds even without a session. */
+export function logout(): Promise<void> {
+  return apiRequest('/auth/logout', { method: 'POST' });
+}

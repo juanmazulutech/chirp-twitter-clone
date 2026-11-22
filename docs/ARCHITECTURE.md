@@ -362,7 +362,10 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 - Likes and follows are **optimistic** with rollback (`onMutate` / `onError` / `onSettled`).
 - Composer: code-point character counter with a progress ring; disabled when empty or over 280; image attach with preview and progress.
 - A newly created tweet is inserted into the first timeline page in the cache (no full refetch).
-- A 401 from any request invalidates `['auth', 'me']`, which redirects to `/login` and returns to the original route after signing in.
+- Route guards (`ProtectedRoute`, `GuestRoute`, `SessionRedirect` in `features/auth/components/`) read the session query. A 401 from any request sets `['auth', 'me']` to `null`, so `ProtectedRoute` redirects to `/login` with the page in history state (`{ from }`, validated as an in-app path) and signing in returns there. Creating an account always opens `/search`; signing out opens `/login` with nothing to return to.
+- Signing in or out changes the session and then navigates; while those mutations run (`authKeys.signIn` / `authKeys.signOut`), the guards do not redirect. `AppRouter` renders navigations without React transitions so the new page commits before the mutation settles.
+- Signing in drops every cached query but the session; signing out drops them all, so one account's data never reaches the next.
+- The session request starts when the app loads (`prefetchSession`), in parallel with the first route's code.
 - Accessibility: labelled controls, visible focus, `aria-pressed` on like/follow toggles, keyboard navigation, WCAG AA contrast.
 
 ## 7. Testing strategy

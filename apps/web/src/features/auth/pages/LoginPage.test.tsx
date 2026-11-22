@@ -5,12 +5,15 @@ import { describe, expect, it } from 'vitest';
 
 import { authResponse } from '@/test/fixtures';
 import { apiError } from '@/test/msw/errors';
+import { signedIn } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
+import { startSignedOut } from '@/test/msw/session';
 import { renderRoute } from '@/test/render';
 
 import { DEMO_ACCOUNT } from '../demo-account';
 
 async function openLogin() {
+  startSignedOut();
   const user = userEvent.setup();
   const view = renderRoute('/login');
   await screen.findByRole('heading', { level: 1, name: 'Sign in to Chirp' });
@@ -27,6 +30,8 @@ describe('LoginPage', () => {
     server.use(
       http.post('/api/auth/login', async ({ request }) => {
         body = await request.json();
+        // The API set the session cookie: /auth/me answers with the user from now on.
+        server.use(signedIn());
         return HttpResponse.json(authResponse);
       }),
     );
@@ -108,6 +113,7 @@ describe('LoginPage', () => {
         () =>
           new Promise<Response>((resolve) => {
             respond = () => {
+              server.use(signedIn());
               resolve(HttpResponse.json(authResponse));
             };
           }),

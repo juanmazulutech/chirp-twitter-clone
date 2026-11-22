@@ -3,10 +3,12 @@ import { Link } from 'react-router';
 import { Avatar } from '@/components/ui/Avatar';
 import { useSession } from '@/features/auth/hooks';
 
+import { HeaderSignOutButton } from './SignOutButton';
+
 /**
  * The sheet header with the wordmark, and beneath it the page's one airmail chevron.
- * On phones it also carries your avatar, the way to your profile; larger screens reach the
- * profile from the rail.
+ * On phones it also carries your avatar, the way to your profile, and the sign-out button;
+ * larger screens reach both from the rail.
  */
 export function AppHeader() {
   const { user } = useSession();
@@ -29,6 +31,7 @@ export function AppHeader() {
         >
           Chirp
         </Link>
+        <HeaderSignOutButton />
       </div>
       <div className="airmail-edge" />
     </header>

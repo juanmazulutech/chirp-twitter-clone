@@ -1,10 +1,10 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { authKeys } from '@/features/auth/keys';
-import { ApiError, apiRequest } from '@/lib/api-client';
+import { returnToPath } from '@/features/auth/return-to';
 import { signedOut } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
@@ -52,38 +52,79 @@ describe('AppShell', () => {
     }
   });
 
-  it('shows no profile links while signed out', async () => {
-    server.use(signedOut());
-    const { queryClient } = renderRoute('/home');
-    await screen.findByRole('heading', { level: 1, name: 'Home' });
-    await waitFor(() => {
-      expect(queryClient.getQueryState(authKeys.session)?.status).toBe('success');
-    });
+  it.each([
+    ['rail', 0],
+    ['header', 1],
+  ])('signs out from the %s and opens sign-in with nothing to return to', async (_place, index) => {
+    let signedOutOnServer = false;
+    server.use(
+      http.post('/api/auth/logout', () => {
+        signedOutOnServer = true;
+        server.use(signedOut());
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    const { router, queryClient } = renderRoute('/search?q=ana');
+    await screen.findByRole('heading', { level: 1, name: 'Search' });
+    queryClient.setQueryData(['private'], 'cached for this account');
 
-    expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Your profile' })).not.toBeInTheDocument();
+    const signOut = screen.getAllByRole('button', { name: 'Sign out' })[index];
+    if (!signOut) throw new Error('expected a sign-out button');
+    await user.click(signOut);
+
+    await screen.findByRole('heading', { level: 1, name: 'Sign in to Chirp' });
+    expect(signedOutOnServer).toBe(true);
+    expect(router.state.location.pathname).toBe('/login');
+    // Leaving was deliberate: signing in again opens home, not the page left behind.
+    expect(returnToPath(router.state.location.state)).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
+    expect(queryClient.getQueryData(authKeys.session)).toBeNull();
+    expect(queryClient.getQueryData(['private'])).toBeUndefined();
   });
 
-  it('signs out everywhere when any request answers 401', async () => {
+  it('stays signed in and says so when signing out fails', async () => {
+    server.use(http.post('/api/auth/logout', () => HttpResponse.error()));
+    const user = userEvent.setup();
+    const { router } = renderRoute('/home');
+    await screen.findByRole('heading', { level: 1, name: 'Home' });
+
+    const [signOut] = screen.getAllByRole('button', { name: 'Sign out' });
+    if (!signOut) throw new Error('expected a sign-out button');
+    await user.click(signOut);
+
+    expect(
+      await screen.findByText('Couldn’t sign out. Check your connection and try again.'),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/home');
+    expect(screen.getAllByRole('link', { name: 'Profile' }).length).toBeGreaterThan(0);
+  });
+
+  it('marks the sign-out button busy while it waits for the server', async () => {
+    let respond: () => void = () => {};
     server.use(
-      http.get('/api/private', () =>
-        HttpResponse.json(
-          { error: { code: 'UNAUTHENTICATED', message: 'Sign in to continue' } },
-          { status: 401 },
-        ),
+      http.post(
+        '/api/auth/logout',
+        () =>
+          new Promise<Response>((resolve) => {
+            respond = () => {
+              resolve(new HttpResponse(null, { status: 204 }));
+            };
+          }),
       ),
     );
-    const { queryClient } = renderRoute('/home');
-    await screen.findAllByRole('link', { name: 'Profile' });
+    const user = userEvent.setup();
+    renderRoute('/home');
+    await screen.findByRole('heading', { level: 1, name: 'Home' });
 
-    await expect(
-      queryClient.fetchQuery({ queryKey: ['private'], queryFn: () => apiRequest('/private') }),
-    ).rejects.toBeInstanceOf(ApiError);
+    const [railSignOut] = screen.getAllByRole('button', { name: 'Sign out' });
+    if (!railSignOut) throw new Error('expected a sign-out button');
+    await user.click(railSignOut);
 
-    await waitFor(() => {
-      expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument();
-    });
-    expect(screen.queryByRole('link', { name: 'Your profile' })).not.toBeInTheDocument();
+    expect(railSignOut).toHaveAttribute('aria-busy', 'true');
+    expect(railSignOut).toBeDisabled();
+    respond();
+    await screen.findByRole('heading', { level: 1, name: 'Sign in to Chirp' });
   });
 
   it('marks the current page in every navigation, not only with colour', async () => {

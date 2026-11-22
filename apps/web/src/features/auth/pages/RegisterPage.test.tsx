@@ -5,10 +5,13 @@ import { describe, expect, it } from 'vitest';
 
 import { authResponse } from '@/test/fixtures';
 import { apiError } from '@/test/msw/errors';
+import { signedIn } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
+import { startSignedOut } from '@/test/msw/session';
 import { renderRoute } from '@/test/render';
 
 async function openRegister() {
+  startSignedOut();
   const user = userEvent.setup();
   const view = renderRoute('/register');
   await screen.findByRole('heading', { level: 1, name: 'Create your account' });
@@ -32,6 +35,8 @@ describe('RegisterPage', () => {
     server.use(
       http.post('/api/auth/register', async ({ request }) => {
         body = await request.json();
+        // The API set the session cookie: /auth/me answers with the user from now on.
+        server.use(signedIn());
         return HttpResponse.json(authResponse, { status: 201 });
       }),
     );

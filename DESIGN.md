@@ -450,12 +450,12 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Decorative by default** (`aria-hidden`, empty alt): beside a visible name, the name carries the identity and is not read twice. An avatar that stands alone takes an opt-in label and is then announced as an image with that name.
 
 ### Header
-- 56px on the sheet with the wordmark (16px side padding) linking home, followed by the chevron edge. On phones, once the session is known, your small (32px) avatar sits before the wordmark, 12px apart, as the link to your profile (named "Your profile"); from 640px the rail's Profile item does that job. Sticky at the top of the feed column at every width; never spans the rail or the side panel.
+- 56px on the sheet with the wordmark (16px side padding) linking home, followed by the chevron edge. On phones, once the session is known, your small (32px) avatar sits before the wordmark, 12px apart, as the link to your profile (named "Your profile"); from 640px the rail's Profile item does that job. On phones a ghost 48px icon button with the sign-out icon (named "Sign out") closes the row at the trailing edge, its icon aligned with the 16px padding; from 640px the rail's foot does that job. Sticky at the top of the feed column at every width; never spans the rail or the side panel.
 
 ### Navigation
 Two renderings of one list of destinations (Home, Search, and Profile, your own profile, which appears once the session is known; Notifications joins with its feature). Profile stays current on your profile's follower and following lists too, both labelled "Primary", so phone and desktop always offer the same places.
 - **Current page:** marked four ways, never by colour alone: `aria-current="page"`, a bolder label (700 against 500), a paper-tinted pill, and airmail blue. Icons are 24px.
-- **Left rail (from 640px):** on tablets, 48px circles holding only the icon (named by `aria-label`), 4px apart, ink at rest with the paper wash on hover. From 1024px each item becomes a 48px-tall full-width pill with 16px padding, the icon and a title-size label 16px apart. The compose button sits 16px below the list.
+- **Left rail (from 640px):** on tablets, 48px circles holding only the icon (named by `aria-label`), 4px apart, ink at rest with the paper wash on hover. From 1024px each item becomes a 48px-tall full-width pill with 16px padding, the icon and a title-size label 16px apart. The compose button sits 16px below the list. **Sign out** sits alone at the rail's foot (24px above the bottom), shaped like the items but in faded ink at rest, since it leaves rather than goes somewhere: icon only on tablets, icon and "Sign out" from 1024px; hover takes the paper wash and ink. It signs out at once, without a confirmation or a toast: the sign-in screen that follows is the confirmation. If the server cannot be reached, an error toast says so and the session stays open.
 - **Bottom navigation (phone):** a fixed 64px bar on the sheet with a hairline top, one equal-width item per destination: the icon in a 56×32px pill (paper when current) over a caption-size label, 4px apart; faded ink at rest. Its focus ring is drawn 4px inside the item, because the bar sits on the screen edge where an outer ring would be clipped.
 - **Skip link:** "Skip to content" is the first focusable element. It is parked above the viewport and slides in at the top left on focus as a sheet pill with a hairline border, 8px × 16px padding and airmail blue text at 600; it moves focus to the main content.
 
@@ -473,7 +473,8 @@ The one red action of the shell; every compose button opens the "New chirp" moda
 - Every route names the browser tab "<Page> · Chirp".
 
 ### Route states
-- **Loading (first visit):** a 32px spinner in faded ink, centred in the viewport, while the opening screen's code arrives.
+- **Loading (first visit):** a 32px spinner in faded ink, centred in the viewport, while the opening screen's code arrives and while the session is being checked.
+- **Access:** signed-out visitors to any shell page land on sign-in and return to that page once signed in; signed-in visitors to sign-in or account creation go to the timeline. If the session cannot be checked (server down), the route error shows instead of sign-in.
 - **Not found:** centred like an empty state (48px × 24px padding, 12px gaps): a headline, a description in faded ink capped at 40ch, and a secondary "Go to your timeline" button link.
 - **Route error:** the same centred layout, announced as an alert: a 32px alert icon in danger, a title-size heading, words that say what to do, and a secondary "Reload" button. Inside the shell, so navigation stays usable.
 

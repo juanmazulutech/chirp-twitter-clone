@@ -1,18 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { startSignedOut } from '@/test/msw/session';
 import { renderRoute } from '@/test/render';
 
 import { RouteErrorPage } from './layout/RouteErrorPage';
 
 describe('routes', () => {
-  it('sends the root path to the home timeline', async () => {
-    const { router } = renderRoute('/');
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Home' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/home');
-  });
-
   it.each([
     ['/home', 'Home'],
     ['/search', 'Search'],
@@ -32,6 +26,7 @@ describe('routes', () => {
     ['/login', 'Sign in to Chirp'],
     ['/register', 'Create your account'],
   ])('renders %s without the app shell', async (path, heading) => {
+    startSignedOut();
     renderRoute(path);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
