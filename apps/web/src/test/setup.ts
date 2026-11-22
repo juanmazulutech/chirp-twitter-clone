@@ -22,6 +22,16 @@ if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
 
 installIntersectionObserver();
 
+// jsdom has no object URLs; previews only need a stable, unique string per file.
+if (typeof URL.createObjectURL !== 'function') {
+  let objectUrls = 0;
+  URL.createObjectURL = () => {
+    objectUrls += 1;
+    return `blob:test/${objectUrls}`;
+  };
+  URL.revokeObjectURL = () => {};
+}
+
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 
 afterEach(() => {

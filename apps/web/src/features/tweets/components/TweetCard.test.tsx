@@ -82,4 +82,20 @@ describe('TweetCard', () => {
     });
     expect(within(card).queryByRole('button', { name: 'Delete chirp' })).not.toBeInTheDocument();
   });
+
+  it('shows an attached image, loaded lazily', () => {
+    const { card } = renderCard({
+      imageUrl: 'http://storage.test/chirp-media/users/a/tweet/b.png',
+    });
+
+    const image = within(card).getByRole('img', { name: 'Image shared by Ana Torres' });
+    expect(image).toHaveAttribute('src', 'http://storage.test/chirp-media/users/a/tweet/b.png');
+    expect(image).toHaveAttribute('loading', 'lazy');
+  });
+
+  it('shows no image when the chirp has none', () => {
+    const { card } = renderCard();
+
+    expect(within(card).queryByRole('img', { name: /Image shared by/ })).not.toBeInTheDocument();
+  });
 });

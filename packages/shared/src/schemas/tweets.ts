@@ -14,7 +14,16 @@ export const tweetContentSchema = z
     `Use at most ${TWEET_MAX_LENGTH} characters`,
   );
 
-export const createTweetBodySchema = z.object({ content: tweetContentSchema });
+/**
+ * The key `POST /uploads/presign` returned for a chirp image (ADR-14). Only its shape is
+ * checked here; the API checks it belongs to the author and the upload arrived.
+ */
+export const imageKeySchema = z.string().min(1).max(255);
+
+export const createTweetBodySchema = z.object({
+  content: tweetContentSchema,
+  imageKey: imageKeySchema.optional(),
+});
 export type CreateTweetBody = z.infer<typeof createTweetBodySchema>;
 
 export const tweetParamsSchema = z.object({ id: z.uuid() });

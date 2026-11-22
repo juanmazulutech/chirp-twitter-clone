@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BIO_MAX_LENGTH } from '../constants';
 import { countCharacters } from '../text';
 import { displayNameSchema } from './auth';
+import { imageKeySchema } from './tweets';
 import { userSummarySchema } from './users';
 
 /** Trimmed; empty is allowed (no bio). */
@@ -27,9 +28,13 @@ export const userProfileSchema = userSummarySchema.extend({
 });
 export type UserProfile = z.infer<typeof userProfileSchema>;
 
-/** Only the fields sent change. The avatar joins with media uploads (C41). */
+/**
+ * Only the fields sent change. `avatarKey` is the key `POST /uploads/presign` returned for an
+ * avatar; `null` removes the picture.
+ */
 export const updateProfileBodySchema = z.object({
   displayName: displayNameSchema.optional(),
   bio: bioSchema.optional(),
+  avatarKey: imageKeySchema.nullable().optional(),
 });
 export type UpdateProfileBody = z.infer<typeof updateProfileBodySchema>;

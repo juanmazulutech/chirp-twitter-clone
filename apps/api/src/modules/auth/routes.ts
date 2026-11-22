@@ -28,7 +28,9 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
       const { user, token, expiresAt } = await app.auth.register(request.body);
       await endCurrentSession(request);
       app.setSessionCookie(reply, token, expiresAt);
-      return reply.code(201).send({ user: toUserSummary(user) });
+      return reply
+        .code(201)
+        .send({ user: toUserSummary(user, (key) => app.storage.publicUrl(key)) });
     },
   );
 
@@ -51,7 +53,7 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
       const { user, token, expiresAt } = await app.auth.login(request.body);
       await endCurrentSession(request);
       app.setSessionCookie(reply, token, expiresAt);
-      return { user: toUserSummary(user) };
+      return { user: toUserSummary(user, (key) => app.storage.publicUrl(key)) };
     },
   );
 
@@ -65,7 +67,9 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/auth/me',
     { onRequest: app.requireAuth, schema: { response: { 200: sessionResponseSchema } } },
-    async (request) => ({ user: toSessionUser(currentUser(request)) }),
+    async (request) => ({
+      user: toSessionUser(currentUser(request), (key) => app.storage.publicUrl(key)),
+    }),
   );
 };
 

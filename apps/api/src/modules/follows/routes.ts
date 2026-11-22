@@ -11,7 +11,7 @@ import { currentUser } from '../../plugins/session';
 import { createFollowsService } from './service';
 
 const followsRoutes: FastifyPluginAsyncZod = async (app) => {
-  const follows = createFollowsService({ prisma: app.prisma });
+  const follows = createFollowsService({ prisma: app.prisma, storage: app.storage });
   const schema = { params: usernameParamsSchema, response: { 200: followStateSchema } };
 
   app.post('/users/:username/follow', { onRequest: app.requireAuth, schema }, async (request) =>

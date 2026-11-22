@@ -5,7 +5,7 @@ import { currentUser } from '../../plugins/session';
 import { createSearchService } from './service';
 
 const searchRoutes: FastifyPluginAsyncZod = async (app) => {
-  const search = createSearchService({ prisma: app.prisma });
+  const search = createSearchService({ prisma: app.prisma, storage: app.storage });
 
   // A static path, so it wins over `/users/:username` ("search" is a reserved username).
   app.get(

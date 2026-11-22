@@ -33,6 +33,16 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
         <p className="mt-1 text-[0.9375rem] leading-5 wrap-anywhere whitespace-pre-wrap text-ink">
           {tweet.content}
         </p>
+        {tweet.imageUrl ? (
+          // A fixed 16:9 frame: images load lazily without shifting the feed under the reader.
+          <img
+            src={tweet.imageUrl}
+            alt={`Image shared by ${author.displayName}`}
+            loading="lazy"
+            decoding="async"
+            className="mt-2 aspect-video w-full rounded-lg border border-hairline bg-paper object-cover"
+          />
+        ) : null}
         <div className="mt-1 flex items-center justify-between">
           <LikeButton tweet={tweet} />
           {user?.id === author.id ? <DeleteTweetButton tweetId={tweet.id} /> : null}
