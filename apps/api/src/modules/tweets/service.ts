@@ -14,13 +14,16 @@ export function createTweetsService({ prisma }: TweetsServiceDependencies) {
   async function create(authorId: string, { content }: CreateTweetBody): Promise<Tweet> {
     const tweet = await prisma.tweet.create({
       data: { authorId, content },
-      select: tweetRowSelect,
+      select: tweetRowSelect(authorId),
     });
     return toTweet(tweet);
   }
 
-  async function get(id: string): Promise<Tweet> {
-    const tweet = await prisma.tweet.findUnique({ where: { id }, select: tweetRowSelect });
+  async function get(id: string, viewerId: string): Promise<Tweet> {
+    const tweet = await prisma.tweet.findUnique({
+      where: { id },
+      select: tweetRowSelect(viewerId),
+    });
     if (!tweet) throw new NotFoundError('Tweet');
     return toTweet(tweet);
   }

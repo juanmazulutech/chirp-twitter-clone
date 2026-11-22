@@ -357,7 +357,7 @@ Three things leave the page. Toasts and the phone's floating compose button floa
 
 Three radii do all the work: the circle, the softly rounded card and the gently rounded field.
 
-- **Circles** (`rounded.full`): avatars (32, 44 and 80px), the postmark ring (56px), every button (a pill at 44px or 36px tall, or a 48px circle when it holds only an icon), the modal's 36px close button, the rail's navigation items and the bottom navigation's 56×32px current-page pill.
+- **Circles** (`rounded.full`): avatars (32, 44 and 80px), the postmark ring (56px), every button (a pill at 44px or 36px tall, or a 48px or 36px circle when it holds only an icon), the modal's 36px close button, the rail's navigation items and the bottom navigation's 56×32px current-page pill.
 - **Cards** (`rounded.card`, 0.875rem): panels, modals, toasts and the signed-out column from 640px: containers that are not feed rows. Cards stay in the 12–16px range; pills are reserved for controls.
 - **Fields** (`rounded.field`, 0.5rem): text inputs, textareas and the form alert, a tighter corner than the card so a form reads as writing space, not as another panel.
 - **The chevron edge:** a 4px band of repeating 135° stripes (10px red, 6px sheet, 10px blue, 6px sheet), the airmail envelope border.
@@ -371,7 +371,7 @@ Screens are built from the primitives in `apps/web/src/components/ui/`; nothing 
 
 ### Buttons
 Pills that say what they do; one red one per screen.
-- **Shape:** a full pill (`rounded.full`). Three sizes: default 44px tall with 20px horizontal padding and a 1rem label; small 36px tall with 16px padding and a 0.875rem label; icon, a 48px circle with no padding that holds only an icon and must carry an `aria-label`. Labels at 600, icon and text 8px apart.
+- **Shape:** a full pill (`rounded.full`). Four sizes: default 44px tall with 20px horizontal padding and a 1rem label; small 36px tall with 16px padding and a 0.875rem label; icon, a 48px circle with no padding that holds only an icon and must carry an `aria-label`; small icon (`icon-sm`), the same at 36px, for actions inside a chirp row. Labels at 600, icon and text 8px apart.
 - **Primary:** airmail red with on-airmail-red text. The one main action on a screen ("Chirp", "Sign in"). Hover darkens it slightly (95% brightness), pressed a step more (90%).
 - **Secondary:** the sheet with a hairline border and ink text, for every other action ("Follow", "Cancel"). Hover takes the paper wash.
 - **Ghost:** no fill or border, faded ink text; hover takes the paper wash and ink text. For quiet actions in toolbars, menus and modal cancels.
@@ -444,6 +444,9 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Grid:** a 44px avatar column and a content column, 12px gap, 12px × 16px padding.
 - **Content:** display name (600) and @handle (faded ink) on one meta line, body text below, counts in faded tabular meta.
 - **Postmark:** absolutely placed top right (10px from the top, 14px from the right).
+- **Action row:** 4px under the body text, the like toggle at the start and, on your own chirps only, the delete action at the end (kept clear of the postmark by the content column's right padding).
+- **Like toggle:** a 36px round icon button (20px Heart) pulled 8px left so the heart lines up with the text, then the count ("12 likes") in meta. At rest faded ink, the heart turning airmail red on hover with the paper wash. Liked: the heart **filled** in airmail red and the count in ink at 600, with `aria-pressed="true"`, so the state never lives in colour alone. Named "Like" in both states. It changes at once and rolls back with an error toast if the server refuses.
+- **Delete action:** a ghost `icon-sm` (36px) button with an 18px Trash icon, named "Delete chirp". It opens a confirmation modal ("Delete chirp?", what will happen, then Cancel as ghost and Delete as the outlined danger button, which takes focus). Delete shows its loading state; a failure keeps the dialog open with a form alert; success closes the dialog and then shows the "Your chirp was deleted" toast.
 
 ### Avatar
 - A circle in three sizes: small 32px, default 44px, large 80px (profile header). It shows the user's picture, or, without one (or if it fails to load), white initials at 600 on one of the six avatar hues, derived from the user id. Up to two initials from the display name; "?" when there are none.

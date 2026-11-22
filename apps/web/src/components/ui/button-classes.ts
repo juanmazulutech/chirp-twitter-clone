@@ -8,8 +8,9 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 /**
  * - md / sm: labelled buttons.
  * - icon: a 48px round button holding only an icon (give it an aria-label).
+ * - icon-sm: the same at 36px, for actions inside a chirp row (Delete chirp).
  */
-export type ButtonSize = 'md' | 'sm' | 'icon';
+export type ButtonSize = 'md' | 'sm' | 'icon' | 'icon-sm';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-airmail-red text-on-airmail-red hover:brightness-95 active:brightness-90',
@@ -23,6 +24,7 @@ const sizeClasses: Record<ButtonSize, string> = {
   md: 'h-11 px-5 text-base',
   sm: 'h-9 px-4 text-sm',
   icon: 'size-12',
+  'icon-sm': 'size-9',
 };
 
 export interface ButtonStyleOptions {

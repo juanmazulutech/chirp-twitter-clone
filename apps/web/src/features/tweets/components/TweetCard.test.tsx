@@ -1,16 +1,18 @@
-import { render, screen, within } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { tweetFixture } from '@/test/fixtures';
+import { renderRoute } from '@/test/render';
 
 import { TweetCard } from './TweetCard';
 
 function renderCard(...overrides: Parameters<typeof tweetFixture>) {
   const tweet = tweetFixture(...overrides);
-  const router = createMemoryRouter([{ path: '/', element: <TweetCard tweet={tweet} /> }]);
-  render(<RouterProvider router={router} />);
-  return { tweet, card: screen.getByRole('article', { name: 'Chirp by Ana Torres' }) };
+  const { queryClient } = renderRoute('/', {
+    routes: [{ path: '/', element: <TweetCard tweet={tweet} /> }],
+  });
+  const name = `Chirp by ${tweet.author.displayName}`;
+  return { tweet, queryClient, card: screen.getByRole('article', { name }) };
 }
 
 describe('TweetCard', () => {
@@ -47,5 +49,37 @@ describe('TweetCard', () => {
     const { card } = renderCard({ likeCount });
 
     expect(within(card).getByText(label)).toBeInTheDocument();
+  });
+
+  it('shows the like toggle, pressed when the viewer liked the chirp', () => {
+    const { card } = renderCard({ likedByMe: true });
+
+    expect(within(card).getByRole('button', { name: 'Like' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('offers to delete the viewer’s own chirp once the session is known', async () => {
+    const { card } = renderCard();
+
+    expect(await within(card).findByRole('button', { name: 'Delete chirp' })).toBeInTheDocument();
+  });
+
+  it('never offers to delete someone else’s chirp', async () => {
+    const { card, queryClient } = renderCard({
+      author: {
+        id: '019a0000-0000-7000-8000-0000000000bb',
+        username: 'bruno',
+        displayName: 'Bruno',
+        avatarUrl: null,
+      },
+    });
+
+    // Assert the absence only once the session is known, or it would pass vacuously.
+    await waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+    });
+    expect(within(card).queryByRole('button', { name: 'Delete chirp' })).not.toBeInTheDocument();
   });
 });

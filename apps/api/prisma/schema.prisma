@@ -23,6 +23,7 @@ model User {
 
   sessions  Session[]
   tweets    Tweet[]
+  likes     Like[]
   // Follows where this user is the follower, and where they are the one followed.
   following Follow[]  @relation("FollowFollower")
   followers Follow[]  @relation("FollowFollowing")
@@ -51,7 +52,8 @@ model Tweet {
   content   String   @db.VarChar(280)
   createdAt DateTime @default(now()) @map("created_at")
 
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes  Like[]
 
   // Serves profile tweets and the home timeline's keyset pagination (ADR-11, ADR-12).
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
@@ -71,4 +73,18 @@ model Follow {
   @@id([followerId, followingId])
   @@index([followingId, createdAt(sort: Desc)])
   @@map("follows")
+}
+
+model Like {
+  userId    String   @map("user_id") @db.Uuid
+  tweetId   String   @map("tweet_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tweet Tweet @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  // The primary key serves "did the viewer like this" (likedByMe); this index serves like counts (ADR-13).
+  @@id([userId, tweetId])
+  @@index([tweetId])
+  @@map("likes")
 }
