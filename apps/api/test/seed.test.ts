@@ -1,7 +1,15 @@
-import { emailSchema, usernameSchema } from '@chirp/shared';
+import {
+  emailSchema,
+  pageSchema,
+  tweetContentSchema,
+  tweetSchema,
+  usernameSchema,
+} from '@chirp/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { runSeedCli, seedDatabase } from '../prisma/seed';
+import { seedFollows } from '../prisma/seed-data/follows';
+import { seedTweetDate, seedTweets } from '../prisma/seed-data/tweets';
 import {
   DEMO_USERNAME,
   SEED_EMAIL_DOMAIN,
@@ -10,6 +18,7 @@ import {
 } from '../prisma/seed-data/users';
 import type { App } from '../src/app';
 import { buildTestApp } from './app';
+import { loginAs } from './auth';
 import { resetDatabase } from './database';
 import { testDatabaseUrl } from './env';
 import { createUser } from './factories/users';
@@ -32,7 +41,7 @@ describe('seed', () => {
   it('creates at least 10 users with valid, normalized identifiers', async () => {
     const result = await seedDatabase(app.prisma);
 
-    expect(result).toEqual({ seeded: true, users: seedPersonas.length });
+    expect(result).toMatchObject({ seeded: true, users: seedPersonas.length });
     const users = await app.prisma.user.findMany();
     expect(users.length).toBeGreaterThanOrEqual(10);
     for (const user of users) {
@@ -77,6 +86,95 @@ describe('seed', () => {
 
     expect(await app.prisma.user.count()).toBe(seedPersonas.length);
     expect(await app.prisma.user.findUnique({ where: { username: 'leftover' } })).toBeNull();
+    expect(await app.prisma.tweet.count()).toBe(Object.values(seedTweets).flat().length);
+    expect(await app.prisma.follow.count()).toBe(Object.values(seedFollows).flat().length);
+  });
+
+  describe('chirps', () => {
+    const usernames = seedPersonas.map((persona) => persona.username);
+    const DAY = 24 * 60 * 60 * 1000;
+
+    it('gives every persona 8–15 chirps and none to unknown users', () => {
+      expect(Object.keys(seedTweets).sort()).toEqual([...usernames].sort());
+      for (const chirps of Object.values(seedTweets)) {
+        expect(chirps.length).toBeGreaterThanOrEqual(8);
+        expect(chirps.length).toBeLessThanOrEqual(15);
+      }
+    });
+
+    it('only contains content the API itself would accept', () => {
+      for (const { content, at } of Object.values(seedTweets).flat()) {
+        expect(tweetContentSchema.parse(content)).toBe(content);
+        expect(at).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
+      }
+    });
+
+    it('stores every chirp at its relative time, within the last 30 days', async () => {
+      const now = new Date('2026-11-21T12:00:00.000Z');
+      const result = await seedDatabase(app.prisma, { now });
+
+      const tweets = await app.prisma.tweet.findMany({ include: { author: true } });
+      expect(tweets).toHaveLength(result.tweets);
+      for (const tweet of tweets) {
+        expect(tweet.createdAt.getTime()).toBeLessThan(now.getTime());
+        expect(tweet.createdAt.getTime()).toBeGreaterThan(now.getTime() - 30 * DAY);
+        expect(tweet.createdAt.getTime()).toBeGreaterThan(tweet.author.createdAt.getTime());
+      }
+    });
+
+    it('places a chirp on its day and time of day', () => {
+      const now = new Date('2026-11-21T08:00:00.000Z');
+
+      expect(seedTweetDate(now, { daysAgo: 1, at: '23:59', content: 'x' }).toISOString()).toBe(
+        '2026-11-20T23:59:00.000Z',
+      );
+      expect(seedTweetDate(now, { daysAgo: 29, at: '00:00', content: 'x' }).toISOString()).toBe(
+        '2026-10-23T00:00:00.000Z',
+      );
+    });
+  });
+
+  describe('follow graph', () => {
+    const usernames = new Set(seedPersonas.map((persona) => persona.username));
+
+    it('has every persona follow 4–9 known, distinct others and never themselves', () => {
+      expect(Object.keys(seedFollows).sort()).toEqual([...usernames].sort());
+      for (const [follower, followed] of Object.entries(seedFollows)) {
+        expect(followed.length).toBeGreaterThanOrEqual(4);
+        expect(followed.length).toBeLessThanOrEqual(9);
+        expect(new Set(followed).size).toBe(followed.length);
+        expect(followed).not.toContain(follower);
+        for (const username of followed) expect(usernames.has(username)).toBe(true);
+      }
+    });
+
+    it('has the demo account follow exactly 8 people', async () => {
+      await seedDatabase(app.prisma);
+
+      const demo = await app.prisma.user.findUniqueOrThrow({
+        where: { username: DEMO_USERNAME },
+        include: { _count: { select: { following: true } } },
+      });
+      expect(demo._count.following).toBe(8);
+    });
+
+    it('gives the demo account a populated timeline with more pages to load', async () => {
+      await seedDatabase(app.prisma);
+      const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/timeline',
+        headers: { cookie: await loginAs(app, demo) },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const page = pageSchema(tweetSchema).parse(response.json());
+      expect(page.items).toHaveLength(20);
+      expect(page.nextCursor).not.toBeNull();
+      const visibleAuthors = new Set([DEMO_USERNAME, ...(seedFollows[DEMO_USERNAME] ?? [])]);
+      for (const tweet of page.items) expect(visibleAuthors.has(tweet.author.username)).toBe(true);
+    });
   });
 
   it('leaves a database with data untouched in if-empty mode', async () => {
@@ -84,7 +182,7 @@ describe('seed', () => {
 
     const result = await seedDatabase(app.prisma, { mode: 'if-empty' });
 
-    expect(result).toEqual({ seeded: false, users: 0 });
+    expect(result).toEqual({ seeded: false, users: 0, tweets: 0, follows: 0 });
     expect(await app.prisma.user.count()).toBe(1);
   });
 
@@ -108,6 +206,7 @@ describe('seed', () => {
       const output = await run(['node', 'seed.ts']);
 
       expect(output).toContain(`demo@${SEED_EMAIL_DOMAIN} / ${SEED_PASSWORD}`);
+      expect(output).toMatch(/\d+ chirps and \d+ follows/);
       expect(await app.prisma.user.count()).toBe(seedPersonas.length);
     });
 

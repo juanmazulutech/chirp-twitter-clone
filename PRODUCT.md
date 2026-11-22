@@ -42,7 +42,7 @@ A calm, chronological microblog. The home timeline shows only the people you fol
 
 ## Evidence on Hand
 
-- Seed personas with names, usernames and bios: `apps/api/prisma/seed-data/users.ts`. Persona-matched chirps, follows and likes are added as those features land.
+- Seed personas with names, usernames and bios: `apps/api/prisma/seed-data/users.ts`; persona-matched chirps (`tweets.ts`, 8–15 each over the last 30 days) and an interest-based follow graph (`follows.ts`). Likes are added when that feature lands.
 - Illustrated seed avatars (DiceBear, CC0) are planned; until then avatars fall back to initials.
 - There are no real users, testimonials, usage metrics, press or customers. Never fabricate them.
 
