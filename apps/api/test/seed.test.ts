@@ -7,7 +7,7 @@ import {
 } from '@chirp/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { runSeedCli, seedDatabase } from '../prisma/seed';
+import { runSeedCli, seedDatabase, UnsafeSeedResetError } from '../prisma/seed';
 import { seedFollows } from '../prisma/seed-data/follows';
 import {
   pickSeedLikes,
@@ -84,10 +84,10 @@ describe('seed', () => {
     expect(ana.createdAt.toISOString()).toBe('2026-03-12T14:20:00.000Z');
   });
 
-  it('is idempotent in reset mode and replaces existing data', async () => {
+  it('is idempotent in reset mode and, when allowed, replaces non-seed data', async () => {
     await createUser(app.prisma, { username: 'leftover' });
 
-    await seedDatabase(app.prisma);
+    await seedDatabase(app.prisma, { allowNonSeedData: true });
     await seedDatabase(app.prisma);
 
     expect(await app.prisma.user.count()).toBe(seedPersonas.length);
@@ -248,6 +248,38 @@ describe('seed', () => {
     });
   });
 
+  describe('reset guard', () => {
+    it('refuses to delete accounts the seed did not create, leaving the data untouched', async () => {
+      const user = await createUser(app.prisma, { username: 'real_person' });
+      await app.prisma.tweet.create({ data: { authorId: user.id, content: 'Keep me' } });
+
+      await expect(seedDatabase(app.prisma)).rejects.toThrow(
+        new UnsafeSeedResetError('the database has 1 account(s) the seed did not create'),
+      );
+      expect(await app.prisma.user.count()).toBe(1);
+      expect(await app.prisma.tweet.count()).toBe(1);
+    });
+
+    it('treats a seed username with a different email as a non-seed account', async () => {
+      await createUser(app.prisma, { username: DEMO_USERNAME, email: 'someone@example.com' });
+
+      await expect(seedDatabase(app.prisma)).rejects.toThrow(UnsafeSeedResetError);
+    });
+
+    it('resets freely when the database holds only seed accounts and their activity', async () => {
+      await seedDatabase(app.prisma);
+      const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
+      await app.prisma.tweet.create({
+        data: { authorId: demo.id, content: 'Posted while testing' },
+      });
+
+      const result = await seedDatabase(app.prisma);
+
+      expect(result.seeded).toBe(true);
+      expect(await app.prisma.tweet.count()).toBe(result.tweets);
+    });
+  });
+
   it('leaves a database with data untouched in if-empty mode', async () => {
     await createUser(app.prisma, { username: 'existing' });
 
@@ -265,20 +297,52 @@ describe('seed', () => {
   });
 
   describe('command line', () => {
-    const run = async (argv: string[]) => {
+    const databaseName = new URL(testDatabaseUrl()).pathname.slice(1);
+    const run = async (argv: string[], env: Record<string, string> = {}) => {
       const output: string[] = [];
-      await runSeedCli(argv, { DATABASE_URL: testDatabaseUrl() }, (line) => output.push(line));
+      await runSeedCli(argv, { DATABASE_URL: testDatabaseUrl(), ...env }, (line) =>
+        output.push(line),
+      );
       return output.join('');
     };
 
     it('resets and seeds by default, printing the demo credentials', async () => {
-      await createUser(app.prisma, { username: 'leftover' });
-
       const output = await run(['node', 'seed.ts']);
 
       expect(output).toContain(`demo@${SEED_EMAIL_DOMAIN} / ${SEED_PASSWORD}`);
       expect(output).toMatch(/\d+ chirps, \d+ follows and \d+ likes/);
       expect(await app.prisma.user.count()).toBe(seedPersonas.length);
+    });
+
+    it('refuses to reset non-seed accounts and explains how to confirm', async () => {
+      await createUser(app.prisma, { username: 'leftover' });
+
+      const attempt = run(['node', 'seed.ts']);
+
+      await expect(attempt).rejects.toThrow(UnsafeSeedResetError);
+      await expect(attempt).rejects.toThrow(
+        `Refusing to reset "${databaseName}": the database has 1 account(s)`,
+      );
+      await expect(attempt).rejects.toThrow(`SEED_CONFIRM_RESET=${databaseName} npm run db:seed`);
+      expect(await app.prisma.user.count()).toBe(1);
+    });
+
+    it('resets non-seed accounts when SEED_CONFIRM_RESET names the database', async () => {
+      await createUser(app.prisma, { username: 'leftover' });
+
+      await run(['node', 'seed.ts'], { SEED_CONFIRM_RESET: databaseName });
+
+      expect(await app.prisma.user.findUnique({ where: { username: 'leftover' } })).toBeNull();
+      expect(await app.prisma.user.count()).toBe(seedPersonas.length);
+    });
+
+    it('refuses a SEED_CONFIRM_RESET that names another database, before connecting', async () => {
+      await createUser(app.prisma, { username: 'leftover' });
+
+      await expect(run(['node', 'seed.ts'], { SEED_CONFIRM_RESET: 'chirp' })).rejects.toThrow(
+        `SEED_CONFIRM_RESET is "chirp" but DATABASE_URL points to "${databaseName}"`,
+      );
+      expect(await app.prisma.user.count()).toBe(1);
     });
 
     it('skips a database with data when called with --if-empty', async () => {
