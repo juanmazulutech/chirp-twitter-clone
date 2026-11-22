@@ -10,13 +10,21 @@ import {
 
 import type { Env } from './config/env';
 import { buildLoggerOptions } from './config/logger';
+import { S3Storage } from './lib/s3-storage';
+import type { StorageService } from './lib/storage';
 import modules from './modules';
 import errorsPlugin from './plugins/errors';
 import prismaPlugin from './plugins/prisma';
 import securityPlugin from './plugins/security';
 import sessionPlugin from './plugins/session';
+import storagePlugin from './plugins/storage';
 
 export type AppConfig = Env;
+
+export interface BuildAppOptions {
+  /** Replaces the S3 driver built from the configuration (tests pass `MemoryStorage`). */
+  storage?: StorageService;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -35,11 +43,23 @@ function requestId(request: IncomingMessage): string {
   return typeof incoming === 'string' && VALID_REQUEST_ID.test(incoming) ? incoming : randomUUID();
 }
 
+export function createS3Storage(config: AppConfig): S3Storage {
+  return new S3Storage({
+    endpoint: config.S3_ENDPOINT,
+    publicEndpoint: config.S3_PUBLIC_ENDPOINT,
+    region: config.S3_REGION,
+    bucket: config.S3_BUCKET,
+    accessKeyId: config.S3_ACCESS_KEY_ID,
+    secretAccessKey: config.S3_SECRET_ACCESS_KEY,
+    forcePathStyle: config.S3_FORCE_PATH_STYLE,
+  });
+}
+
 /**
  * Builds a fully configured app without listening on a port, so tests can
  * exercise it through `app.inject()`.
  */
-export async function buildApp(config: AppConfig) {
+export async function buildApp(config: AppConfig, options: BuildAppOptions = {}) {
   const app = Fastify({
     logger: buildLoggerOptions(config),
     requestIdHeader: false,
@@ -70,6 +90,7 @@ export async function buildApp(config: AppConfig) {
     sessionTtlDays: config.SESSION_TTL_DAYS,
     cookieSecure: config.COOKIE_SECURE,
   });
+  await app.register(storagePlugin, { storage: options.storage ?? createS3Storage(config) });
   await app.register(modules, { prefix: '/api' });
 
   return app;

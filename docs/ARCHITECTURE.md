@@ -52,7 +52,7 @@ chirp/
 │   │   │   ├── server.ts           process entry point (listen)
 │   │   │   ├── config/env.ts       environment parsed with Zod; fails fast
 │   │   │   ├── plugins/            prisma · session/auth · storage · errors · security
-│   │   │   ├── lib/                cursor · password · tokens · serializers · errors
+│   │   │   ├── lib/                cursor · password · tokens · serializers · errors · storage (S3 + memory drivers)
 │   │   │   ├── generated/prisma/   Prisma client (generated on install, not committed)
 │   │   │   └── modules/
 │   │   │       ├── auth/           routes.ts · service.ts · *.test.ts
