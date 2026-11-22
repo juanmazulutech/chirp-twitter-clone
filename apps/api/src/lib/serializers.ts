@@ -14,7 +14,7 @@ type UserSummaryRow = Pick<User, 'id' | 'username' | 'displayName'>;
  * A tweet row with the author fields its DTO embeds, its like count and, in `likes`,
  * the viewer's own like when there is one.
  */
-export type TweetRow = Pick<Tweet, 'id' | 'content' | 'createdAt'> & {
+export type TweetRow = Pick<Tweet, 'id' | 'content' | 'imageKey' | 'createdAt'> & {
   author: UserSummaryRow;
   _count: { likes: number };
   likes: Array<{ userId: string }>;
@@ -28,6 +28,7 @@ export function tweetRowSelect(viewerId: string) {
   return {
     id: true,
     content: true,
+    imageKey: true,
     createdAt: true,
     author: { select: { id: true, username: true, displayName: true } },
     _count: { select: { likes: true } },
@@ -55,12 +56,14 @@ export function toSessionUser(user: User): SessionUser {
   };
 }
 
-export function toTweet(tweet: TweetRow): TweetDto {
+/** Turns a stored object key into the URL the browser loads it from (`StorageService.publicUrl`). */
+export type PublicUrl = (key: string) => string;
+
+export function toTweet(tweet: TweetRow, publicUrl: PublicUrl): TweetDto {
   return {
     id: tweet.id,
     content: tweet.content,
-    // Tweet images arrive with media uploads (Phase 7).
-    imageUrl: null,
+    imageUrl: tweet.imageKey === null ? null : publicUrl(tweet.imageKey),
     createdAt: tweet.createdAt.toISOString(),
     author: toUserSummary(tweet.author),
     likeCount: tweet._count.likes,

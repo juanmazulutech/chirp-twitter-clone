@@ -9,14 +9,16 @@ import {
   tweetRowSelect,
   userProfileRowSelect,
 } from '../../lib/serializers';
+import type { StorageService } from '../../lib/storage';
 
 export interface UsersServiceDependencies {
   prisma: PrismaClient;
+  storage: Pick<StorageService, 'publicUrl'>;
 }
 
 export type UsersService = ReturnType<typeof createUsersService>;
 
-export function createUsersService({ prisma }: UsersServiceDependencies) {
+export function createUsersService({ prisma, storage }: UsersServiceDependencies) {
   async function profile(viewerId: string, username: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { username },
@@ -53,7 +55,7 @@ export function createUsersService({ prisma }: UsersServiceDependencies) {
       take: limit + 1,
       select: tweetRowSelect(viewerId),
     });
-    return toPage(rows, limit, toTweet);
+    return toPage(rows, limit, (row) => toTweet(row, (key) => storage.publicUrl(key)));
   }
 
   return { profile, updateProfile, tweets };

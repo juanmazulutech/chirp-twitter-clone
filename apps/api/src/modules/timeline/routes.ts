@@ -5,7 +5,7 @@ import { currentUser } from '../../plugins/session';
 import { createTimelineService } from './service';
 
 const timelineRoutes: FastifyPluginAsyncZod = async (app) => {
-  const timeline = createTimelineService({ prisma: app.prisma });
+  const timeline = createTimelineService({ prisma: app.prisma, storage: app.storage });
 
   app.get(
     '/timeline',

@@ -54,6 +54,9 @@ model Tweet {
   authorId  String   @map("author_id") @db.Uuid
   // varchar(n) counts code points in PostgreSQL, matching `countCharacters` in @chirp/shared.
   content   String   @db.VarChar(280)
+  // Object key of an attached image (ADR-14); unique, so deleting one chirp never removes
+  // another chirp's image.
+  imageKey  String?  @unique @map("image_key")
   createdAt DateTime @default(now()) @map("created_at")
 
   author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)

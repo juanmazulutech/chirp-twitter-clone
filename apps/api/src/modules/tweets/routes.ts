@@ -5,7 +5,7 @@ import { currentUser } from '../../plugins/session';
 import { createTweetsService } from './service';
 
 const tweetsRoutes: FastifyPluginAsyncZod = async (app) => {
-  const tweets = createTweetsService({ prisma: app.prisma });
+  const tweets = createTweetsService({ prisma: app.prisma, storage: app.storage, log: app.log });
 
   app.post(
     '/tweets',
