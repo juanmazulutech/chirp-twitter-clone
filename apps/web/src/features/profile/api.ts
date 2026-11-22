@@ -1,4 +1,5 @@
 import {
+  followListUserSchema,
   type FollowState,
   followStateSchema,
   pageSchema,
@@ -8,7 +9,10 @@ import {
 
 import { apiRequest } from '@/lib/api-client';
 
+import type { FollowList } from './keys';
+
 const tweetPageSchema = pageSchema(tweetSchema);
+const followListPageSchema = pageSchema(followListUserSchema);
 
 const userPath = (username: string) => `/users/${encodeURIComponent(username)}`;
 const pageQuery = (cursor: string | undefined) =>
@@ -31,5 +35,18 @@ export function setFollow(username: string, following: boolean): Promise<FollowS
   return apiRequest(`${userPath(username)}/follow`, {
     method: following ? 'POST' : 'DELETE',
     schema: followStateSchema,
+  });
+}
+
+/** One page of a user's followers or of the people they follow, most recent follow first. */
+export function getFollowList(
+  username: string,
+  list: FollowList,
+  cursor: string | undefined,
+  signal?: AbortSignal,
+) {
+  return apiRequest(`${userPath(username)}/${list}${pageQuery(cursor)}`, {
+    schema: followListPageSchema,
+    signal,
   });
 }

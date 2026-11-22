@@ -1,6 +1,7 @@
 import type {
   CreateTweetBody,
   ErrorResponse,
+  FollowListUser,
   Page,
   SessionUser,
   Tweet,
@@ -38,11 +39,15 @@ export function tweetCreated(onBody: (body: CreateTweetBody) => void = () => {})
 }
 
 /** Serves `pages` in order: the first without a cursor, then `page-N` for each next one. */
-function pagesFrom(pages: Tweet[][], request: Request, onCursor: (cursor: string | null) => void) {
+function pagesFrom<Item>(
+  pages: Item[][],
+  request: Request,
+  onCursor: (cursor: string | null) => void,
+) {
   const cursor = new URL(request.url).searchParams.get('cursor');
   onCursor(cursor);
   const index = cursor === null ? 0 : Number(cursor.replace('page-', ''));
-  const page: Page<Tweet> = {
+  const page: Page<Item> = {
     items: pages[index] ?? [],
     nextCursor: index + 1 < pages.length ? `page-${index + 1}` : null,
   };
@@ -62,6 +67,17 @@ export function userTweetsPages(
 ) {
   return http.get(`/api/users/${username}/tweets`, ({ request }) =>
     pagesFrom(pages, request, onCursor),
+  );
+}
+
+/** `GET /api/users/:username/followers` or `/following` serving `pages` like `timelinePages`. */
+export function followListPages(
+  username: string,
+  list: 'followers' | 'following',
+  pages: FollowListUser[][] = [[]],
+) {
+  return http.get(`/api/users/${username}/${list}`, ({ request }) =>
+    pagesFrom(pages, request, () => {}),
   );
 }
 

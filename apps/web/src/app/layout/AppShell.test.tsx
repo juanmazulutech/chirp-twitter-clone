@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 import { authKeys } from '@/features/auth/keys';
 import { returnToPath } from '@/features/auth/return-to';
-import { signedOut } from '@/test/msw/handlers';
+import { profileFixture } from '@/test/fixtures';
+import { followListPages, profileFound, signedOut } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
@@ -44,8 +45,14 @@ describe('AppShell', () => {
   });
 
   it('marks Profile as current on your own profile and its lists', async () => {
+    server.use(
+      profileFound(
+        profileFixture({ username: 'ana_codes', displayName: 'Ana Torres', isMe: true }),
+      ),
+      followListPages('ana_codes', 'followers'),
+    );
     renderRoute('/ana_codes/followers');
-    await screen.findByRole('heading', { level: 1, name: 'People following @ana_codes' });
+    await screen.findByRole('heading', { level: 1, name: 'Ana Torres' });
 
     for (const link of await screen.findAllByRole('link', { name: 'Profile' })) {
       expect(link).toHaveAttribute('aria-current', 'page');

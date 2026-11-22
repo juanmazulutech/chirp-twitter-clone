@@ -1,4 +1,4 @@
-import type { SessionUser, Tweet, UserProfile } from '@chirp/shared';
+import type { FollowListUser, SessionUser, Tweet, UserProfile } from '@chirp/shared';
 
 /** The signed-in user the base handlers answer with, unless a test says otherwise. */
 export const sessionUser: SessionUser = {
@@ -52,6 +52,21 @@ export function profileFixture(overrides: Partial<UserProfile> = {}): UserProfil
     tweetsCount: 3,
     isFollowing: false,
     isMe: false,
+    ...overrides,
+  };
+}
+
+let userSequence = 0;
+
+/** Someone in a follow list, with a unique id and username; any field can be overridden. */
+export function followListUserFixture(overrides: Partial<FollowListUser> = {}): FollowListUser {
+  userSequence += 1;
+  return {
+    id: `019a0000-0000-7000-8000-1${String(userSequence).padStart(11, '0')}`,
+    username: `person${userSequence}`,
+    displayName: `Person ${userSequence}`,
+    avatarUrl: null,
+    isFollowing: false,
     ...overrides,
   };
 }

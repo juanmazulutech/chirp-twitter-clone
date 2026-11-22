@@ -1,4 +1,4 @@
-import type { Page, Tweet, UserProfile } from '@chirp/shared';
+import type { FollowListUser, Page, Tweet, UserProfile } from '@chirp/shared';
 import {
   type InfiniteData,
   type QueryClient,
@@ -13,8 +13,9 @@ import { useSession } from '@/features/auth/hooks';
 import { tweetKeys } from '@/features/tweets/keys';
 import { notify } from '@/lib/notify';
 
-import { getProfile, getUserTweets, setFollow } from './api';
-import { profileKeys } from './keys';
+import { getFollowList, getProfile, getUserTweets, setFollow } from './api';
+import { isFollowListPages, withFollow, withFollowInPages } from './follow-cache';
+import { type FollowList, profileKeys } from './keys';
 
 export type UserTweetsData = InfiniteData<Page<Tweet>, string | undefined>;
 
@@ -44,23 +45,40 @@ export function useUserTweets(username: string) {
   });
 }
 
-/** The profile as it looks once `following` is true or false; already in that state, unchanged. */
-export function withFollow(profile: UserProfile, following: boolean): UserProfile {
-  if (profile.isFollowing === following) return profile;
-  return {
-    ...profile,
-    isFollowing: following,
-    followersCount: Math.max(0, profile.followersCount + (following ? 1 : -1)),
-  };
+export type FollowListData = InfiniteData<Page<FollowListUser>, string | undefined>;
+
+/** A user's followers or the people they follow, a page at a time. */
+export function useFollowList(username: string, list: FollowList) {
+  return useInfiniteQuery<
+    Page<FollowListUser>,
+    Error,
+    FollowListData,
+    ReturnType<typeof profileKeys.followList>,
+    string | undefined
+  >({
+    queryKey: profileKeys.followList(username, list),
+    queryFn: ({ pageParam, signal }) => getFollowList(username, list, pageParam, signal),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
 }
 
-function updateCachedProfile(
+/**
+ * Writes whether the viewer follows `username` into every cached place that shows it: their
+ * profile (with its follower count, via `updateProfile`) and their row in any follow list.
+ */
+function updateCachedFollow(
   queryClient: QueryClient,
   username: string,
-  update: (profile: UserProfile) => UserProfile,
+  following: boolean,
+  updateProfile: (profile: UserProfile) => UserProfile = (profile) =>
+    withFollow(profile, following),
 ): void {
   queryClient.setQueryData<UserProfile>(profileKeys.detail(username), (profile) =>
-    profile ? update(profile) : profile,
+    profile ? updateProfile(profile) : profile,
+  );
+  queryClient.setQueriesData({ queryKey: profileKeys.all }, (data: unknown) =>
+    isFollowListPages(data) ? withFollowInPages(data, username, following) : data,
   );
 }
 
@@ -78,13 +96,14 @@ export function useFollowUser(username: string) {
     onMutate: async (following) => {
       latestToggle.current += 1;
       const toggle = latestToggle.current;
-      await queryClient.cancelQueries({ queryKey: profileKeys.detail(username) });
-      updateCachedProfile(queryClient, username, (profile) => withFollow(profile, following));
+      // A fetch already on its way would land with the old state on top of this one.
+      await queryClient.cancelQueries({ queryKey: profileKeys.all });
+      updateCachedFollow(queryClient, username, following);
       return { toggle };
     },
     onError: (_error, following, context) => {
       if (context?.toggle !== latestToggle.current) return;
-      updateCachedProfile(queryClient, username, (profile) => withFollow(profile, !following));
+      updateCachedFollow(queryClient, username, !following);
       notify.error(
         following
           ? 'The follow didn’t go through. Try again.'
@@ -93,12 +112,13 @@ export function useFollowUser(username: string) {
     },
     onSuccess: ({ isFollowing, followersCount }, _following, context) => {
       if (context.toggle !== latestToggle.current) return;
-      updateCachedProfile(queryClient, username, (profile) => ({
+      updateCachedFollow(queryClient, username, isFollowing, (profile) => ({
         ...profile,
         isFollowing,
         followersCount,
       }));
       void queryClient.invalidateQueries({ queryKey: tweetKeys.timeline });
+      // The viewer's own profile and following list changed too (the key prefixes both).
       if (user) void queryClient.invalidateQueries({ queryKey: profileKeys.detail(user.username) });
     },
   });

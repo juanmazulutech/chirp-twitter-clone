@@ -5,6 +5,10 @@
  */
 export const profileKeys = {
   all: ['profiles'] as const,
-  /** A `UserProfile`. */
+  /** A `UserProfile`. Also the prefix of that user's follow lists. */
   detail: (username: string) => ['profiles', username] as const,
+  /** An infinite query of `Page<FollowListUser>`, most recent follow first. */
+  followList: (username: string, list: FollowList) => ['profiles', username, list] as const,
 };
+
+export type FollowList = 'followers' | 'following';
