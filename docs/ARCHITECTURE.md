@@ -52,7 +52,7 @@ chirp/
 │   │   │   ├── server.ts           process entry point (listen)
 │   │   │   ├── config/env.ts       environment parsed with Zod; fails fast
 │   │   │   ├── plugins/            prisma · session/auth · storage · errors · security
-│   │   │   ├── lib/                cursor · password · tokens · serializers · errors
+│   │   │   ├── lib/                cursor · password · tokens · serializers · errors · storage (S3 + memory drivers)
 │   │   │   ├── generated/prisma/   Prisma client (generated on install, not committed)
 │   │   │   └── modules/
 │   │   │       ├── auth/           routes.ts · service.ts · *.test.ts
@@ -462,6 +462,6 @@ Target state once every feature is in place; each phase extends the seed with th
 - Follow graph: `demo` follows 8 users; every user follows 4–9 others; no self-follows.
 - Cross-likes: each user likes 10–30 tweets from people they follow, timed after both the chirp and the liker's join date.
 - Notifications consistent with the generated follows and likes (never self-notifications), with some unread for `demo`.
-- Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
+- Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`), but refuses when the database holds accounts the seed did not create unless `SEED_CONFIRM_RESET=<database name>` is set (ADR-23); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
 - Every account gets its own argon2 hash; a test signs in with the documented demo credentials so documentation and data cannot drift.
 - Requires the storage service (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.

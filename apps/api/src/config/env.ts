@@ -1,3 +1,4 @@
+import { IMAGE_MAX_BYTES } from '@chirp/shared';
 import { z } from 'zod';
 
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -12,6 +13,9 @@ const originList = z
       .filter(Boolean),
   )
   .pipe(z.array(z.url({ protocol: /^https?$/ }).transform((url) => new URL(url).origin)).min(1));
+
+/** An http(s) endpoint without a trailing slash, so URLs can be joined with "/". */
+const httpUrl = z.url({ protocol: /^https?$/ }).transform((url) => url.replace(/\/+$/, ''));
 
 /**
  * The only place that reads environment variables. Every variable is validated
@@ -36,6 +40,18 @@ export const envSchema = z.object({
   // Requests per minute: per IP on every route, and on sign-in/sign-up endpoints.
   RATE_LIMIT_GLOBAL_MAX: z.coerce.number().int().min(1).default(300),
   RATE_LIMIT_AUTH_MAX: z.coerce.number().int().min(1).default(10),
+  // S3-compatible object storage (ADR-14). Defaults match the docker-compose `storage` service.
+  // The API talks to S3_ENDPOINT; URLs handed to the browser use S3_PUBLIC_ENDPOINT.
+  S3_ENDPOINT: httpUrl.default('http://localhost:9000'),
+  S3_PUBLIC_ENDPOINT: httpUrl.default('http://localhost:9000'),
+  S3_REGION: z.string().min(1).default('us-east-1'),
+  S3_BUCKET: z.string().min(3).max(63).default('chirp-media'),
+  S3_ACCESS_KEY_ID: z.string().min(1).default('chirp'),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).default('chirpsecret'),
+  // Local S3-compatible servers need path-style URLs (http://host/bucket/key).
+  S3_FORCE_PATH_STYLE: booleanString.default(true),
+  // Largest image a presigned upload accepts; can only lower the shared 5 MB limit.
+  UPLOAD_MAX_BYTES: z.coerce.number().int().min(1).max(IMAGE_MAX_BYTES).default(IMAGE_MAX_BYTES),
 });
 
 export type Env = z.infer<typeof envSchema>;
