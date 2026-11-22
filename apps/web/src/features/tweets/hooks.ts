@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { useRef } from 'react';
 
+import { profileKeys } from '@/features/profile/keys';
 import { isApiError } from '@/lib/api-client';
 import { notify } from '@/lib/notify';
 
@@ -53,6 +54,10 @@ export function useCreateTweet() {
       queryClient.setQueryData<TimelineData>(tweetKeys.timeline, (data) =>
         data ? prependTweet(data, tweet) : data,
       );
+      // The author's profile counts it, and their chirp list starts with it.
+      const author = tweet.author.username;
+      void queryClient.invalidateQueries({ queryKey: profileKeys.detail(author) });
+      void queryClient.invalidateQueries({ queryKey: tweetKeys.byUser(author) });
     },
   });
 }
@@ -123,6 +128,8 @@ export function useDeleteTweet() {
       queryClient.setQueriesData({ queryKey: tweetKeys.all }, (data: unknown) =>
         isTweetPages(data) ? removeTweetFromPages(data, tweetId) : data,
       );
+      // Only the author can delete, so only their profile's chirp count changed.
+      void queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
 }

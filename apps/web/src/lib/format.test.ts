@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatPostmark } from './format';
+import { formatMonthYear, formatPostmark } from './format';
 
 const evening = new Date('2026-11-21T21:42:00.000Z');
 
@@ -40,5 +40,15 @@ describe('formatPostmark', () => {
 
   it('offers a full spoken label', () => {
     expect(formatPostmark(evening, { timeZone: 'UTC' }).label).toBe('November 21, 2026 at 9:42 PM');
+  });
+});
+
+describe('formatMonthYear', () => {
+  it('names the month and year in the given time zone', () => {
+    const date = new Date('2026-11-01T02:00:00.000Z');
+
+    expect(formatMonthYear(date, { timeZone: 'UTC' })).toBe('November 2026');
+    // Still October 31st in Los Angeles.
+    expect(formatMonthYear(date, { timeZone: 'America/Los_Angeles' })).toBe('October 2026');
   });
 });
