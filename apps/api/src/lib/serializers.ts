@@ -1,4 +1,10 @@
-import type { SessionUser, Tweet as TweetDto, UserProfile, UserSummary } from '@chirp/shared';
+import type {
+  FollowListUser,
+  SessionUser,
+  Tweet as TweetDto,
+  UserProfile,
+  UserSummary,
+} from '@chirp/shared';
 
 import type { Prisma, Tweet, User } from '../generated/prisma/client';
 
@@ -94,4 +100,21 @@ export function toUserProfile(user: UserProfileRow, viewerId: string): UserProfi
     isFollowing: user.followers.length > 0,
     isMe: user.id === viewerId,
   };
+}
+
+/** A user in a follow list, with the viewer's own follow of them when there is one. */
+export type FollowListUserRow = UserSummaryRow & { followers: Array<{ followerId: string }> };
+
+/** Selects exactly the columns of a `FollowListUserRow` for `viewerId`. */
+export function followListUserRowSelect(viewerId: string) {
+  return {
+    id: true,
+    username: true,
+    displayName: true,
+    followers: { where: { followerId: viewerId }, select: { followerId: true }, take: 1 },
+  } as const satisfies Prisma.UserSelect;
+}
+
+export function toFollowListUser(user: FollowListUserRow): FollowListUser {
+  return { ...toUserSummary(user), isFollowing: user.followers.length > 0 };
 }
