@@ -28,7 +28,7 @@ describe('AppShell', () => {
         within(nav)
           .getAllByRole('link')
           .map((link) => link.textContent),
-      ).toEqual(['Home', 'Search', 'Profile']);
+      ).toEqual(['Home', 'Search', 'Notifications', 'Profile']);
     }
   });
 

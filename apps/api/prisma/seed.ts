@@ -14,6 +14,7 @@ import type { StorageService } from '../src/lib/storage';
 import { readSeedAvatar, seedAvatarKey } from './seed-data/avatars';
 import { seedFollows } from './seed-data/follows';
 import { pickSeedLikes, seedLikeDate } from './seed-data/likes';
+import { seedFollowNotificationDate, withSeedReadState } from './seed-data/notifications';
 import { flattenSeedThreads, seedReplyDate, seedThreads } from './seed-data/replies';
 import { seedTweetDate, seedTweets } from './seed-data/tweets';
 import { SEED_EMAIL_DOMAIN, SEED_PASSWORD, seedPersonas } from './seed-data/users';
@@ -72,6 +73,7 @@ export interface SeedResult {
   replies: number;
   follows: number;
   likes: number;
+  notifications: number;
 }
 
 export async function seedDatabase(
@@ -80,7 +82,15 @@ export async function seedDatabase(
   { mode = 'reset', now = new Date(), allowNonSeedData = false }: SeedOptions = {},
 ): Promise<SeedResult> {
   if (mode === 'if-empty' && (await prisma.user.count()) > 0) {
-    return { seeded: false, users: 0, tweets: 0, replies: 0, follows: 0, likes: 0 };
+    return {
+      seeded: false,
+      users: 0,
+      tweets: 0,
+      replies: 0,
+      follows: 0,
+      likes: 0,
+      notifications: 0,
+    };
   }
   // Before the database changes: without storage there is nothing to show the avatars from.
   await uploadSeedAvatars(storage);
@@ -130,6 +140,11 @@ export async function seedDatabase(
       if (!id) throw new Error(`Seed data references an unknown user: ${username}`);
       return id;
     };
+    const joinedOf = (username: string): Date => {
+      const joined = joinedAt.get(username);
+      if (!joined) throw new Error(`Seed data references an unknown user: ${username}`);
+      return joined;
+    };
 
     const follows = Object.entries(seedFollows).flatMap(([follower, followed]) =>
       followed.map((following) => ({ followerId: idOf(follower), followingId: idOf(following) })),
@@ -167,7 +182,12 @@ export async function seedDatabase(
     };
 
     // One by one, in thread order: each reply needs the id of the one it answers.
-    const inserted: Array<{ id: string; createdAt: Date }> = [];
+    const inserted: Array<{
+      id: string;
+      authorId: string;
+      parentId: string | null;
+      createdAt: Date;
+    }> = [];
     for (const { reply, thread, parent } of flattenSeedThreads(seedThreads)) {
       const root = chirpAt(thread.to);
       const answered = parent === null ? undefined : inserted[parent];
@@ -184,7 +204,7 @@ export async function seedDatabase(
             content: reply.content,
             createdAt,
           },
-          select: { id: true, createdAt: true },
+          select: { id: true, authorId: true, parentId: true, createdAt: true },
         }),
       );
     }
@@ -205,6 +225,45 @@ export async function seedDatabase(
     );
     await tx.like.createMany({ data: likes });
 
+    // The API's rules (ADR-15): one per action, never about one's own action.
+    const tweetAuthors = new Map(
+      [...createdTweets, ...inserted].map((tweet) => [tweet.id, tweet.authorId]),
+    );
+    const authorOf = (tweetId: string | null): string => {
+      const authorId = tweetId === null ? undefined : tweetAuthors.get(tweetId);
+      if (!authorId) throw new Error(`Seed data references an unknown chirp: ${tweetId}`);
+      return authorId;
+    };
+    const notifications = withSeedReadState(
+      now,
+      [
+        ...Object.entries(seedFollows).flatMap(([follower, followed]) =>
+          followed.map((following) => ({
+            type: 'FOLLOW' as const,
+            recipientId: idOf(following),
+            actorId: idOf(follower),
+            tweetId: null,
+            createdAt: seedFollowNotificationDate(joinedOf(follower), joinedOf(following)),
+          })),
+        ),
+        ...likes.map((like) => ({
+          type: 'LIKE' as const,
+          recipientId: authorOf(like.tweetId),
+          actorId: like.userId,
+          tweetId: like.tweetId,
+          createdAt: like.createdAt,
+        })),
+        ...inserted.map((reply) => ({
+          type: 'REPLY' as const,
+          recipientId: authorOf(reply.parentId),
+          actorId: reply.authorId,
+          tweetId: reply.id,
+          createdAt: reply.createdAt,
+        })),
+      ].filter((notification) => notification.recipientId !== notification.actorId),
+    );
+    await tx.notification.createMany({ data: notifications });
+
     return {
       seeded: true,
       users: created.length,
@@ -212,6 +271,7 @@ export async function seedDatabase(
       replies: inserted.length,
       follows: follows.length,
       likes: likes.length,
+      notifications: notifications.length,
     };
   });
 }
@@ -256,8 +316,8 @@ export async function runSeedCli(
     write(
       result.seeded
         ? `Seeded ${result.users} users, ${result.tweets} chirps, ${result.replies} replies, ` +
-            `${result.follows} follows ` +
-            `and ${result.likes} likes. ` +
+            `${result.follows} follows, ${result.likes} likes ` +
+            `and ${result.notifications} notifications. ` +
             `Sign in as demo@${SEED_EMAIL_DOMAIN} / ${SEED_PASSWORD}\n`
         : 'Database already has data; skipping seed (--if-empty).\n',
     );

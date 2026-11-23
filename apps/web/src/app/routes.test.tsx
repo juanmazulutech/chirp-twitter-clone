@@ -2,7 +2,12 @@ import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { profileFixture } from '@/test/fixtures';
-import { followListPages, profileFound, userTweetsPages } from '@/test/msw/handlers';
+import {
+  followListPages,
+  notificationPages,
+  profileFound,
+  userTweetsPages,
+} from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { startSignedOut } from '@/test/msw/session';
 import { renderRoute } from '@/test/render';
@@ -23,6 +28,7 @@ describe('routes', () => {
       userTweetsPages('ana_codes'),
       followListPages('ana_codes', 'followers'),
       followListPages('ana_codes', 'following'),
+      notificationPages(),
     );
     renderRoute(path);
 

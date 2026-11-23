@@ -273,6 +273,9 @@ model Notification {
   actor     User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
   tweet     Tweet? @relation(fields: [tweetId], references: [id], onDelete: Cascade)
 
+  // The migration adds NULLS NOT DISTINCT and CHECK constraints (not self; tweetId null only
+  // for FOLLOW), which Prisma cannot express (ADR-15).
+  @@unique([type, recipientId, actorId, tweetId], map: "notifications_action_key")
   @@index([recipientId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([recipientId, readAt])
   @@map("notifications")
@@ -306,7 +309,7 @@ UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, t
 Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean,
                  replyCount, replyTo: { id, author: UserSummary } | null }   // reply fields from C54
 Notification = { id, type: 'FOLLOW' | 'LIKE' | 'REPLY', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }
-               // REPLY: `tweet` is the reply itself
+               // discriminated on `type`: FOLLOW has `tweet: null`; REPLY: `tweet` is the reply itself
 Page<T>      = { items: T[], nextCursor: string | null }
 ```
 
@@ -340,7 +343,7 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | POST | `/uploads/presign` | 🔒 | `{ purpose: 'tweet' \| 'avatar', contentType, size }` | `200 { uploadUrl, key }` | 400 on invalid type/size |
 | GET | `/notifications` | 🔒 | `?cursor=&limit=` | `200 Page<Notification>` | |
 | GET | `/notifications/unread-count` | 🔒 | — | `200 { count }` | |
-| POST | `/notifications/read` | 🔒 | — | `204` | marks all as read |
+| POST | `/notifications/read` | 🔒 | `{ until }` | `204` | `until`: the `createdAt` of the newest notification shown; marks every one created up to then as read, idempotent (ADR-15) |
 
 Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 

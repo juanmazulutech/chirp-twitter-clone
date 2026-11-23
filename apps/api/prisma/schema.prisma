@@ -23,12 +23,15 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  sessions  Session[]
-  tweets    Tweet[]
-  likes     Like[]
+  sessions           Session[]
+  tweets             Tweet[]
+  likes              Like[]
   // Follows where this user is the follower, and where they are the one followed.
-  following Follow[]  @relation("FollowFollower")
-  followers Follow[]  @relation("FollowFollowing")
+  following          Follow[]       @relation("FollowFollower")
+  followers          Follow[]       @relation("FollowFollowing")
+  // Notifications this user receives, and those their own actions caused (ADR-15).
+  notifications      Notification[] @relation("NotificationRecipient")
+  actedNotifications Notification[] @relation("NotificationActor")
 
   // Trigram indexes serve case-insensitive substring search (ILIKE '%q%') on both names. The
   // migration enables `pg_trgm` first: Prisma does not manage extensions (ADR-04).
@@ -63,11 +66,13 @@ model Tweet {
   parentId  String?  @map("parent_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
-  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   // Deleting a chirp deletes the conversation under it (ADR-24).
-  parent  Tweet?  @relation("TweetReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies Tweet[] @relation("TweetReplies")
-  likes   Like[]
+  parent        Tweet?         @relation("TweetReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Tweet[]        @relation("TweetReplies")
+  likes         Like[]
+  // LIKE notifications point at the liked chirp; REPLY notifications at the reply itself.
+  notifications Notification[]
 
   // Serves profile tweets and the home timeline's keyset pagination (ADR-11, ADR-12).
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
@@ -103,4 +108,35 @@ model Like {
   @@id([userId, tweetId])
   @@index([tweetId])
   @@map("likes")
+}
+
+enum NotificationType {
+  FOLLOW
+  LIKE
+  REPLY
+}
+
+// Created and deleted in the same transaction as the action that causes it (ADR-15).
+model Notification {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  type        NotificationType
+  recipientId String           @map("recipient_id") @db.Uuid
+  actorId     String           @map("actor_id") @db.Uuid
+  // FOLLOW: null. LIKE: the liked chirp. REPLY: the reply.
+  tweetId     String?          @map("tweet_id") @db.Uuid
+  readAt      DateTime?        @map("read_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  recipient User   @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  tweet     Tweet? @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  // One notification per action. The migration adds NULLS NOT DISTINCT (Prisma cannot express
+  // it), so FOLLOW rows, whose tweet_id is null, are unique per pair of users too (ADR-15).
+  @@unique([type, recipientId, actorId, tweetId], map: "notifications_action_key")
+  // Serves the newest-first list and its keyset pagination.
+  @@index([recipientId, createdAt(sort: Desc), id(sort: Desc)])
+  // Serves the unread count.
+  @@index([recipientId, readAt])
+  @@map("notifications")
 }

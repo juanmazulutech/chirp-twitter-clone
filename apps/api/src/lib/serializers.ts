@@ -1,12 +1,13 @@
 import type {
   FollowListUser,
+  Notification as NotificationDto,
   SessionUser,
   Tweet as TweetDto,
   UserProfile,
   UserSummary,
 } from '@chirp/shared';
 
-import type { Prisma, Tweet, User } from '../generated/prisma/client';
+import type { Notification, Prisma, Tweet, User } from '../generated/prisma/client';
 
 type UserSummaryRow = Pick<User, 'id' | 'username' | 'displayName' | 'avatarKey'>;
 
@@ -139,4 +140,33 @@ export function followListUserRowSelect(viewerId: string) {
 
 export function toFollowListUser(user: FollowListUserRow, publicUrl: PublicUrl): FollowListUser {
   return { ...toUserSummary(user, publicUrl), isFollowing: user.followers.length > 0 };
+}
+
+/** A notification row with its actor and, for LIKE and REPLY, the chirp it is about. */
+export type NotificationRow = Pick<Notification, 'id' | 'type' | 'readAt' | 'createdAt'> & {
+  actor: UserSummaryRow;
+  tweet: Pick<Tweet, 'id' | 'content'> | null;
+};
+
+/** Selects exactly the columns of a `NotificationRow`. */
+export const notificationRowSelect = {
+  id: true,
+  type: true,
+  readAt: true,
+  createdAt: true,
+  actor: { select: userSummarySelect },
+  tweet: { select: { id: true, content: true } },
+} as const satisfies Prisma.NotificationSelect;
+
+export function toNotification(row: NotificationRow, publicUrl: PublicUrl): NotificationDto {
+  const fields = {
+    id: row.id,
+    actor: toUserSummary(row.actor, publicUrl),
+    readAt: row.readAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+  };
+  if (row.type === 'FOLLOW') return { ...fields, type: 'FOLLOW', tweet: null };
+  // A CHECK constraint guarantees LIKE and REPLY rows point at a chirp (ADR-15).
+  if (row.tweet === null) throw new Error(`Notification ${row.id} has no chirp`);
+  return { ...fields, type: row.type, tweet: { id: row.tweet.id, content: row.tweet.content } };
 }

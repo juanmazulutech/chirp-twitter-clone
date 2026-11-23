@@ -4,6 +4,7 @@ import authRoutes from './auth/routes';
 import followsRoutes from './follows/routes';
 import healthRoutes from './health/routes';
 import likesRoutes from './likes/routes';
+import notificationsRoutes from './notifications/routes';
 import searchRoutes from './search/routes';
 import timelineRoutes from './timeline/routes';
 import tweetsRoutes from './tweets/routes';
@@ -24,6 +25,7 @@ const modules: FastifyPluginAsync = async (app) => {
   await app.register(uploadsRoutes);
   await app.register(usersRoutes);
   await app.register(searchRoutes);
+  await app.register(notificationsRoutes);
 };
 
 export default modules;

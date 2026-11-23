@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router';
 
 import { RailAppearanceButton } from '@/features/appearance/components/AppearanceButton';
+import { NotificationsBadge } from '@/features/notifications/components/NotificationsBadge';
 
 import { RailComposeButton } from './ComposeButton';
 import { useNavItems } from './nav-items';
@@ -18,11 +19,11 @@ export function Sidebar() {
     <aside className="sticky top-0 hidden h-dvh shrink-0 flex-col items-center gap-4 px-3 pt-16 pb-6 sm:flex lg:w-60 lg:items-stretch">
       <nav aria-label="Primary">
         <ul className="flex flex-col gap-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, accessibleName, icon: Icon, badge = 0 }) => (
             <li key={to}>
               <NavLink
                 to={to}
-                aria-label={label}
+                aria-label={accessibleName}
                 className={({ isActive }) =>
                   [
                     'flex size-12 items-center justify-center gap-4 rounded-full text-lg no-underline transition-colors duration-150 lg:h-12 lg:w-full lg:justify-start lg:px-4',
@@ -32,7 +33,10 @@ export function Sidebar() {
                   ].join(' ')
                 }
               >
-                <Icon aria-hidden="true" className="size-6 shrink-0" strokeWidth={1.75} />
+                <span className="relative shrink-0">
+                  <Icon aria-hidden="true" className="size-6" strokeWidth={1.75} />
+                  <NotificationsBadge count={badge} className="-top-1.5 -right-2" />
+                </span>
                 <span className="hidden lg:inline">{label}</span>
               </NavLink>
             </li>

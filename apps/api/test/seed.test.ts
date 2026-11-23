@@ -26,6 +26,11 @@ import {
   SEED_LIKES_MIN,
   seedLikeDate,
 } from '../prisma/seed-data/likes';
+import {
+  SEED_UNREAD_PER_USER,
+  seedFollowNotificationDate,
+  withSeedReadState,
+} from '../prisma/seed-data/notifications';
 import { flattenSeedThreads, seedReplyDate, seedThreads } from '../prisma/seed-data/replies';
 import { seedTweetDate, seedTweets } from '../prisma/seed-data/tweets';
 import {
@@ -352,6 +357,84 @@ describe('seed', () => {
     });
   });
 
+  describe('notifications', () => {
+    it('notifies once for every follow, like and reply, never about one’s own action', async () => {
+      const now = new Date('2026-11-21T12:00:00.000Z');
+      const result = await seedDatabase(app.prisma, app.storage, { now });
+
+      const [follows, likes, replies, rows] = await Promise.all([
+        app.prisma.follow.findMany(),
+        app.prisma.like.findMany({ include: { tweet: { select: { authorId: true } } } }),
+        app.prisma.tweet.findMany({
+          where: { parentId: { not: null } },
+          select: { id: true, authorId: true, parent: { select: { authorId: true } } },
+        }),
+        app.prisma.notification.findMany(),
+      ]);
+      const key = (type: string, recipient: string, actor: string, tweet: string | null) =>
+        `${type}|${recipient}|${actor}|${tweet ?? '-'}`;
+      const expected = [
+        ...follows.map((f) => key('FOLLOW', f.followingId, f.followerId, null)),
+        ...likes.map((l) => key('LIKE', l.tweet.authorId, l.userId, l.tweetId)),
+        ...replies
+          .filter((r) => r.parent?.authorId !== r.authorId)
+          .map((r) => key('REPLY', r.parent?.authorId ?? '', r.authorId, r.id)),
+      ];
+
+      expect(rows).toHaveLength(result.notifications);
+      expect(rows.map((n) => key(n.type, n.recipientId, n.actorId, n.tweetId)).sort()).toEqual(
+        expected.sort(),
+      );
+      for (const notification of rows) {
+        expect(notification.createdAt.getTime()).toBeLessThanOrEqual(now.getTime());
+      }
+    });
+
+    it('leaves the demo account its newest notifications unread', async () => {
+      await seedDatabase(app.prisma, app.storage);
+      const demo = await app.prisma.user.findUniqueOrThrow({ where: { username: DEMO_USERNAME } });
+
+      const rows = await app.prisma.notification.findMany({
+        where: { recipientId: demo.id },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      });
+
+      expect(rows.length).toBeGreaterThan(SEED_UNREAD_PER_USER);
+      expect(rows.slice(0, SEED_UNREAD_PER_USER).every((row) => row.readAt === null)).toBe(true);
+      expect(rows.slice(SEED_UNREAD_PER_USER).every((row) => row.readAt !== null)).toBe(true);
+    });
+
+    it('dates a follow notification once both people had joined', () => {
+      const earlier = new Date('2024-01-01T00:00:00.000Z');
+      const later = new Date('2025-06-01T00:00:00.000Z');
+
+      expect(seedFollowNotificationDate(earlier, later)).toEqual(later);
+      expect(seedFollowNotificationDate(later, earlier)).toEqual(later);
+    });
+
+    it('keeps each recipient’s newest notifications unread, whatever the input order', () => {
+      const now = new Date('2026-11-21T12:00:00.000Z');
+      const at = (minutes: number) => new Date(now.getTime() - minutes * 60_000);
+      const drafts = [
+        ...Array.from({ length: SEED_UNREAD_PER_USER + 2 }, (_, i) => ({
+          recipientId: 'ana',
+          createdAt: at(i),
+        })),
+        { recipientId: 'ben', createdAt: at(1_000) },
+      ].reverse();
+
+      const result = withSeedReadState(now, drafts);
+
+      const unread = result.filter((row) => row.readAt === null);
+      expect(unread.filter((row) => row.recipientId === 'ana')).toHaveLength(SEED_UNREAD_PER_USER);
+      expect(unread.some((row) => row.recipientId === 'ben')).toBe(true);
+      expect(result.filter((row) => row.readAt !== null).map((row) => row.createdAt)).toEqual([
+        at(SEED_UNREAD_PER_USER),
+        at(SEED_UNREAD_PER_USER + 1),
+      ]);
+    });
+  });
+
   describe('reset guard', () => {
     it('refuses to delete accounts the seed did not create, leaving the data untouched', async () => {
       const user = await createUser(app.prisma, { username: 'real_person' });
@@ -396,6 +479,7 @@ describe('seed', () => {
       replies: 0,
       follows: 0,
       likes: 0,
+      notifications: 0,
     });
     expect(await app.prisma.user.count()).toBe(1);
   });
@@ -502,7 +586,9 @@ describe('seed', () => {
       const output = await run(['node', 'seed.ts']);
 
       expect(output).toContain(`demo@${SEED_EMAIL_DOMAIN} / ${SEED_PASSWORD}`);
-      expect(output).toMatch(/\d+ chirps, \d+ replies, \d+ follows and \d+ likes/);
+      expect(output).toMatch(
+        /\d+ chirps, \d+ replies, \d+ follows, \d+ likes and \d+ notifications/,
+      );
       expect(await app.prisma.user.count()).toBe(seedPersonas.length);
     });
 
