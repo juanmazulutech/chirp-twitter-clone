@@ -12,7 +12,7 @@ import { useRef } from 'react';
 import { useSession } from '@/features/auth/hooks';
 import { authKeys } from '@/features/auth/keys';
 import { searchKeys } from '@/features/search/keys';
-import { tweetKeys } from '@/features/tweets/keys';
+import { likerKeys, tweetKeys } from '@/features/tweets/keys';
 import { notify } from '@/lib/notify';
 
 import { getFollowList, getProfile, getUserTweets, setFollow, updateProfile } from './api';
@@ -80,8 +80,8 @@ function updateCachedFollow(
   queryClient.setQueryData<UserProfile>(profileKeys.detail(username), (profile) =>
     profile ? updateProfile(profile) : profile,
   );
-  // Follow lists and search results show the same rows.
-  for (const queryKey of [profileKeys.all, searchKeys.all]) {
+  // Follow lists, search results and the people who liked a chirp show the same rows.
+  for (const queryKey of [profileKeys.all, searchKeys.all, likerKeys.all]) {
     queryClient.setQueriesData({ queryKey }, (data: unknown) =>
       isFollowListPages(data) ? withFollowInPages(data, username, following) : data,
     );
@@ -105,6 +105,7 @@ export function useFollowUser(username: string) {
       // A fetch already on its way would land with the old state on top of this one.
       await queryClient.cancelQueries({ queryKey: profileKeys.all });
       await queryClient.cancelQueries({ queryKey: searchKeys.all });
+      await queryClient.cancelQueries({ queryKey: likerKeys.all });
       updateCachedFollow(queryClient, username, following);
       return { toggle };
     },

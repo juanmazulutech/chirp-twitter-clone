@@ -1,6 +1,7 @@
 import {
   type CreateReplyBody,
   type CreateTweetBody,
+  followListUserSchema,
   type LikeState,
   likeStateSchema,
   pageSchema,
@@ -12,6 +13,7 @@ import {
 import { apiRequest } from '@/lib/api-client';
 
 const tweetPageSchema = pageSchema(tweetSchema);
+const likersPageSchema = pageSchema(followListUserSchema);
 
 /** Posts a chirp as the signed-in user and returns it as the API stored it. */
 export function createTweet(body: CreateTweetBody): Promise<Tweet> {
@@ -56,4 +58,10 @@ export function setLike(tweetId: string, liked: boolean): Promise<LikeState> {
 /** Deletes one of the signed-in user's own chirps. */
 export function deleteTweet(tweetId: string): Promise<void> {
   return apiRequest(`/tweets/${tweetId}`, { method: 'DELETE' });
+}
+
+/** One page of the people who liked chirp `tweetId`, most recent like first. */
+export function getLikers(tweetId: string, cursor: string | undefined, signal?: AbortSignal) {
+  const query = cursor ? `?${new URLSearchParams({ cursor }).toString()}` : '';
+  return apiRequest(`/tweets/${tweetId}/likes${query}`, { schema: likersPageSchema, signal });
 }

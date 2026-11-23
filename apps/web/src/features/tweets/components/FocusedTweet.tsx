@@ -6,6 +6,7 @@ import { Postmark } from '@/components/ui/Postmark';
 import { useSession } from '@/features/auth/hooks';
 import { formatPostmark } from '@/lib/format';
 
+import { tweetPath } from '../tweet-path';
 import { DeleteTweetButton } from './DeleteTweetButton';
 import { LikeButton } from './LikeButton';
 import { ReplyButton } from './ReplyButton';
@@ -65,7 +66,7 @@ export function FocusedTweet({ tweet, onReply, onDeleted }: FocusedTweetProps) {
         <div className="mt-2 flex items-center justify-between border-t border-hairline pt-1">
           <div className="flex items-center gap-4">
             <ReplyButton tweet={tweet} onReply={onReply} />
-            <LikeButton tweet={tweet} />
+            <LikeButton tweet={tweet} likersPath={`${tweetPath(tweet)}/likes`} />
           </div>
           {user?.id === author.id ? (
             <DeleteTweetButton tweet={tweet} onDeleted={onDeleted} />
