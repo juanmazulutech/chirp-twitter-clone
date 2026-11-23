@@ -1,20 +1,9 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { type Account, newAccount } from './fixtures';
+
 // Seeded by global-setup (apps/api/prisma/seed-data/users.ts).
 const DEMO_USERNAME = 'demo';
-
-/** A fresh account per test, so specs never depend on each other or on run order. */
-function newAccount() {
-  const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 11);
-  return {
-    displayName: 'E2E Tester',
-    username: `e2e_${suffix}`,
-    email: `e2e_${suffix}@example.test`,
-    password: 'correct horse battery',
-  };
-}
-
-type Account = ReturnType<typeof newAccount>;
 
 async function register(page: Page, account: Account) {
   await page.goto('/register');
