@@ -8,13 +8,20 @@ import { formatPostmark } from '@/lib/format';
 
 import { DeleteTweetButton } from './DeleteTweetButton';
 import { LikeButton } from './LikeButton';
+import { ReplyButton } from './ReplyButton';
 import { ReplyingTo } from './ReplyingTo';
+
+interface FocusedTweetProps {
+  tweet: Tweet;
+  /** Runs once the author deletes it: its page no longer has anything to show. */
+  onDeleted?: () => void;
+}
 
 /**
  * The chirp a thread page is about: the same parts as a feed row, the text a step larger and
  * the full date spelled out under it, since this is where people come to read it closely.
  */
-export function FocusedTweet({ tweet }: { tweet: Tweet }) {
+export function FocusedTweet({ tweet, onDeleted }: FocusedTweetProps) {
   const { author } = tweet;
   const { user } = useSession();
   const sentAt = formatPostmark(new Date(tweet.createdAt)).label;
@@ -54,8 +61,13 @@ export function FocusedTweet({ tweet }: { tweet: Tweet }) {
           <time dateTime={tweet.createdAt}>{sentAt}</time>
         </p>
         <div className="mt-2 flex items-center justify-between border-t border-hairline pt-1">
-          <LikeButton tweet={tweet} />
-          {user?.id === author.id ? <DeleteTweetButton tweetId={tweet.id} /> : null}
+          <div className="flex items-center gap-4">
+            <ReplyButton tweet={tweet} />
+            <LikeButton tweet={tweet} />
+          </div>
+          {user?.id === author.id ? (
+            <DeleteTweetButton tweet={tweet} onDeleted={onDeleted} />
+          ) : null}
         </div>
       </div>
       <Postmark dateTime={tweet.createdAt} className="absolute top-2.5 right-3.5" />

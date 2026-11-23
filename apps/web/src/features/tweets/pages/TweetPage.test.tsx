@@ -197,27 +197,23 @@ describe('TweetPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('forgets the chirp and its replies once it is deleted', async () => {
+  it('leaves the page once its chirp is deleted, home on a direct visit', async () => {
     const focused = tweetFixture({ content: 'Mine to delete' });
-    let deleted = false;
     server.use(
-      http.get(`/api/tweets/${focused.id}`, () =>
-        deleted ? apiError(404, 'NOT_FOUND', 'Tweet not found') : HttpResponse.json(focused),
-      ),
-      http.delete(`/api/tweets/${focused.id}`, () => {
-        deleted = true;
-        return new HttpResponse(null, { status: 204 });
-      }),
+      http.delete(`/api/tweets/${focused.id}`, () => new HttpResponse(null, { status: 204 })),
       ...threadOf(focused),
     );
-    const { user } = await renderThread(pathOf(focused));
+    const { user, router, queryClient } = await renderThread(pathOf(focused));
 
-    await user.click(await screen.findByRole('button', { name: 'Delete chirp' }));
+    const article = await screen.findByRole('article', { name: 'Chirp by Ana Torres' });
+    await user.click(within(article).getByRole('button', { name: 'Delete chirp' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    expect(
-      await screen.findByRole('heading', { name: 'This chirp doesn’t exist' }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/home');
+    });
+    expect(await screen.findByText('Your chirp was deleted')).toBeInTheDocument();
+    expect(queryClient.getQueryData(['tweets', 'detail', focused.id])).toBeUndefined();
   });
 
   it('keeps a reply’s like in step with its copy in the thread above', async () => {

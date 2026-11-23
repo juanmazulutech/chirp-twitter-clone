@@ -1,6 +1,6 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CircleAlert } from 'lucide-react';
-import { Navigate, useParams } from 'react-router';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
 
 import { PageHeading } from '@/app/layout/PageHeading';
 import { Button, ButtonLink } from '@/components/ui/Button';
@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
 import { isApiError } from '@/lib/api-client';
 
+import { ReplyComposer } from '../components/Composer';
 import { FocusedTweet } from '../components/FocusedTweet';
 import { ThreadAncestors } from '../components/ThreadAncestors';
 import { TweetList } from '../components/TweetList';
@@ -47,6 +48,14 @@ export function TweetPage() {
   const tweet = useTweet(tweetId);
   const ancestors = useAncestors(tweetId);
   const replies = useReplies(tweetId);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Its page is gone with it: back to where the reader came from, or home on a direct visit.
+  function leave() {
+    if (location.key === 'default') void navigate('/home', { replace: true });
+    else void navigate(-1);
+  }
 
   if (tweet.data) {
     // The address names the author, but the id decides: a wrong or old name is corrected.
@@ -68,7 +77,11 @@ export function TweetPage() {
             </div>
           )
         ) : null}
-        <FocusedTweet tweet={tweet.data} />
+        <FocusedTweet tweet={tweet.data} onDeleted={leave} />
+        {/* Phones reply from the Reply button, which opens the full compose modal. */}
+        <div className="hidden border-b border-hairline px-4 py-3 sm:block">
+          <ReplyComposer key={tweet.data.id} replyTo={tweet.data} />
+        </div>
         <h2 className="sr-only">Replies</h2>
         <TweetList
           query={replies}

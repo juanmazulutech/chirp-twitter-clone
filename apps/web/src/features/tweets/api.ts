@@ -1,4 +1,5 @@
 import {
+  type CreateReplyBody,
   type CreateTweetBody,
   type LikeState,
   likeStateSchema,
@@ -21,6 +22,11 @@ export function createTweet(body: CreateTweetBody): Promise<Tweet> {
 export function getTimeline(cursor: string | undefined, signal?: AbortSignal) {
   const query = cursor ? `?${new URLSearchParams({ cursor }).toString()}` : '';
   return apiRequest(`/timeline${query}`, { schema: tweetPageSchema, signal });
+}
+
+/** Posts a reply to chirp `tweetId` as the signed-in user. */
+export function createReply(tweetId: string, body: CreateReplyBody): Promise<Tweet> {
+  return apiRequest(`/tweets/${tweetId}/replies`, { method: 'POST', body, schema: tweetSchema });
 }
 
 /** One chirp, as the signed-in user sees it. */

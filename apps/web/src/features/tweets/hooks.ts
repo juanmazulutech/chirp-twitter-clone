@@ -1,4 +1,4 @@
-import type { Page, Tweet } from '@chirp/shared';
+import type { CreateReplyBody, Page, Tweet } from '@chirp/shared';
 import {
   type InfiniteData,
   type QueryClient,
@@ -14,6 +14,7 @@ import { isApiError } from '@/lib/api-client';
 import { notify } from '@/lib/notify';
 
 import {
+  createReply,
   createTweet,
   deleteTweet,
   getAncestors,
@@ -24,6 +25,7 @@ import {
 } from './api';
 import { tweetKeys } from './keys';
 import {
+  isTweet,
   isTweetAncestors,
   isTweetPages,
   removeTweetFromPages,
@@ -55,6 +57,22 @@ export function useTweet(tweetId: string) {
   return useQuery({
     queryKey: tweetKeys.detail(tweetId),
     queryFn: ({ signal }) => getTweet(tweetId, signal),
+  });
+}
+
+/**
+ * The chirp a reply is being written to. Usually it is already on screen, so it comes from
+ * the cache without a request; it is fetched only when no cached list holds it.
+ */
+export function useReplyTarget(tweetId: string | null) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: tweetKeys.detail(tweetId ?? ''),
+    queryFn: ({ signal }) => getTweet(tweetId ?? '', signal),
+    enabled: tweetId !== null,
+    initialData: () => (tweetId === null ? undefined : findCachedTweet(queryClient, tweetId)),
+    // What the reader just saw is fresh enough to answer; their likes keep it current.
+    staleTime: Number.POSITIVE_INFINITY,
   });
 }
 
@@ -109,6 +127,53 @@ export function useCreateTweet() {
       void queryClient.invalidateQueries({ queryKey: tweetKeys.byUser(author) });
     },
   });
+}
+
+/** The new reply goes after the last loaded one, but only once every reply is loaded. */
+function appendReply(data: RepliesData, reply: Tweet): RepliesData {
+  const last = data.pages.at(-1);
+  // With more pages to come, the reply arrives with the last of them, in its place.
+  if (!last || last.nextCursor !== null) return data;
+  return {
+    ...data,
+    pages: [...data.pages.slice(0, -1), { ...last, items: [...last.items, reply] }],
+  };
+}
+
+/**
+ * Posts a reply to `parentId`: the parent's reply count rises wherever it is cached, and the
+ * reply joins the parent's loaded replies. The timeline lists top-level chirps only (ADR-24).
+ */
+export function useReplyToTweet(parentId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateReplyBody) => createReply(parentId, body),
+    onSuccess: (reply) => {
+      updateCachedTweet(queryClient, parentId, (tweet) => ({
+        ...tweet,
+        replyCount: tweet.replyCount + 1,
+      }));
+      queryClient.setQueryData<RepliesData>(tweetKeys.replies(parentId), (data) =>
+        data ? appendReply(data, reply) : data,
+      );
+    },
+  });
+}
+
+/** The chirp `tweetId` from whichever cached list, chain or page holds it, if any does. */
+export function findCachedTweet(queryClient: QueryClient, tweetId: string): Tweet | undefined {
+  for (const [, data] of queryClient.getQueriesData({ queryKey: tweetKeys.all })) {
+    const items = isTweetPages(data)
+      ? data.pages.flatMap((page) => page.items)
+      : isTweetAncestors(data)
+        ? data.items
+        : isTweet(data)
+          ? [data]
+          : [];
+    const found = items.find((tweet) => tweet.id === tweetId);
+    if (found) return found;
+  }
+  return undefined;
 }
 
 /**
@@ -169,14 +234,20 @@ export function useLikeTweet(tweetId: string) {
 export function useDeleteTweet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (tweetId: string) => {
+    mutationFn: async ({ id: tweetId }: Pick<Tweet, 'id' | 'replyTo'>) => {
       try {
         await deleteTweet(tweetId);
       } catch (error) {
         if (!isApiError(error, 404)) throw error;
       }
     },
-    onSuccess: (_result, tweetId) => {
+    onSuccess: (_result, { id: tweetId, replyTo }) => {
+      if (replyTo) {
+        updateCachedTweet(queryClient, replyTo.id, (parent) => ({
+          ...parent,
+          replyCount: Math.max(0, parent.replyCount - 1),
+        }));
+      }
       queryClient.setQueriesData({ queryKey: tweetKeys.all }, (data: unknown) => {
         if (isTweetPages(data)) return removeTweetFromPages(data, tweetId);
         if (isTweetAncestors(data)) {
