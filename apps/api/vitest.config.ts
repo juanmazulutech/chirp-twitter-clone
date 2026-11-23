@@ -10,13 +10,19 @@ if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    // On GitHub Actions: failures stay as inline annotations, but the job summary is written once
+    // for every workspace by .github/scripts/test-summary.mjs, from this JSON report.
+    reporters: process.env.GITHUB_ACTIONS
+      ? ['default', ['github-actions', { jobSummary: { enabled: false } }], 'json']
+      : ['default'],
+    outputFile: { json: 'test-results/vitest.json' },
     // Migrates the test database once; requires PostgreSQL (npm run services:up).
     globalSetup: ['./test/global-setup.ts'],
     // Test files share one database, so they run one at a time (ADR-19).
     fileParallelism: false,
     coverage: {
       provider: 'v8',
-      // json-summary feeds the CI job summary (.github/scripts/coverage-summary.mjs).
+      // json-summary feeds the CI job summary (.github/scripts/test-summary.mjs).
       reporter: ['text', 'html', 'json-summary'],
       include: ['src/**/*.ts', 'prisma/**/*.ts'],
       exclude: [

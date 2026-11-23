@@ -10,7 +10,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // On CI the JSON report feeds the job summary (.github/scripts/e2e-summary.mjs); the HTML
+  // report and traces are uploaded when a run fails.
+  reporter: isCI
+    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/e2e.json' }]]
+    : 'list',
   use: {
     baseURL: E2E_WEB_ORIGIN,
     trace: 'on-first-retry',

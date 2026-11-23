@@ -51,9 +51,9 @@ jobs:
       - name: Verify (lint, format, typecheck, tests with coverage)
         run: npm run verify
 
-      - name: Publish coverage summary
+      - name: Publish test summary
         if: ${{ !cancelled() }}
-        run: node .github/scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+        run: node .github/scripts/test-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
   e2e:
     name: End-to-end tests
@@ -118,6 +118,10 @@ jobs:
 
       - name: Run end-to-end tests
         run: npm run test:e2e
+
+      - name: Publish end-to-end summary
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/e2e-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Playwright report and traces
         if: failure()
