@@ -144,13 +144,17 @@ describe('replying', () => {
     expect(field).not.toHaveFocus();
   });
 
-  it('moves to the reply box from the conversation’s own Reply button', async () => {
+  it('moves to the reply box from the conversation’s own reply action', async () => {
     const parent = tweetFixture({ author: brunoSummary });
     const { user, field } = await renderConversation(parent);
     expect(field).not.toHaveFocus();
 
+    // One control per name: "Reply" is only the reply box's submit button.
+    expect(screen.getAllByRole('button', { name: 'Reply' })).toEqual([
+      within(replyFormOf(field)).getByRole('button', { name: 'Reply' }),
+    ]);
     const focused = screen.getByRole('article', { name: 'Chirp by Bruno Silva' });
-    await user.click(within(focused).getByRole('button', { name: 'Reply' }));
+    await user.click(within(focused).getByRole('button', { name: 'Write a reply' }));
 
     expect(field).toHaveFocus();
   });

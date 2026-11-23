@@ -40,7 +40,8 @@ export function ReplyButton({
     <div className={replyActionClasses.group}>
       <button
         type="button"
-        aria-label="Reply"
+        // Not "Reply": that is the reply box's submit button just below.
+        aria-label="Write a reply"
         onClick={onReply}
         className={`${replyActionClasses.icon} hover:bg-paper hover:text-airmail-blue`}
       >

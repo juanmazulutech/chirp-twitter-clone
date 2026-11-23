@@ -206,7 +206,7 @@ export function FieldHint({ children }: { children: ReactNode }) {
   const { hintId, register } = useField('FieldHint');
   useEffect(() => register('hint'), [register]);
   return (
-    <p id={hintId} className="text-sm text-ink-muted">
+    <p id={hintId} className="text-sm text-pretty text-ink-muted">
       {children}
     </p>
   );

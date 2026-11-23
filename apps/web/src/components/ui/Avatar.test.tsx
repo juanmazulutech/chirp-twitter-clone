@@ -37,6 +37,12 @@ describe('Avatar', () => {
     expect(screen.getByRole('img', { name: 'Your profile' })).toBeInTheDocument();
   });
 
+  it('loads the picture only when it nears the viewport', () => {
+    render(<Avatar name="Ana Torres" label="Ana Torres" userId="user-1" src="/a.svg" />);
+
+    expect(screen.getByRole('img', { name: 'Ana Torres' })).toHaveAttribute('loading', 'lazy');
+  });
+
   it('falls back to initials when the picture fails to load', () => {
     const { container } = render(
       <Avatar name="Ana Torres" userId="user-1" src="https://cdn.example/broken.png" />,

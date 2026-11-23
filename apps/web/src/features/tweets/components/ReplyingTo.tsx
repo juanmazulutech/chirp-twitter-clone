@@ -5,7 +5,8 @@ export function ReplyingTo({ username }: { username: string }) {
   return (
     <p className="truncate text-sm text-ink-muted">
       Replying to{' '}
-      <Link to={`/${username}`} className="text-airmail-blue underline-offset-2 hover:underline">
+      {/* Underlined at rest: beside faded text, blue alone does not mark a link (WCAG 1.4.1). */}
+      <Link to={`/${username}`} className="font-medium text-airmail-blue underline">
         @{username}
       </Link>
     </p>

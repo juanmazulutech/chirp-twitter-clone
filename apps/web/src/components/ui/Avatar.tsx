@@ -33,6 +33,8 @@ export function Avatar({ name, label, userId, src, size = 'md', className = '' }
     <img
       src={src ?? undefined}
       alt={label ?? ''}
+      loading="lazy"
+      decoding="async"
       className={`${shape} bg-hairline object-cover`}
       onError={() => setFailedSrc(src ?? null)}
     />

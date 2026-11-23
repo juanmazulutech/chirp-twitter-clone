@@ -32,6 +32,15 @@ describe('AppShell', () => {
     }
   });
 
+  it('has one complementary region, named, beside the feed', async () => {
+    renderRoute('/home');
+    await screen.findByRole('heading', { level: 1, name: 'Home' });
+
+    expect(screen.getAllByRole('complementary')).toEqual([
+      screen.getByRole('complementary', { name: 'Search people' }),
+    ]);
+  });
+
   it('links Profile and the header avatar to the signed-in user', async () => {
     renderRoute('/home');
 

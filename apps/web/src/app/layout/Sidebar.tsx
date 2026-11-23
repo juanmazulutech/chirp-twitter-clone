@@ -16,7 +16,9 @@ import { RailSignOutButton } from './SignOutButton';
 export function Sidebar() {
   const navItems = useNavItems();
   return (
-    <aside className="sticky top-0 hidden h-dvh shrink-0 flex-col items-center gap-4 px-3 pt-16 pb-6 sm:flex lg:w-60 lg:items-stretch">
+    // A plain container: the "Primary" nav inside is the landmark, and a second unnamed
+    // complementary region beside the right panel would read as a duplicate.
+    <div className="sticky top-0 hidden h-dvh shrink-0 flex-col items-center gap-4 px-3 pt-16 pb-6 sm:flex lg:w-60 lg:items-stretch">
       <nav aria-label="Primary">
         <ul className="flex flex-col gap-1">
           {navItems.map(({ to, label, accessibleName, icon: Icon, badge = 0 }) => (
@@ -48,6 +50,6 @@ export function Sidebar() {
         <RailAppearanceButton />
         <RailSignOutButton />
       </div>
-    </aside>
+    </div>
   );
 }

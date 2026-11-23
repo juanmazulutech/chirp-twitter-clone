@@ -20,10 +20,15 @@ test('a reply appears in the conversation and raises the reply count', async ({
   await expect(replyBox).toBeFocused();
 
   await replyBox.fill(answer);
-  await page.locator('form', { has: replyBox }).getByRole('button', { name: 'Reply' }).click();
+  await page.getByRole('button', { name: 'Reply', exact: true }).click();
 
   const reply = page.getByRole('article').filter({ hasText: answer });
   await expect(reply).toContainText(`Replying to @${account.username}`);
+  // Beside faded text, colour alone would not mark it as a link (WCAG 1.4.1).
+  await expect(reply.getByRole('link', { name: `@${account.username}` })).toHaveCSS(
+    'text-decoration-line',
+    'underline',
+  );
   const focused = page.getByRole('article').filter({ hasText: original });
   await expect(focused).toContainText('1 reply');
 
