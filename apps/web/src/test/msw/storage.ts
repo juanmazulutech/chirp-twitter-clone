@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { server } from './server';
 
 /** The bucket's CORS answer for the web origin, as `storage-init` configures it. */
-export const CORS_HEADERS = {
+const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'PUT',
   'Access-Control-Allow-Headers': 'content-type',

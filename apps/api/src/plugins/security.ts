@@ -16,7 +16,7 @@ export interface SecurityPluginOptions {
 const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** Errors thrown by the rate limiter reach the errors plugin as a 429 (RATE_LIMITED). */
-export function rateLimitExceeded(_request: unknown, context: { statusCode: number }) {
+function rateLimitExceeded(_request: unknown, context: { statusCode: number }) {
   return Object.assign(new Error('Rate limit exceeded'), { statusCode: context.statusCode });
 }
 

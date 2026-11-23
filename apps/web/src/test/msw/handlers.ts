@@ -116,14 +116,14 @@ export function tweetFound(tweet: Tweet) {
 }
 
 /** `GET /api/tweets/:id/ancestors` answering with `ancestors`, root first. */
-export function tweetAncestors(tweetId: string, ancestors: Tweet[] = []) {
+function tweetAncestors(tweetId: string, ancestors: Tweet[] = []) {
   return http.get(`/api/tweets/${tweetId}/ancestors`, () =>
     HttpResponse.json({ items: ancestors }),
   );
 }
 
 /** `GET /api/tweets/:id/replies` serving `pages` like `timelinePages`. */
-export function tweetRepliesPages(
+function tweetRepliesPages(
   tweetId: string,
   pages: Tweet[][] = [[]],
   onCursor: (cursor: string | null) => void = () => {},

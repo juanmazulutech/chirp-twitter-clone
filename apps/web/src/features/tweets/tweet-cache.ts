@@ -9,7 +9,7 @@ export function isTweetPages(data: unknown): data is TweetPages {
 }
 
 /** Applies `update` to every copy of chirp `tweetId`; pages without it keep their identity. */
-export function updateTweetInPages<T extends TweetPages>(
+function updateTweetInPages<T extends TweetPages>(
   data: T,
   tweetId: string,
   update: (tweet: Tweet) => Tweet,
@@ -28,7 +28,7 @@ export function updateTweetInPages<T extends TweetPages>(
 }
 
 /** Whether cached data is one chirp (a chirp page's `tweetKeys.detail`). */
-export function isTweet(data: unknown): data is Tweet {
+function isTweet(data: unknown): data is Tweet {
   return typeof data === 'object' && data !== null && 'content' in data && 'author' in data;
 }
 

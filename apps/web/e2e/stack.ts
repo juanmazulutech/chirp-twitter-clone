@@ -8,7 +8,7 @@ export const E2E_WEB_ORIGIN = `http://localhost:${E2E_WEB_PORT}`;
 const LOCAL_TEST_DATABASE_URL = 'postgresql://chirp:chirp@localhost:5433/chirp_test';
 
 /** The suite resets and seeds this database, so it refuses anything not named `*_test`. */
-export function e2eDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
+function e2eDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   const url = env.TEST_DATABASE_URL ?? LOCAL_TEST_DATABASE_URL;
   const databaseName = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
   if (!databaseName.endsWith('_test')) {
