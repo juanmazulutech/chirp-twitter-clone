@@ -1,8 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    // Build tooling runs in Node.
+    // Build tooling and the nginx configuration tests run in Node.
     "types": ["node"]
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "nginx/*.test.ts"]
 }

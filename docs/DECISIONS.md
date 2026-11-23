@@ -221,6 +221,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 
 - **Decision:** the browser always talks to one origin. In development, Vite proxies `/api` to the API; in Docker, nginx serves the SPA and proxies `/api`.
 - **Context:** no CORS configuration, no cross-site cookies; `SameSite=Lax` works without exceptions.
+- **Web security headers (C51):** nginx sends the SPA's Content-Security-Policy; the API keeps its own JSON-only policy (ADR-09). Inline code is allowed **by hash only**, never with `'unsafe-inline'`: the appearance script in `index.html` (it must run before the first paint) and the stylesheet Sonner appends at runtime (toast positioning). React's style props go through the CSSOM, which the policy does not restrict. `apps/web/nginx/csp.test.ts` recomputes both hashes from the sources, so editing the script or upgrading Sonner fails `verify` instead of breaking production silently. *Alternative:* nonces need a server that renders `index.html` per request; nginx serves it as a static file.
 
 ## ADR-18 · Lowercase usernames and emails
 
@@ -262,7 +263,7 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Context:** reset mode deletes every user, and everything cascades from users. Nothing in the command tied it to development: run with a production `DATABASE_URL` (a copied `.env`, a shell inside the API container, an SSH tunnel to `localhost`), it would wipe production.
 - **Why the data and not the host:** a host or `NODE_ENV` check misses the most common accident, a tunnel that makes production look local, and blocks legitimate resets of the Docker stack. The question that matters is whether the reset would destroy something the seed cannot recreate. Seed accounts and their activity (chirps posted while trying the demo account) are disposable by definition.
 - **Why name the database:** a yes/no flag left in a shell history or `.env` would disarm the guard everywhere. Naming the database scopes the confirmation to one target. `SEED_CONFIRM_RESET` is deliberately absent from `.env.example` and `env.ts`: it is a one-off confirmation for a single command, not configuration.
-- **Trade-offs:** after registering accounts by hand in development, resetting needs the confirmation. Production must also not create the demo accounts (known password) on first start; the Docker entrypoint's seed-when-empty step becomes opt-in in C51.
+- **Trade-offs:** after registering accounts by hand in development, resetting needs the confirmation. Production must also not create the demo accounts (known password) on first start; the Docker entrypoint's seed-when-empty step is opt-in: it runs only when `SEED_DEMO_DATA=true`, which only `docker-compose.yml` sets (C51). The API image on its own migrates and starts without creating any account.
 
 ## ADR-24 · Replies are tweets with a parent
 

@@ -28,7 +28,7 @@
     "db:migrate": "npm run db:migrate -w @chirp/api",
     "db:seed": "npm run db:seed -w @chirp/api",
     "dev": "concurrently --names api,web --prefix-colors blue,magenta --kill-others-on-fail \"npm run dev -w @chirp/api\" \"npm run dev -w @chirp/web\"",
-    "build": "npm run build -w @chirp/web"
+    "build": "npm run build -w @chirp/api && npm run build -w @chirp/web"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [

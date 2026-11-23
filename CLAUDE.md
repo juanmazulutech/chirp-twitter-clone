@@ -45,6 +45,8 @@ Use the Node version in `.nvmrc` (`nvm use`); several dependencies require Node 
 | `npm run db:migrate` | create and apply a migration to the development database (`prisma migrate dev`) | C09 |
 | `npm run db:generate` | regenerate the Prisma client (also runs on every `npm install`) | C09 |
 | `npm run db:seed` | **replace** all development data with the demo data set (idempotent; `--if-empty` variant used by Docker) | C13 |
+| `npm run build` | production builds: API bundles (tsup) and the web app | C51 |
+| `docker compose up --build` | full stack in production images (API not published; web on :8080, demo data seeded when empty) | C51 |
 | `npm run test:e2e` | Playwright | C47 |
 
 A pre-commit hook (husky + lint-staged) runs ESLint and Prettier on staged files.

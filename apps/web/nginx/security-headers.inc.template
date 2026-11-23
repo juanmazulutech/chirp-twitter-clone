@@ -1,0 +1,12 @@
+# Included by every static location: nginx drops server-level add_header directives in any
+# location that adds its own (Cache-Control), so the headers live here instead.
+#
+# The two hashes allow exactly two inline blocks, and nginx/csp.test.ts fails if either drifts:
+# - script-src: the appearance script in index.html, applied before the first paint;
+# - style-src: the stylesheet Sonner injects at runtime (toast positioning and stacking).
+# React sets style props through the CSSOM, which style-src does not restrict.
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BJ/zOxvrDqePUsVV5XnNPHh9Brz7pkMW4BjsiwAmP7Y='; style-src 'self' 'sha256-StEaX+se6YS7pqjzrzMIA0KaX9zF/8zAhvQXZAe5epY='; img-src 'self' data: blob: ${STORAGE_PUBLIC_ORIGIN}; connect-src 'self' ${STORAGE_PUBLIC_ORIGIN}; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;

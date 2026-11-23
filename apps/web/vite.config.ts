@@ -16,7 +16,8 @@ export default defineConfig({
   preview: { port: 4173, strictPort: true, proxy: apiProxy },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}'],
+    // nginx/*.test.ts check the production web server's configuration (CSP hashes).
+    include: ['src/**/*.test.{ts,tsx}', 'nginx/**/*.test.ts'],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',

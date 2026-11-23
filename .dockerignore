@@ -1,0 +1,21 @@
+# Images are built from the repository root (ADR-02); only sources and manifests go in.
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/*.tsbuildinfo
+**/*.log
+apps/api/src/generated
+.env
+.env.*
+!.env.example
+.git
+.github
+.husky
+.claude
+.vscode
+.idea
+**/.DS_Store
+docs
+*.md

@@ -65,8 +65,9 @@ chirp/
 │   │   │       ├── uploads/
 │   │   │       └── notifications/
 │   │   ├── test/                   global-setup (migrations) · env (_test guard) · database (reset) · app · factories/
+│   │   ├── tsup.config.ts          production bundles: dist/server.js · prisma/dist/seed.js
 │   │   ├── Dockerfile
-│   │   └── docker-entrypoint.sh    migrate deploy → seed if empty → start
+│   │   └── docker-entrypoint.sh    migrate deploy → seed if empty (only with SEED_DEMO_DATA=true) → start
 │   └── web/
 │       ├── .impeccable/surfaces/   direction contract for the app surfaces (impeccable)
 │       ├── src/
@@ -84,7 +85,7 @@ chirp/
 │       │   ├── lib/                domain-free infrastructure: api-client.ts · query-client.ts · format.ts · notify.ts
 │       │   └── test/               msw/ (handlers, server) · render.tsx · fixtures.ts
 │       ├── e2e/                    Playwright specs and global setup
-│       ├── nginx.conf
+│       ├── nginx/                  default.conf.template (SPA + /api proxy) · security-headers.inc.template (CSP)
 │       └── Dockerfile
 ├── packages/shared/src/
 │   ├── schemas/                    auth · users · tweets · pagination · uploads · notifications · errors
@@ -99,6 +100,7 @@ chirp/
 ├── DESIGN.md                       visual system "Postmarked": tokens, type, components
 ├── .impeccable/design.json         machine-readable sidecar of DESIGN.md
 ├── README.md
+├── .dockerignore
 ├── .env.example
 ├── .nvmrc
 ├── docker-compose.yml
@@ -406,10 +408,13 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 | `db` | `postgres:16.16-alpine` | 5433 → 5432 | development and test databases (`init.sql` creates `chirp_test`) |
 | `storage` | `rustfs/rustfs:1.0.6` | 9000 (S3 API), 9001 (console) | S3-compatible object storage |
 | `storage-init` | `amazon/aws-cli:2.42.0` | — | creates bucket `chirp-media`, public-read policy (objects only) and CORS, then exits; idempotent |
-| `api` | `apps/api/Dockerfile` | 3000 | entrypoint: `prisma migrate deploy` → seed if `users` is empty → server |
-| `web` | `apps/web/Dockerfile` (nginx) | **8080** | serves the SPA and proxies `/api` to `api:3000` |
+| `api` | `apps/api/Dockerfile` | — (not published) | entrypoint: `prisma migrate deploy` → seed if `users` is empty, only when `SEED_DEMO_DATA=true` (ADR-23) → server |
+| `web` | `apps/web/Dockerfile` (nginx) | **8080** (`WEB_PORT`) | serves the SPA with its security headers and proxies `/api` to `api:3000` |
 
 - **One command:** `docker compose up --build` → <http://localhost:8080>.
+- **Images** are built from the repository root. The API image is `node:22.23.5-bookworm-slim` with the tsup bundles, runtime dependencies only (the Prisma CLI among them, for `migrate deploy`), OpenSSL for Prisma's migration engine, and the non-root `node` user. The web image is `nginx:1.30.7-alpine` serving the Vite build.
+- **`api` reads no `.env`:** compose sets its variables (`db:5432`, `http://storage:9000`, `WEB_ORIGINS=http://localhost:8080`, `TRUST_PROXY=true`, JSON logs, `SEED_DEMO_DATA=true`), because `.env` holds host addresses for `npm run dev`. Its port is not published: the browser reaches it only through `web` (ADR-17), and port 3000 stays free for `npm run dev`.
+- **Web headers (ADR-17):** a Content-Security-Policy that allows inline code only by hash (the appearance script in `index.html` and the stylesheet Sonner injects; `nginx/csp.test.ts` fails when either drifts), images and uploads from the storage's public origin (`STORAGE_PUBLIC_ORIGIN`), `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy` and `Permissions-Policy`. Hashed `/assets/` are cached for a year as `immutable`; `index.html` is always revalidated.
 - **Development:** `npm run services:up` (= `docker compose up -d db storage storage-init`), then `npm run dev` → <http://localhost:5173>.
 - Works with Docker 20.10 / Compose v2.0: `depends_on` health conditions are supported; the top-level `name:` key is not, so the project name comes from `COMPOSE_PROJECT_NAME`.
 - Host ports are configurable (`POSTGRES_PORT`, `STORAGE_PORT`, `STORAGE_CONSOLE_PORT`) in case they are taken.
@@ -447,6 +452,9 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 | `STORAGE_PORT` / `STORAGE_CONSOLE_PORT` | `9000` / `9001` | host ports for the S3 API and web console |
 | `STORAGE_BUCKET` | `chirp-media` | bucket created by `storage-init` |
 | `STORAGE_CORS_ORIGINS` | `http://localhost:5173,http://localhost:8080` | origins allowed to upload with presigned URLs |
+| `WEB_PORT` | `8080` | host port of the Docker web app (add a changed origin to `STORAGE_CORS_ORIGINS`) |
+
+`SEED_DEMO_DATA` is not an application variable: only the API image's entrypoint reads it, and only `docker-compose.yml` sets it (ADR-23).
 
 ### 8.3 Root scripts
 
@@ -454,11 +462,9 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 |---|---|
 | `services:up` / `services:down` | start local PostgreSQL + storage (with bucket setup) / stop them, keeping data |
 | `dev` | API (`tsx watch`, :3000) and web (`vite`, :5173, proxying `/api`) concurrently |
-| `build` | production build of the web app (`apps/web/dist`) |
-| `build` | shared → api → web |
+| `build` | production builds: API bundles (tsup, `apps/api/dist` and `apps/api/prisma/dist`), then the web app (`apps/web/dist`) |
 | `db:migrate` | `prisma migrate dev` |
 | `db:generate` | `prisma generate` (also runs on `postinstall`) |
-| `db:seed` | `prisma db seed` |
 | `db:seed` | `prisma db seed` → `prisma/seed.ts`: replaces application data with the demo data set |
 | `lint` / `typecheck` | across all workspaces |
 | `test` | shared, API and web tests |
@@ -478,6 +484,6 @@ Target state once every feature is in place; each phase extends the seed with th
 - Cross-likes: each user likes 10–30 tweets from people they follow, timed after both the chirp and the liker's join date.
 - Reply threads (`seed-data/replies.ts`): 9 hand-written conversations (31 replies) under recent chirps, up to three replies deep, including self-threads and replies on `demo`'s chirps; whoever replies is connected to the person answered by a follow in at least one direction; each reply is timed some minutes after the chirp it answers, clamped to `now`.
 - Notifications consistent with the generated follows, likes and replies (never self-notifications), with some unread for `demo`.
-- Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`), but refuses when the database holds accounts the seed did not create unless `SEED_CONFIRM_RESET=<database name>` is set (ADR-23); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
+- Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`), but refuses when the database holds accounts the seed did not create unless `SEED_CONFIRM_RESET=<database name>` is set (ADR-23); `--if-empty` seeds only an empty database; the Docker entrypoint runs it (as the bundled `prisma/dist/seed.js`) when `SEED_DEMO_DATA=true`, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
 - Every account gets its own argon2 hash; a test signs in with the documented demo credentials so documentation and data cannot drift.
 - Requires the storage service (avatars are uploaded); if storage is unreachable it fails with a message pointing to the runbook command.
