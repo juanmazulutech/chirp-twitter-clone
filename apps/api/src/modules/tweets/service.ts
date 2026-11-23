@@ -1,9 +1,9 @@
-import type { CreateTweetBody, Tweet } from '@chirp/shared';
+import type { CreateReplyBody, CreateTweetBody, Tweet } from '@chirp/shared';
 import type { FastifyBaseLogger } from 'fastify';
 
 import type { PrismaClient } from '../../generated/prisma/client';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../lib/errors';
-import { isUniqueViolation } from '../../lib/prisma-errors';
+import { isForeignKeyViolation, isUniqueViolation } from '../../lib/prisma-errors';
 import { toTweet, tweetRowSelect } from '../../lib/serializers';
 import type { StorageService } from '../../lib/storage';
 
@@ -38,19 +38,39 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
     if (!(await storage.exists(imageKey))) throw unusableImage();
   }
 
-  async function create(authorId: string, { content, imageKey }: CreateTweetBody): Promise<Tweet> {
+  /** Top-level chirps and replies share every rule but the parent (ADR-24). */
+  async function insert(
+    authorId: string,
+    { content, imageKey }: CreateTweetBody,
+    parentId?: string,
+  ): Promise<Tweet> {
     if (imageKey !== undefined) await checkImage(authorId, imageKey);
     try {
       const tweet = await prisma.tweet.create({
-        data: { authorId, content, imageKey },
+        data: { authorId, content, imageKey, parentId },
         select: tweetRowSelect(authorId),
       });
       return toTweet(tweet, publicUrl);
     } catch (error) {
       // The image is already on another chirp: sharing it would let one delete remove both.
       if (isUniqueViolation(error)) throw unusableImage(error);
+      // The parent was deleted between the lookup and the insert.
+      if (parentId !== undefined && isForeignKeyViolation(error)) {
+        throw new NotFoundError('Tweet', { cause: error });
+      }
       throw error;
     }
+  }
+
+  async function create(authorId: string, body: CreateTweetBody): Promise<Tweet> {
+    return insert(authorId, body);
+  }
+
+  /** A reply to any chirp, replies included, so conversations can nest (ADR-24). */
+  async function reply(authorId: string, parentId: string, body: CreateReplyBody): Promise<Tweet> {
+    const parent = await prisma.tweet.findUnique({ where: { id: parentId }, select: { id: true } });
+    if (!parent) throw new NotFoundError('Tweet');
+    return insert(authorId, body, parentId);
   }
 
   async function get(id: string, viewerId: string): Promise<Tweet> {
@@ -62,7 +82,11 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
     return toTweet(tweet, publicUrl);
   }
 
-  /** Only the author may delete a tweet; a missing tweet is reported before ownership. */
+  /**
+   * Only the author may delete a tweet; a missing tweet is reported before ownership. Its
+   * replies cascade in the database (ADR-24); their images are left behind like any orphan
+   * upload (ADR-14).
+   */
   async function remove(id: string, userId: string): Promise<void> {
     const tweet = await prisma.tweet.findUnique({
       where: { id },
@@ -87,5 +111,5 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
     }
   }
 
-  return { create, get, remove };
+  return { create, reply, get, remove };
 }

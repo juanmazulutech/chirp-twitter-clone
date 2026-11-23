@@ -14,7 +14,7 @@ Chirp is a Twitter/X clone: Fastify + Prisma + PostgreSQL API (`apps/api`), Reac
 
 ## Workflow
 
-Work advances one planned commit (`C01`–`C53` in PLAN.md §4) at a time:
+Work advances one planned commit (`C01`–`C58` in PLAN.md §4; Phase 7b's C54–C58 run between C42 and C43) at a time:
 
 1. **Explain** the next commit to the author: goal, files, decisions, open questions, and **which agent skills apply** — load them first and state what is adopted from each and what is not (and why). Do not edit files or run commands yet.
 2. **Wait for approval.**

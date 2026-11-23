@@ -72,7 +72,7 @@ export function createUsersService({ prisma, storage, log }: UsersServiceDepende
     return toUserProfile(user, userId, publicUrl);
   }
 
-  /** One user's chirps, newest first, with the viewer's likes (ADR-11, ADR-13). */
+  /** One user's top-level chirps, newest first, with the viewer's likes (ADR-11, ADR-13, ADR-24). */
   async function tweets(
     viewerId: string,
     username: string,
@@ -84,7 +84,7 @@ export function createUsersService({ prisma, storage, log }: UsersServiceDepende
     if (!author) throw new NotFoundError('User');
 
     const rows = await prisma.tweet.findMany({
-      where: { AND: [{ authorId: author.id }, keysetAfter(after)] },
+      where: { AND: [{ authorId: author.id, parentId: null }, keysetAfter(after)] },
       orderBy: newestFirst,
       take: limit + 1,
       select: tweetRowSelect(viewerId),

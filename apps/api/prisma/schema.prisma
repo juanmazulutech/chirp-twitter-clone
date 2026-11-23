@@ -59,13 +59,20 @@ model Tweet {
   // Object key of an attached image (ADR-14); unique, so deleting one chirp never removes
   // another chirp's image.
   imageKey  String?  @unique @map("image_key")
+  // The chirp this one replies to; null for a top-level chirp (ADR-24).
+  parentId  String?  @map("parent_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
-  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  likes  Like[]
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // Deleting a chirp deletes the conversation under it (ADR-24).
+  parent  Tweet?  @relation("TweetReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Tweet[] @relation("TweetReplies")
+  likes   Like[]
 
   // Serves profile tweets and the home timeline's keyset pagination (ADR-11, ADR-12).
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
+  // Serves a chirp's replies, oldest first, and its reply count.
+  @@index([parentId, createdAt, id])
   @@map("tweets")
 }
 

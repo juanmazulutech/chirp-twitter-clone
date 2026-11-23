@@ -34,6 +34,8 @@ export function tweetFixture(overrides: Partial<Tweet> = {}): Tweet {
     author: authResponse.user,
     likeCount: 0,
     likedByMe: false,
+    replyCount: 0,
+    replyTo: null,
     ...overrides,
   };
 }

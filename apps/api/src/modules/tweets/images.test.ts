@@ -70,6 +70,50 @@ describe('chirp images', () => {
     });
   });
 
+  describe('on replies', () => {
+    const postReply = (parentId: string, payload: object, session = cookie) =>
+      app.inject({
+        method: 'POST',
+        url: `/api/tweets/${parentId}/replies`,
+        payload,
+        headers: { cookie: session },
+      });
+
+    it('attaches the author’s upload to a reply', async () => {
+      const parent = await app.prisma.tweet.create({
+        data: { authorId: (await createUser(app.prisma)).id, content: 'Show me' },
+      });
+      const key = await uploaded(ana);
+
+      const response = await postReply(parent.id, { content: 'Here', imageKey: key });
+
+      expect(response.statusCode).toBe(201);
+      expect(tweetSchema.parse(response.json())).toMatchObject({
+        imageUrl: storage.publicUrl(key),
+        replyTo: { id: parent.id },
+      });
+    });
+
+    it('applies the same image rules as a chirp', async () => {
+      const parent = await app.prisma.tweet.create({
+        data: { authorId: ana.id, content: 'Show me' },
+      });
+      const key = await uploaded(await createUser(app.prisma));
+
+      expectUnusable(await postReply(parent.id, { content: 'Not mine', imageKey: key }));
+      expect(await app.prisma.tweet.count()).toBe(1);
+    });
+
+    it('checks the parent before the image', async () => {
+      const response = await postReply('019a0000-0000-7000-8000-000000000000', {
+        content: 'Gone',
+        imageKey: 'users/someone/tweet/missing.png',
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
   it('still requires the text of the chirp', async () => {
     const key = await uploaded(ana);
 

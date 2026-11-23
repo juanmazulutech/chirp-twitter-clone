@@ -13,13 +13,18 @@ export interface TimelineServiceDependencies {
 export type TimelineService = ReturnType<typeof createTimelineService>;
 
 export function createTimelineService({ prisma, storage }: TimelineServiceDependencies) {
-  /** The viewer's own tweets and those of everyone they follow, computed at read time (ADR-12). */
+  /**
+   * The viewer's own top-level chirps and those of everyone they follow, computed at read time
+   * (ADR-12, ADR-24).
+   */
   async function home(viewerId: string, { cursor, limit }: PageQuery): Promise<Page<Tweet>> {
     const after = cursor === undefined ? undefined : decodeCursor(cursor);
 
     const rows = await prisma.tweet.findMany({
       where: {
         AND: [
+          // Replies are read in their thread, not in the timeline (ADR-24).
+          { parentId: null },
           {
             OR: [
               { authorId: viewerId },

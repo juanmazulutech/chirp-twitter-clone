@@ -29,10 +29,10 @@ A calm, chronological microblog. The home timeline shows only the people you fol
 
 - Accounts: sign up (email, username, display name, password), sign in, sign out; sessions persist across reloads.
 - Chirps: create (1–280 Unicode code points, counted as the user sees them, emoji included), delete your own, optional image attachment.
-- Social: follow / unfollow, like / unlike with visible counts, followers and following lists, user search by name or username, notifications for new followers and likes.
+- Social: follow / unfollow, like / unlike with visible counts, replies to chirps and to replies (read as a thread on the chirp's page), followers and following lists, user search by name or username, notifications for new followers, likes and replies.
 - Profiles: unique username (3–15 lowercase letters, digits or underscores), display name (up to 50 characters), bio (up to 160), avatar with an initials fallback.
 - Terminology: the interface calls posts "chirps" and the action "chirp" ("Chirp", "Delete chirp"); the code and API call them tweets.
-- Out of scope: replies and threads, reposts, direct messages, real-time updates, email verification, password reset.
+- Out of scope: reposts and quote chirps, direct messages, real-time updates, email verification, password reset.
 
 ## Brand Commitments
 
