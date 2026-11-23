@@ -3,6 +3,7 @@ import type { LikeState } from '@chirp/shared';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { NotFoundError } from '../../lib/errors';
 import { isForeignKeyViolation } from '../../lib/prisma-errors';
+import { notifyLike, retractLike } from '../notifications/rules';
 
 export interface LikesServiceDependencies {
   prisma: PrismaClient;
@@ -11,9 +12,14 @@ export interface LikesServiceDependencies {
 export type LikesService = ReturnType<typeof createLikesService>;
 
 export function createLikesService({ prisma }: LikesServiceDependencies) {
-  async function ensureTweetExists(tweetId: string): Promise<void> {
-    const tweet = await prisma.tweet.findUnique({ where: { id: tweetId }, select: { id: true } });
+  /** The tweet's author, who receives the like notification. */
+  async function findAuthorId(tweetId: string): Promise<string> {
+    const tweet = await prisma.tweet.findUnique({
+      where: { id: tweetId },
+      select: { authorId: true },
+    });
     if (!tweet) throw new NotFoundError('Tweet');
+    return tweet.authorId;
   }
 
   async function stateOf(tweetId: string, liked: boolean): Promise<LikeState> {
@@ -22,10 +28,13 @@ export function createLikesService({ prisma }: LikesServiceDependencies) {
 
   /** Idempotent: liking a tweet already liked changes nothing and still succeeds. */
   async function like(userId: string, tweetId: string): Promise<LikeState> {
-    await ensureTweetExists(tweetId);
+    const authorId = await findAuthorId(tweetId);
     try {
-      // ON CONFLICT DO NOTHING: a repeated or concurrent like never raises a unique violation.
-      await prisma.like.createMany({ data: { userId, tweetId }, skipDuplicates: true });
+      await prisma.$transaction(async (tx) => {
+        // ON CONFLICT DO NOTHING: a repeated or concurrent like never raises a unique violation.
+        await tx.like.createMany({ data: { userId, tweetId }, skipDuplicates: true });
+        await notifyLike(tx, { likerId: userId, tweetId, authorId });
+      });
     } catch (error) {
       // The tweet was deleted between the lookup and the insert.
       if (isForeignKeyViolation(error)) throw new NotFoundError('Tweet', { cause: error });
@@ -36,8 +45,11 @@ export function createLikesService({ prisma }: LikesServiceDependencies) {
 
   /** Idempotent: unliking a tweet not liked changes nothing and still succeeds. */
   async function unlike(userId: string, tweetId: string): Promise<LikeState> {
-    await ensureTweetExists(tweetId);
-    await prisma.like.deleteMany({ where: { userId, tweetId } });
+    await findAuthorId(tweetId);
+    await prisma.$transaction(async (tx) => {
+      await tx.like.deleteMany({ where: { userId, tweetId } });
+      await retractLike(tx, { likerId: userId, tweetId });
+    });
     return stateOf(tweetId, false);
   }
 

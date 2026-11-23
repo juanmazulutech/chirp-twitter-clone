@@ -201,15 +201,18 @@ Decisions are appended or amended as the project evolves; superseded decisions a
 - **Decision:**
   - Types: `FOLLOW` (actor → followed user), `LIKE` (actor → tweet author, with `tweetId`) and `REPLY` (actor → author of the chirp replied to, with `tweetId` = the reply; amended with ADR-24).
   - A reply notifies only the direct parent's author, not everyone earlier in the thread.
-  - Created **in the same transaction** as the triggering action — consistent without a queue.
+  - Created **in the same transaction** as the triggering action — consistent without a queue. The rules live in one place (`modules/notifications/rules.ts`), as functions that take the transaction client.
   - Users are never notified about their own actions (liking your own tweet).
-  - Undoing the action (unlike / unfollow) **deletes** its notification.
-  - Actions are idempotent: repeating a like is a no-op and creates no duplicate.
+  - Undoing the action (unlike / unfollow) **deletes** its notification. Redoing it creates a new, unread one; a user who toggles a like repeatedly can raise the badge repeatedly, as on X. Accepted: preserving the old row would add state for little benefit.
+  - Actions are idempotent: repeating a like is a no-op and creates no duplicate. The database guarantees it: a unique index on `(type, recipient_id, actor_id, tweet_id)` with `NULLS NOT DISTINCT` (PostgreSQL ≥ 15, so `FOLLOW` rows, whose `tweet_id` is null, are unique too), and inserts use `ON CONFLICT DO NOTHING`. CHECK constraints reject self-notifications and a `tweet_id` that does not match the type.
   - Deleting a tweet cascades to its notifications.
-  - The unread badge polls every 30 s; opening the notifications page marks all as read.
-  - Optional UI grouping of likes on the same tweet ("Ana and 3 others liked your chirp"), computed client-side.
+  - The unread badge polls every 30 s; opening the notifications page marks as read **up to the newest notification the client has seen** (`POST /notifications/read { until }`), so one that arrives between loading the page and marking it is not marked read unseen. Ids are UUIDv7, so `id <= until` means "no newer than".
+  - Read state is per row (`readAt`), not a per-user "last read" watermark, so single items can be marked later.
+  - No grouping ("Ana and 3 others liked your chirp"). Grouping client-side breaks with cursor pagination (a group splits across pages and its count only covers what is loaded); grouping server-side would paginate groups, a larger change than this bonus warrants.
+  - A notification about a chirp without text (image only) shows "Image" as its excerpt.
+- **Alternatives:** deriving notifications on read from `follows`, `likes` and replies (a `UNION` query, no table): undo and cascades come free, but pagination across three sources is complex, there is no per-item read state and new kinds (mentions, system notices) do not fit. Asynchronous creation through an event emitter or queue: outside the action's transaction, so an action could commit without its notification.
 - **Context:** the feature is intentionally underspecified; these rules prevent spam, duplicates and dangling notifications.
-- **Revisit when:** immediacy is required → Server-Sent Events backed by Postgres `LISTEN/NOTIFY` or Redis pub/sub; at high volume → asynchronous generation through a queue.
+- **Revisit when:** immediacy is required → Server-Sent Events backed by Postgres `LISTEN/NOTIFY` or Redis pub/sub; at high volume → asynchronous generation through a queue; grouping becomes a product need → server-side aggregation.
 
 ## ADR-16 · Seed avatars generated with DiceBear
 

@@ -6,6 +6,7 @@ import { NotFoundError, ValidationError } from '../../lib/errors';
 import { isForeignKeyViolation } from '../../lib/prisma-errors';
 import { followListUserRowSelect, toFollowListUser } from '../../lib/serializers';
 import type { StorageService } from '../../lib/storage';
+import { notifyFollow, retractFollow } from '../notifications/rules';
 
 export interface FollowsServiceDependencies {
   prisma: PrismaClient;
@@ -33,8 +34,11 @@ export function createFollowsService({ prisma, storage }: FollowsServiceDependen
     if (followingId === followerId) throw new ValidationError('You cannot follow yourself');
 
     try {
-      // ON CONFLICT DO NOTHING: a repeated or concurrent follow never raises a unique violation.
-      await prisma.follow.createMany({ data: { followerId, followingId }, skipDuplicates: true });
+      await prisma.$transaction(async (tx) => {
+        // ON CONFLICT DO NOTHING: a repeated or concurrent follow never raises a unique violation.
+        await tx.follow.createMany({ data: { followerId, followingId }, skipDuplicates: true });
+        await notifyFollow(tx, { followerId, followingId });
+      });
     } catch (error) {
       // The user was deleted between the lookup and the insert.
       if (isForeignKeyViolation(error)) throw new NotFoundError('User', { cause: error });
@@ -46,7 +50,10 @@ export function createFollowsService({ prisma, storage }: FollowsServiceDependen
   /** Idempotent: unfollowing someone not followed changes nothing and still succeeds. */
   async function unfollow(followerId: string, username: string): Promise<FollowState> {
     const followingId = await findUserId(username);
-    await prisma.follow.deleteMany({ where: { followerId, followingId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.follow.deleteMany({ where: { followerId, followingId } });
+      await retractFollow(tx, { followerId, followingId });
+    });
     return stateOf(followingId, false);
   }
 

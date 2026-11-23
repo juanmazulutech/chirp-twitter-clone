@@ -273,6 +273,9 @@ model Notification {
   actor     User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
   tweet     Tweet? @relation(fields: [tweetId], references: [id], onDelete: Cascade)
 
+  // The migration adds NULLS NOT DISTINCT and CHECK constraints (not self; tweetId null only
+  // for FOLLOW), which Prisma cannot express (ADR-15).
+  @@unique([type, recipientId, actorId, tweetId], map: "notifications_action_key")
   @@index([recipientId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([recipientId, readAt])
   @@map("notifications")
@@ -340,7 +343,7 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | POST | `/uploads/presign` | 🔒 | `{ purpose: 'tweet' \| 'avatar', contentType, size }` | `200 { uploadUrl, key }` | 400 on invalid type/size |
 | GET | `/notifications` | 🔒 | `?cursor=&limit=` | `200 Page<Notification>` | |
 | GET | `/notifications/unread-count` | 🔒 | — | `200 { count }` | |
-| POST | `/notifications/read` | 🔒 | — | `204` | marks all as read |
+| POST | `/notifications/read` | 🔒 | `{ until }` | `204` | marks as read every notification up to `until` (the newest id the client has seen; ADR-15) |
 
 Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 

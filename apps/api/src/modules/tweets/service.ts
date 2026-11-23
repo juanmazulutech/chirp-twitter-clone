@@ -15,6 +15,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../../lib/errors
 import { isForeignKeyViolation, isUniqueViolation } from '../../lib/prisma-errors';
 import { toTweet, tweetRowSelect } from '../../lib/serializers';
 import type { StorageService } from '../../lib/storage';
+import { notifyReply } from '../notifications/rules';
 
 export interface TweetsServiceDependencies {
   prisma: PrismaClient;
@@ -24,6 +25,12 @@ export interface TweetsServiceDependencies {
 }
 
 export type TweetsService = ReturnType<typeof createTweetsService>;
+
+/** The chirp a reply answers; its author receives the reply notification (ADR-15). */
+interface ParentTweet {
+  id: string;
+  authorId: string;
+}
 
 const UNUSABLE_IMAGE = 'This image can’t be used. Upload it again.';
 
@@ -51,20 +58,30 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
   async function insert(
     authorId: string,
     { content, imageKey }: CreateTweetBody,
-    parentId?: string,
+    parent?: ParentTweet,
   ): Promise<Tweet> {
     if (imageKey !== undefined) await checkImage(authorId, imageKey);
     try {
-      const tweet = await prisma.tweet.create({
-        data: { authorId, content, imageKey, parentId },
-        select: tweetRowSelect(authorId),
+      const tweet = await prisma.$transaction(async (tx) => {
+        const created = await tx.tweet.create({
+          data: { authorId, content, imageKey, parentId: parent?.id },
+          select: tweetRowSelect(authorId),
+        });
+        if (parent !== undefined) {
+          await notifyReply(tx, {
+            replyId: created.id,
+            replierId: authorId,
+            parentAuthorId: parent.authorId,
+          });
+        }
+        return created;
       });
       return toTweet(tweet, publicUrl);
     } catch (error) {
       // The image is already on another chirp: sharing it would let one delete remove both.
       if (isUniqueViolation(error)) throw unusableImage(error);
       // The parent was deleted between the lookup and the insert.
-      if (parentId !== undefined && isForeignKeyViolation(error)) {
+      if (parent !== undefined && isForeignKeyViolation(error)) {
         throw new NotFoundError('Tweet', { cause: error });
       }
       throw error;
@@ -77,13 +94,20 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
 
   /** A reply to any chirp, replies included, so conversations can nest (ADR-24). */
   async function reply(authorId: string, parentId: string, body: CreateReplyBody): Promise<Tweet> {
-    await ensureExists(parentId);
-    return insert(authorId, body, parentId);
+    return insert(authorId, body, await findExisting(parentId));
+  }
+
+  async function findExisting(id: string): Promise<ParentTweet> {
+    const tweet = await prisma.tweet.findUnique({
+      where: { id },
+      select: { id: true, authorId: true },
+    });
+    if (!tweet) throw new NotFoundError('Tweet');
+    return tweet;
   }
 
   async function ensureExists(id: string): Promise<void> {
-    const tweet = await prisma.tweet.findUnique({ where: { id }, select: { id: true } });
-    if (!tweet) throw new NotFoundError('Tweet');
+    await findExisting(id);
   }
 
   /** Direct replies only, oldest first, so a conversation reads top-down (ADR-24). */
