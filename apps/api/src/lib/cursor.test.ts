@@ -5,6 +5,7 @@ import {
   encodeCursor,
   keysetAfter,
   keysetAfterBy,
+  keysetAfterOldestFirst,
   newestFirstBy,
   toPage,
 } from './cursor';
@@ -97,5 +98,20 @@ describe('toPage', () => {
     );
 
     expect(decodeCursor(page.nextCursor ?? '')).toEqual(rows[0]);
+  });
+});
+
+describe('keysetAfterOldestFirst', () => {
+  it('filters nothing on the first page', () => {
+    expect(keysetAfterOldestFirst(undefined)).toEqual({});
+  });
+
+  it('keeps later rows and, at the same instant, higher ids', () => {
+    expect(keysetAfterOldestFirst(cursor)).toEqual({
+      OR: [
+        { createdAt: { gt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+      ],
+    });
   });
 });

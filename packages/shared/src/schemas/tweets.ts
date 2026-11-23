@@ -46,3 +46,7 @@ export const tweetSchema = z.object({
   replyTo: z.object({ id: z.uuid(), author: userSummarySchema }).nullable(),
 });
 export type Tweet = z.infer<typeof tweetSchema>;
+
+/** The chirps a reply answers, root first: at most `THREAD_ANCESTORS_MAX`, the nearest ones. */
+export const tweetAncestorsSchema = z.object({ items: z.array(tweetSchema) });
+export type TweetAncestors = z.infer<typeof tweetAncestorsSchema>;

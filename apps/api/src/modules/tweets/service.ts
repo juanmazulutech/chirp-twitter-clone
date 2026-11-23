@@ -1,7 +1,16 @@
-import type { CreateReplyBody, CreateTweetBody, Tweet } from '@chirp/shared';
+import type {
+  CreateReplyBody,
+  CreateTweetBody,
+  Page,
+  PageQuery,
+  Tweet,
+  TweetAncestors,
+} from '@chirp/shared';
+import { THREAD_ANCESTORS_MAX } from '@chirp/shared';
 import type { FastifyBaseLogger } from 'fastify';
 
 import type { PrismaClient } from '../../generated/prisma/client';
+import { decodeCursor, keysetAfterOldestFirst, oldestFirst, toPage } from '../../lib/cursor';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../lib/errors';
 import { isForeignKeyViolation, isUniqueViolation } from '../../lib/prisma-errors';
 import { toTweet, tweetRowSelect } from '../../lib/serializers';
@@ -68,9 +77,65 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
 
   /** A reply to any chirp, replies included, so conversations can nest (ADR-24). */
   async function reply(authorId: string, parentId: string, body: CreateReplyBody): Promise<Tweet> {
-    const parent = await prisma.tweet.findUnique({ where: { id: parentId }, select: { id: true } });
-    if (!parent) throw new NotFoundError('Tweet');
+    await ensureExists(parentId);
     return insert(authorId, body, parentId);
+  }
+
+  async function ensureExists(id: string): Promise<void> {
+    const tweet = await prisma.tweet.findUnique({ where: { id }, select: { id: true } });
+    if (!tweet) throw new NotFoundError('Tweet');
+  }
+
+  /** Direct replies only, oldest first, so a conversation reads top-down (ADR-24). */
+  async function replies(
+    id: string,
+    viewerId: string,
+    { cursor, limit }: PageQuery,
+  ): Promise<Page<Tweet>> {
+    // Decoded first, so a bad cursor is a 400 whether or not the chirp exists.
+    const after = cursor === undefined ? undefined : decodeCursor(cursor);
+    await ensureExists(id);
+
+    const rows = await prisma.tweet.findMany({
+      where: { AND: [{ parentId: id }, keysetAfterOldestFirst(after)] },
+      orderBy: oldestFirst,
+      take: limit + 1,
+      select: tweetRowSelect(viewerId),
+    });
+    return toPage(rows, limit, (row) => toTweet(row, publicUrl));
+  }
+
+  /**
+   * The chirps above this one, root first. A recursive query walks up `parent_id`; it stops at
+   * the nearest `THREAD_ANCESTORS_MAX`, so the first item's `replyTo` still points further up
+   * when the thread is deeper.
+   */
+  async function ancestors(id: string, viewerId: string): Promise<TweetAncestors> {
+    await ensureExists(id);
+
+    const chain = await prisma.$queryRaw<Array<{ id: string; depth: number }>>`
+      WITH RECURSIVE chain (id, parent_id, depth) AS (
+        SELECT parent.id, parent.parent_id, 1
+        FROM tweets AS child
+        JOIN tweets AS parent ON parent.id = child.parent_id
+        WHERE child.id = ${id}::uuid
+        UNION ALL
+        SELECT parent.id, parent.parent_id, chain.depth + 1
+        FROM chain
+        JOIN tweets AS parent ON parent.id = chain.parent_id
+        WHERE chain.depth < ${THREAD_ANCESTORS_MAX}
+      )
+      SELECT id, depth FROM chain`;
+    if (chain.length === 0) return { items: [] };
+
+    const rows = await prisma.tweet.findMany({
+      where: { id: { in: chain.map((row) => row.id) } },
+      select: tweetRowSelect(viewerId),
+    });
+    const depthOf = new Map(chain.map((row) => [row.id, row.depth]));
+    // A chirp deleted between the two queries simply drops out of the chain.
+    const rootFirst = rows.sort((a, b) => (depthOf.get(b.id) ?? 0) - (depthOf.get(a.id) ?? 0));
+    return { items: rootFirst.map((row) => toTweet(row, publicUrl)) };
   }
 
   async function get(id: string, viewerId: string): Promise<Tweet> {
@@ -111,5 +176,5 @@ export function createTweetsService({ prisma, storage, log }: TweetsServiceDepen
     }
   }
 
-  return { create, reply, get, remove };
+  return { create, reply, replies, ancestors, get, remove };
 }

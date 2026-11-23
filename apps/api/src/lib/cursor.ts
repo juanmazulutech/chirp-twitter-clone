@@ -35,6 +35,12 @@ export const newestFirst: [{ createdAt: 'desc' }, { id: 'desc' }] = [
   { id: 'desc' },
 ];
 
+/** A conversation's replies read top-down, so they page in the opposite order (ADR-24). */
+export const oldestFirst: [{ createdAt: 'asc' }, { id: 'asc' }] = [
+  { createdAt: 'asc' },
+  { id: 'asc' },
+];
+
 /**
  * `newestFirst` for rows whose tie-breaker is another unique column, such as a join table's
  * user id (follow lists order by `(createdAt, followerId)`).
@@ -64,6 +70,17 @@ export function keysetAfterBy<Column extends string>(
     createdAt: Date;
   } & Record<Column, { lt: string }>;
   return { OR: [{ createdAt: { lt: cursor.createdAt } }, tie] };
+}
+
+/** Rows strictly after the cursor in `oldestFirst` order; combine it through `AND` too. */
+export function keysetAfterOldestFirst(cursor: Cursor | undefined) {
+  if (!cursor) return {};
+  return {
+    OR: [
+      { createdAt: { gt: cursor.createdAt } },
+      { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+    ],
+  };
 }
 
 /**
