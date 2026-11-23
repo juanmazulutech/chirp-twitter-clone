@@ -123,6 +123,8 @@ Installed in `.claude/skills/` when their phase starts (PLAN.md §5), pinned in 
 - The Prisma skills target Prisma ORM 7; we pin Prisma 7 (Prisma 8 is still a release candidate). Use the local database from docker-compose, not `prisma dev`.
 - `vercel-react-best-practices` includes Next.js / React Server Components rules (`server-*`, hydration) → not applicable to our Vite SPA. Its SWR rule maps to TanStack Query, which we use (ADR-07).
 - `impeccable` reads product truth from `PRODUCT.md` and the visual system from `DESIGN.md` (repository root). Use its `critique` and `audit` explicitly; its edit hook is intentionally not installed.
+- `playwright-best-practices` uses `getByTestId` freely and shows `waitForLoadState('networkidle')` → we query by role and accessible name (test ids only where no accessible name exists) and wait with web-first assertions; specs run against the real stack and the seeded `chirp_test`, never mocked API responses. Its third-party examples (Mailinator, unpkg web-vitals) are not used.
+- `webapp-testing` writes Python Playwright scripts and relies on `networkidle` and fixed timeouts → it is guidance for agent-driven visual QA only (C50). Write any automation in TypeScript with `@playwright/test`, use `impeccable shot` for phone-width captures, and add no Python dependency; its `with_server.py` is replaced by Playwright's `webServer`. Save screenshots to the scratchpad, never the repository.
 
 | Task | Skill | Installed in |
 |---|---|---|
