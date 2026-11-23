@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --project tsconfig.app.json && tsc --project tsconfig.node.json",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@chirp/shared": "*",
@@ -27,6 +28,7 @@
     "zustand": "5.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "@tailwindcss/vite": "4.3.5",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "8.0.0",

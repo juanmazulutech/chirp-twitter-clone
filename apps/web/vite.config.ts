@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 // The browser only ever talks to this origin; `/api` is forwarded to the API (ADR-17).
-const apiProxy = { '/api': { target: 'http://localhost:3000' } };
+// The end-to-end suite points it at its own API instance (e2e/stack.ts).
+const apiProxy = { '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000' } };
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

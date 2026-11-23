@@ -47,7 +47,7 @@ Use the Node version in `.nvmrc` (`nvm use`); several dependencies require Node 
 | `npm run db:seed` | **replace** all development data with the demo data set (idempotent; `--if-empty` variant used by Docker) | C13 |
 | `npm run build` | production builds: API bundles (tsup) and the web app | C51 |
 | `docker compose up --build` | full stack in production images (API not published; web on :8080, demo data seeded when empty) | C51 |
-| `npm run test:e2e` | Playwright | C47 |
+| `npm run test:e2e` | Playwright on its own ports (API :3100, web :5174) against a freshly seeded `chirp_test`; needs `services:up` and `npx playwright install chromium` once; never at the same time as `npm test` | C47 |
 
 A pre-commit hook (husky + lint-staged) runs ESLint and Prettier on staged files.
 
