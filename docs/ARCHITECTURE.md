@@ -256,7 +256,7 @@ model Like {
   tweet Tweet @relation(fields: [tweetId], references: [id], onDelete: Cascade)
 
   @@id([userId, tweetId])
-  @@index([tweetId])
+  @@index([tweetId, createdAt(sort: Desc), userId(sort: Desc)])   // counts and the likers list
   @@map("likes")
 }
 
@@ -295,6 +295,7 @@ model Notification {
 | 7 | `user_avatar_key` (`users.avatar_key`) | avatar uploads (Phase 7) |
 | 8 | `tweet_replies` (`tweets.parent_id` + index) | reply threads (Phase 7b) |
 | 9 | `notifications` (with `REPLY`) | notifications (Phase 8) |
+| 10 | `likes_by_tweet_newest_first` (replaces `likes(tweet_id)`) | who liked a chirp (extra) |
 
 ## 5. API contracts
 
@@ -340,6 +341,7 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | GET | `/tweets/:id/ancestors` | 🔒 | — | `200 { items: Tweet[] }` | the chirps above it, root first, at most the 20 nearest; when capped, the first item's `replyTo` still points further up; 404 |
 | POST | `/tweets/:id/like` | 🔒 | — | `200 { liked: true, likeCount }` | idempotent; notifies author unless self |
 | DELETE | `/tweets/:id/like` | 🔒 | — | `200 { liked: false, likeCount }` | idempotent; removes notification |
+| GET | `/tweets/:id/likes` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | who liked it, most recent like first; cursor on `(like.createdAt, userId)`; 404 on a missing chirp |
 | POST | `/uploads/presign` | 🔒 | `{ purpose: 'tweet' \| 'avatar', contentType, size }` | `200 { uploadUrl, key }` | 400 on invalid type/size |
 | GET | `/notifications` | 🔒 | `?cursor=&limit=` | `200 Page<Notification>` | |
 | GET | `/notifications/unread-count` | 🔒 | — | `200 { count }` | |

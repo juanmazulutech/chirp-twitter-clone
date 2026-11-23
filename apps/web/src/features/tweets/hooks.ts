@@ -1,4 +1,4 @@
-import type { CreateReplyBody, Page, Tweet } from '@chirp/shared';
+import type { CreateReplyBody, FollowListUser, Page, Tweet } from '@chirp/shared';
 import {
   type InfiniteData,
   type QueryClient,
@@ -18,12 +18,13 @@ import {
   createTweet,
   deleteTweet,
   getAncestors,
+  getLikers,
   getReplies,
   getTimeline,
   getTweet,
   setLike,
 } from './api';
-import { tweetKeys } from './keys';
+import { likerKeys, tweetKeys } from './keys';
 import {
   isTweetAncestors,
   isTweetPages,
@@ -190,6 +191,8 @@ export function useLikeTweet(tweetId: string) {
         likedByMe: liked,
         likeCount,
       }));
+      // The viewer joined or left the people who liked it.
+      void queryClient.invalidateQueries({ queryKey: likerKeys.list(tweetId) });
     },
   });
 }
@@ -230,5 +233,23 @@ export function useDeleteTweet() {
       // Only the author can delete, so only their profile's chirp count changed.
       void queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
+  });
+}
+
+export type LikersData = InfiniteData<Page<FollowListUser>, string | undefined>;
+
+/** The people who liked a chirp, a page at a time; follow buttons in it work like any list. */
+export function useLikers(tweetId: string) {
+  return useInfiniteQuery<
+    Page<FollowListUser>,
+    Error,
+    LikersData,
+    ReturnType<typeof likerKeys.list>,
+    string | undefined
+  >({
+    queryKey: likerKeys.list(tweetId),
+    queryFn: ({ pageParam, signal }) => getLikers(tweetId, pageParam, signal),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 }

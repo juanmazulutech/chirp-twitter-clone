@@ -16,3 +16,13 @@ export const tweetKeys = {
   /** A chirp's direct replies: an infinite query of `Page<Tweet>`, oldest first. */
   replies: (tweetId: string) => ['tweets', 'replies', tweetId] as const,
 };
+
+/**
+ * Who liked a chirp. A root of its own, not under `tweetKeys.all`: these are lists of people,
+ * and every list under `tweetKeys.all` is assumed to hold chirps.
+ */
+export const likerKeys = {
+  all: ['likers'] as const,
+  /** An infinite query of `Page<FollowListUser>`, most recent like first. */
+  list: (tweetId: string) => ['likers', tweetId] as const,
+};
