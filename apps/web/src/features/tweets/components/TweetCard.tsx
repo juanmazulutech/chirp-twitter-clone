@@ -8,7 +8,7 @@ import { useSession } from '@/features/auth/hooks';
 import { tweetPath } from '../tweet-path';
 import { DeleteTweetButton } from './DeleteTweetButton';
 import { LikeButton } from './LikeButton';
-import { ReplyButton } from './ReplyButton';
+import { ReplyLink } from './ReplyButton';
 import { ReplyingTo } from './ReplyingTo';
 
 /**
@@ -52,7 +52,7 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
         ) : null}
         <div className="mt-1 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <ReplyButton tweet={tweet} />
+            <ReplyLink tweet={tweet} />
             <LikeButton tweet={tweet} />
           </div>
           {user?.id === author.id ? <DeleteTweetButton tweet={tweet} /> : null}

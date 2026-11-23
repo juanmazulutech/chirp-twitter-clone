@@ -1,6 +1,8 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CircleAlert } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
+import { z } from 'zod';
 
 import { PageHeading } from '@/app/layout/PageHeading';
 import { Button, ButtonLink } from '@/components/ui/Button';
@@ -14,6 +16,9 @@ import { ThreadAncestors } from '../components/ThreadAncestors';
 import { TweetList } from '../components/TweetList';
 import { useAncestors, useReplies, useTweet } from '../hooks';
 import { tweetPath } from '../tweet-path';
+
+// History state is whatever the previous page left; only this exact shape asks for focus.
+const conversationStateSchema = z.object({ focusReply: z.literal(true) });
 
 const TITLE = 'Conversation';
 
@@ -50,6 +55,18 @@ export function TweetPage() {
   const replies = useReplies(tweetId);
   const navigate = useNavigate();
   const location = useLocation();
+  const replyBox = useRef<HTMLDivElement>(null);
+  const loadedId = tweet.data?.id;
+  const focusOnArrival = conversationStateSchema.safeParse(location.state).success;
+
+  function focusReplyBox() {
+    replyBox.current?.querySelector('textarea')?.focus();
+  }
+
+  // Arriving from a chirp's reply action: the thread is in view and the cursor is ready.
+  useEffect(() => {
+    if (focusOnArrival && loadedId !== undefined) focusReplyBox();
+  }, [focusOnArrival, loadedId]);
 
   // Its page is gone with it: back to where the reader came from, or home on a direct visit.
   function leave() {
@@ -77,9 +94,8 @@ export function TweetPage() {
             </div>
           )
         ) : null}
-        <FocusedTweet tweet={tweet.data} onDeleted={leave} />
-        {/* Phones reply from the Reply button, which opens the full compose modal. */}
-        <div className="hidden border-b border-hairline px-4 py-3 sm:block">
+        <FocusedTweet tweet={tweet.data} onReply={focusReplyBox} onDeleted={leave} />
+        <div ref={replyBox} className="border-b border-hairline px-4 py-3">
           <ReplyComposer key={tweet.data.id} replyTo={tweet.data} />
         </div>
         <h2 className="sr-only">Replies</h2>
