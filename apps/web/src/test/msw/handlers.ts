@@ -2,6 +2,8 @@ import type {
   CreateTweetBody,
   ErrorResponse,
   FollowListUser,
+  MarkNotificationsReadBody,
+  Notification,
   Page,
   SessionUser,
   Tweet,
@@ -143,8 +145,30 @@ export function threadOf(
   ];
 }
 
+/** `GET /api/notifications/unread-count`; `count` is read on every poll, so it can change. */
+export function unreadCount(count: number | (() => number) = 0) {
+  return http.get('/api/notifications/unread-count', () =>
+    HttpResponse.json({ count: typeof count === 'number' ? count : count() }),
+  );
+}
+
+/** `GET /api/notifications` serving `pages` in order. */
+export function notificationPages(pages: Notification[][] = [[]]) {
+  return http.get('/api/notifications', ({ request }) => pagesFrom(pages, request, () => {}));
+}
+
+/** `POST /api/notifications/read` answering 204; `onBody` sees what the client sent. */
+export function notificationsMarkedRead(
+  onBody: (body: MarkNotificationsReadBody) => void = () => {},
+) {
+  return http.post('/api/notifications/read', async ({ request }) => {
+    onBody((await request.json()) as MarkNotificationsReadBody);
+    return new HttpResponse(null, { status: 204 });
+  });
+}
+
 /**
- * Handlers every test starts with: the app shell asks for the session on every screen,
- * and the home page for a timeline (empty unless a test serves one).
+ * Handlers every test starts with: the app shell asks for the session and the unread count
+ * on every screen, and the home page for a timeline (empty unless a test serves one).
  */
-export const baseHandlers = [signedIn(), timelinePages()];
+export const baseHandlers = [signedIn(), unreadCount(), timelinePages()];

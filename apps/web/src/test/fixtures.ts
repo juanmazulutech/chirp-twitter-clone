@@ -1,4 +1,4 @@
-import type { FollowListUser, SessionUser, Tweet, UserProfile } from '@chirp/shared';
+import type { FollowListUser, Notification, SessionUser, Tweet, UserProfile } from '@chirp/shared';
 
 /** The signed-in user the base handlers answer with, unless a test says otherwise. */
 export const sessionUser: SessionUser = {
@@ -84,4 +84,25 @@ export function followListUserFixture(overrides: Partial<FollowListUser> = {}): 
     isFollowing: false,
     ...overrides,
   };
+}
+
+let notificationSequence = 0;
+
+/**
+ * An unread notification for `sessionUser` from Bruno, with a unique id: a FOLLOW by default,
+ * a LIKE or REPLY about `tweet` when given one.
+ */
+export function notificationFixture(
+  overrides: Partial<Pick<Notification, 'actor' | 'readAt' | 'createdAt'>> &
+    ({ type?: 'FOLLOW' } | { type: 'LIKE' | 'REPLY'; tweet: { id: string; content: string } }) = {},
+): Notification {
+  notificationSequence += 1;
+  const base = {
+    id: `019a0000-0000-7000-8000-2${String(notificationSequence).padStart(11, '0')}`,
+    actor: brunoSummary,
+    readAt: null,
+    createdAt: '2026-11-22T10:00:00.000Z',
+  };
+  if (overrides.type === 'LIKE' || overrides.type === 'REPLY') return { ...base, ...overrides };
+  return { ...base, ...overrides, type: 'FOLLOW', tweet: null };
 }
