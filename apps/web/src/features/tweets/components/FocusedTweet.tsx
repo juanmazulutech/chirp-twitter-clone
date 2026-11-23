@@ -13,6 +13,8 @@ import { ReplyingTo } from './ReplyingTo';
 
 interface FocusedTweetProps {
   tweet: Tweet;
+  /** Takes the reader to the reply box below. */
+  onReply: () => void;
   /** Runs once the author deletes it: its page no longer has anything to show. */
   onDeleted?: () => void;
 }
@@ -21,7 +23,7 @@ interface FocusedTweetProps {
  * The chirp a thread page is about: the same parts as a feed row, the text a step larger and
  * the full date spelled out under it, since this is where people come to read it closely.
  */
-export function FocusedTweet({ tweet, onDeleted }: FocusedTweetProps) {
+export function FocusedTweet({ tweet, onReply, onDeleted }: FocusedTweetProps) {
   const { author } = tweet;
   const { user } = useSession();
   const sentAt = formatPostmark(new Date(tweet.createdAt)).label;
@@ -62,7 +64,7 @@ export function FocusedTweet({ tweet, onDeleted }: FocusedTweetProps) {
         </p>
         <div className="mt-2 flex items-center justify-between border-t border-hairline pt-1">
           <div className="flex items-center gap-4">
-            <ReplyButton tweet={tweet} />
+            <ReplyButton tweet={tweet} onReply={onReply} />
             <LikeButton tweet={tweet} />
           </div>
           {user?.id === author.id ? (

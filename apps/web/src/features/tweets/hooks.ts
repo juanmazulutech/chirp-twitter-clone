@@ -25,7 +25,6 @@ import {
 } from './api';
 import { tweetKeys } from './keys';
 import {
-  isTweet,
   isTweetAncestors,
   isTweetPages,
   removeTweetFromPages,
@@ -57,22 +56,6 @@ export function useTweet(tweetId: string) {
   return useQuery({
     queryKey: tweetKeys.detail(tweetId),
     queryFn: ({ signal }) => getTweet(tweetId, signal),
-  });
-}
-
-/**
- * The chirp a reply is being written to. Usually it is already on screen, so it comes from
- * the cache without a request; it is fetched only when no cached list holds it.
- */
-export function useReplyTarget(tweetId: string | null) {
-  const queryClient = useQueryClient();
-  return useQuery({
-    queryKey: tweetKeys.detail(tweetId ?? ''),
-    queryFn: ({ signal }) => getTweet(tweetId ?? '', signal),
-    enabled: tweetId !== null,
-    initialData: () => (tweetId === null ? undefined : findCachedTweet(queryClient, tweetId)),
-    // What the reader just saw is fresh enough to answer; their likes keep it current.
-    staleTime: Number.POSITIVE_INFINITY,
   });
 }
 
@@ -158,22 +141,6 @@ export function useReplyToTweet(parentId: string) {
       );
     },
   });
-}
-
-/** The chirp `tweetId` from whichever cached list, chain or page holds it, if any does. */
-export function findCachedTweet(queryClient: QueryClient, tweetId: string): Tweet | undefined {
-  for (const [, data] of queryClient.getQueriesData({ queryKey: tweetKeys.all })) {
-    const items = isTweetPages(data)
-      ? data.pages.flatMap((page) => page.items)
-      : isTweetAncestors(data)
-        ? data.items
-        : isTweet(data)
-          ? [data]
-          : [];
-    const found = items.find((tweet) => tweet.id === tweetId);
-    if (found) return found;
-  }
-  return undefined;
 }
 
 /**

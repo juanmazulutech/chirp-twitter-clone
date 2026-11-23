@@ -1,32 +1,52 @@
 import type { Tweet } from '@chirp/shared';
 import { MessageCircle } from 'lucide-react';
+import { Link } from 'react-router';
 
-import { useComposerStore } from '../store';
+import { type ConversationState, repliesLabel, replyActionClasses } from '../reply-label';
+import { tweetPath } from '../tweet-path';
 
-function repliesLabel(count: number): string {
-  return count === 1 ? '1 reply' : `${count.toLocaleString('en')} replies`;
-}
+type ReplyTarget = Pick<Tweet, 'id' | 'author' | 'replyCount'>;
+
+const icon = <MessageCircle aria-hidden="true" className="size-5" strokeWidth={1.75} />;
 
 /**
- * Opens the compose modal to answer this chirp, with the chirp's reply count beside it.
- * Built like the like toggle, so the two read as one row of actions.
+ * A chirp's reply action in a feed: it opens the conversation, so the reader sees what was
+ * already said before answering, with the cursor waiting in the reply box.
  */
-export function ReplyButton({ tweet }: { tweet: Pick<Tweet, 'id' | 'replyCount'> }) {
-  const openReply = useComposerStore((state) => state.openReply);
-
+export function ReplyLink({ tweet }: { tweet: ReplyTarget }) {
+  const state: ConversationState = { focusReply: true };
   return (
-    <div className="-ml-2 flex items-center gap-0.5">
+    <Link
+      to={tweetPath(tweet)}
+      state={state}
+      aria-label={`Reply, ${repliesLabel(tweet.replyCount)}`}
+      className={`group ${replyActionClasses.group} hover:text-airmail-blue`}
+    >
+      <span className={`${replyActionClasses.icon} group-hover:bg-paper`}>{icon}</span>
+      {repliesLabel(tweet.replyCount)}
+    </Link>
+  );
+}
+
+/** The same action on the conversation's own chirp, where the reply box is already below. */
+export function ReplyButton({
+  tweet,
+  onReply,
+}: {
+  tweet: Pick<Tweet, 'replyCount'>;
+  onReply: () => void;
+}) {
+  return (
+    <div className={replyActionClasses.group}>
       <button
         type="button"
         aria-label="Reply"
-        onClick={() => {
-          openReply(tweet.id);
-        }}
-        className="grid size-9 place-items-center rounded-full text-ink-muted transition-colors duration-150 hover:bg-paper hover:text-airmail-blue"
+        onClick={onReply}
+        className={`${replyActionClasses.icon} hover:bg-paper hover:text-airmail-blue`}
       >
-        <MessageCircle aria-hidden="true" className="size-5" strokeWidth={1.75} />
+        {icon}
       </button>
-      <span className="text-sm text-ink-muted tabular-nums">{repliesLabel(tweet.replyCount)}</span>
+      {repliesLabel(tweet.replyCount)}
     </div>
   );
 }
