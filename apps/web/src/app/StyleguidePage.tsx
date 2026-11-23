@@ -15,6 +15,9 @@ import {
 } from '@/components/ui/Field';
 import { Modal, ModalActions, ModalBody, ModalTitle } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
+import { appearanceSchema } from '@/features/appearance/appearance';
+import { AppearanceModal } from '@/features/appearance/components/AppearanceModal';
+import { useAppearanceStore } from '@/features/appearance/store';
 import { TweetCard } from '@/features/tweets/components/TweetCard';
 import { notify } from '@/lib/notify';
 
@@ -215,7 +218,8 @@ function ThemedComponents({
 
 /**
  * Review helpers: `?section=components` renders one section alone, `?modal=day|night`
- * opens that panel's modal and `?toasts=1` shows a success and an error toast.
+ * opens that panel's modal, `?toasts=1` shows a success and an error toast, and
+ * `?appearance=system|light|dark` applies that theme and opens the appearance dialog.
  */
 export function StyleguidePage() {
   const [searchParams] = useSearchParams();
@@ -223,12 +227,21 @@ export function StyleguidePage() {
   const show = (section: string) => only === null || only === section;
   const openModalIn = searchParams.get('modal');
   const showToasts = searchParams.get('toasts') === '1';
+  const appearance = appearanceSchema.safeParse(searchParams.get('appearance'));
+  const reviewedAppearance = appearance.success ? appearance.data : null;
 
   useEffect(() => {
     if (!showToasts) return;
     notify.success('Chirp posted');
     notify.error('Could not delete the chirp');
   }, [showToasts]);
+
+  useEffect(() => {
+    if (reviewedAppearance === null) return;
+    const { setAppearance, openDialog } = useAppearanceStore.getState();
+    setAppearance(reviewedAppearance);
+    openDialog();
+  }, [reviewedAppearance]);
 
   return (
     <div className="min-h-dvh bg-paper text-ink">
@@ -306,6 +319,7 @@ export function StyleguidePage() {
           </section>
         ) : null}
       </main>
+      <AppearanceModal />
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { Outlet } from 'react-router';
 
+import { AppearanceModal } from '@/features/appearance/components/AppearanceModal';
+
 import { AppHeader } from './AppHeader';
 import { BottomNav } from './BottomNav';
 import { ComposeFab } from './ComposeButton';
@@ -39,6 +41,7 @@ export function AppShell() {
       <BottomNav />
       <ComposeFab />
       <ComposerModal />
+      <AppearanceModal />
     </>
   );
 }

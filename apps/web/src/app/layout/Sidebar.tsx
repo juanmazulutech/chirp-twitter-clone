@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router';
 
+import { RailAppearanceButton } from '@/features/appearance/components/AppearanceButton';
+
 import { RailComposeButton } from './ComposeButton';
 import { useNavItems } from './nav-items';
 import { RailSignOutButton } from './SignOutButton';
@@ -7,8 +9,8 @@ import { RailSignOutButton } from './SignOutButton';
 /**
  * The left rail from 640px: icons only on tablets, icons and labels from 1024px.
  * The current page is marked by aria-current, a bolder label and a tinted pill, as well
- * as by airmail blue, so it never relies on colour alone. Signing out sits at the foot,
- * away from the destinations.
+ * as by airmail blue, so it never relies on colour alone. Appearance and signing out sit at
+ * the foot, away from the destinations.
  */
 export function Sidebar() {
   const navItems = useNavItems();
@@ -38,7 +40,10 @@ export function Sidebar() {
         </ul>
       </nav>
       <RailComposeButton />
-      <RailSignOutButton />
+      <div className="mt-auto flex flex-col items-center gap-1 lg:items-stretch">
+        <RailAppearanceButton />
+        <RailSignOutButton />
+      </div>
     </aside>
   );
 }
