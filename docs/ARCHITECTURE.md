@@ -309,7 +309,7 @@ UserProfile  = UserSummary & { bio, createdAt, followersCount, followingCount, t
 Tweet        = { id, content, imageUrl: string | null, createdAt, author: UserSummary, likeCount, likedByMe: boolean,
                  replyCount, replyTo: { id, author: UserSummary } | null }   // reply fields from C54
 Notification = { id, type: 'FOLLOW' | 'LIKE' | 'REPLY', actor: UserSummary, tweet: { id, content } | null, readAt: string | null, createdAt }
-               // REPLY: `tweet` is the reply itself
+               // discriminated on `type`: FOLLOW has `tweet: null`; REPLY: `tweet` is the reply itself
 Page<T>      = { items: T[], nextCursor: string | null }
 ```
 
@@ -343,7 +343,7 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | POST | `/uploads/presign` | 🔒 | `{ purpose: 'tweet' \| 'avatar', contentType, size }` | `200 { uploadUrl, key }` | 400 on invalid type/size |
 | GET | `/notifications` | 🔒 | `?cursor=&limit=` | `200 Page<Notification>` | |
 | GET | `/notifications/unread-count` | 🔒 | — | `200 { count }` | |
-| POST | `/notifications/read` | 🔒 | `{ until }` | `204` | marks as read every notification up to `until` (the newest id the client has seen; ADR-15) |
+| POST | `/notifications/read` | 🔒 | `{ until }` | `204` | `until`: the `createdAt` of the newest notification shown; marks every one created up to then as read, idempotent (ADR-15) |
 
 Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 

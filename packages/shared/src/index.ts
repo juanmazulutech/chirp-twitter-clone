@@ -3,6 +3,7 @@ export * from './schemas/auth';
 export * from './schemas/errors';
 export * from './schemas/follows';
 export * from './schemas/likes';
+export * from './schemas/notifications';
 export * from './schemas/pagination';
 export * from './schemas/profiles';
 export * from './schemas/search';
