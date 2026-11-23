@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router';
+import { Outlet, ScrollRestoration } from 'react-router';
 
 import { AppearanceModal } from '@/features/appearance/components/AppearanceModal';
 
@@ -42,6 +42,8 @@ export function AppShell() {
       <ComposeFab />
       <ComposerModal />
       <AppearanceModal />
+      {/* Back returns to the same place in a feed; a new page starts at the top. */}
+      <ScrollRestoration />
     </>
   );
 }
