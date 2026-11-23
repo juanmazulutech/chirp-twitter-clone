@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { isApiError } from '@/lib/api-client';
 
 import { ReplyComposer } from '../components/Composer';
+import { ConversationBackButton } from '../components/ConversationBackButton';
 import { FocusedTweet } from '../components/FocusedTweet';
 import { ThreadAncestors } from '../components/ThreadAncestors';
 import { TweetList } from '../components/TweetList';
@@ -21,6 +22,9 @@ import { tweetPath } from '../tweet-path';
 const conversationStateSchema = z.object({ focusReply: z.literal(true) });
 
 const TITLE = 'Conversation';
+
+// Before the chirp arrives (or when it never does) there is no thread to go up.
+const backWithoutThread = <ConversationBackButton tweet={{ replyTo: null }} />;
 
 /** A failed request with a way to try again; `what` names what did not load. */
 function LoadFailure({ what, query }: { what: string; query: UseQueryResult }) {
@@ -82,7 +86,7 @@ export function TweetPage() {
     const { displayName, username: handle } = tweet.data.author;
     return (
       <>
-        <PageHeading title={TITLE} />
+        <PageHeading title={TITLE} leading={<ConversationBackButton tweet={tweet.data} />} />
         {tweet.data.replyTo ? (
           ancestors.data ? (
             <ThreadAncestors ancestors={ancestors.data.items} />
@@ -116,7 +120,7 @@ export function TweetPage() {
   if (isApiError(tweet.error, 404)) {
     return (
       <>
-        <PageHeading title="Chirp not found" />
+        <PageHeading title="Chirp not found" leading={backWithoutThread} />
         <EmptyState
           title="This chirp doesn’t exist"
           description="It may have been deleted, along with the conversation under it."
@@ -129,7 +133,7 @@ export function TweetPage() {
 
   return (
     <>
-      <PageHeading title={TITLE} />
+      <PageHeading title={TITLE} leading={backWithoutThread} />
       {tweet.isError ? (
         <LoadFailure what="This chirp" query={tweet} />
       ) : (

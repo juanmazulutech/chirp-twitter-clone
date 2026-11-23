@@ -371,6 +371,7 @@ Every page is code-split with the route's `lazy`. Static segments outrank `/:use
 ### 6.3 Interaction rules
 
 - Infinite scroll: `useInfiniteQuery` + an `IntersectionObserver` sentinel; explicit loading, empty, error and end-of-feed states.
+- Scroll: `ScrollRestoration` in the app shell returns the reader to the same place on back and forward, and starts every new page at the top.
 - Likes and follows are **optimistic** with rollback (`onMutate` / `onError` / `onSettled`).
 - Composer: a text counter in code points ("N characters left" / "N over the limit", tabular, tied to the field with `aria-describedby`); disabled when empty or over 280; ⌘/Ctrl+Enter posts; inline on home from `sm` up and in the compose modal everywhere; image attach with preview and progress.
 - A newly created tweet is inserted into the first timeline page in the cache (no full refetch).
