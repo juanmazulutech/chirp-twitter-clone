@@ -109,6 +109,12 @@ export const routes: RouteObject[] = [
                     }),
                   },
                   {
+                    path: '/:username/status/:tweetId/likes',
+                    lazy: async () => ({
+                      Component: (await import('@/features/tweets/pages/LikersPage')).LikersPage,
+                    }),
+                  },
+                  {
                     path: '*',
                     lazy: async () => ({
                       Component: (await import('./layout/NotFoundPage')).NotFoundPage,

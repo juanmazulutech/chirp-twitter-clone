@@ -133,6 +133,13 @@ export function tweetRepliesPages(
   );
 }
 
+/** `GET /api/tweets/:id/likes` serving the people who liked it, `pages` in order. */
+export function likersPages(tweetId: string, pages: FollowListUser[][] = [[]]) {
+  return http.get(`/api/tweets/${tweetId}/likes`, ({ request }) =>
+    pagesFrom(pages, request, () => {}),
+  );
+}
+
 /** Everything a chirp's page asks for: the chirp, what it answers and its replies. */
 export function threadOf(
   tweet: Tweet,
