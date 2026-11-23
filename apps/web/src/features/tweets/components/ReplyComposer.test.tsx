@@ -1,5 +1,5 @@
 import type { CreateReplyBody, Tweet } from '@chirp/shared';
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -10,7 +10,8 @@ import { threadOf, timelinePages } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
-import { useComposerStore } from '../store';
+const pathOf = (tweet: Pick<Tweet, 'id' | 'author'>) =>
+  `/${tweet.author.username}/status/${tweet.id}`;
 
 /** `POST /api/tweets/:id/replies` storing the reply as the API would; `sent` collects bodies. */
 function replyCreated(parent: Tweet) {
@@ -25,6 +26,13 @@ function replyCreated(parent: Tweet) {
   return sent;
 }
 
+/** The reply box's form, for its own Reply button (the page has other Reply controls). */
+function replyFormOf(field: HTMLElement): HTMLElement {
+  const form = field.closest('form');
+  if (!form) throw new Error('the reply box has no form');
+  return form;
+}
+
 async function renderTimeline(chirps: Tweet[]) {
   server.use(timelinePages([chirps]));
   const user = userEvent.setup();
@@ -33,61 +41,133 @@ async function renderTimeline(chirps: Tweet[]) {
   return { user, list, ...rendered };
 }
 
+/** A conversation page; `overrides` win over the thread's default handlers. */
+async function renderConversation(
+  parent: Tweet,
+  replies: Tweet[] = [],
+  overrides: Parameters<typeof server.use> = [],
+) {
+  server.use(...overrides, ...threadOf(parent, { replies: [replies] }));
+  const user = userEvent.setup();
+  const rendered = renderRoute(pathOf(parent));
+  const field = await screen.findByRole('textbox', {
+    name: `Reply to @${parent.author.username}`,
+  });
+  const submit = within(replyFormOf(field)).getByRole('button', { name: 'Reply' });
+  return { user, field, submit, ...rendered };
+}
+
 describe('replying', () => {
-  it('shows each chirp’s reply count beside a Reply button', async () => {
+  it('shows each chirp’s reply count as a link to its conversation', async () => {
+    const first = tweetFixture({ replyCount: 0 });
     const { list } = await renderTimeline([
-      tweetFixture({ replyCount: 0 }),
+      first,
       tweetFixture({ replyCount: 1 }),
       tweetFixture({ replyCount: 1234 }),
     ]);
 
-    const rows = within(list).getAllByRole('article');
-    expect(rows.map((row) => within(row).getByRole('button', { name: 'Reply' }))).toHaveLength(3);
-    expect(within(list).getByText('0 replies')).toBeInTheDocument();
-    expect(within(list).getByText('1 reply')).toBeInTheDocument();
-    expect(within(list).getByText('1,234 replies')).toBeInTheDocument();
+    expect(within(list).getByRole('link', { name: 'Reply, 0 replies' })).toHaveAttribute(
+      'href',
+      pathOf(first),
+    );
+    expect(within(list).getByRole('link', { name: 'Reply, 1 reply' })).toBeInTheDocument();
+    expect(within(list).getByRole('link', { name: 'Reply, 1,234 replies' })).toBeInTheDocument();
   });
 
-  it('answers a chirp from the timeline in the compose modal and counts the reply', async () => {
-    const parent = tweetFixture({ author: brunoSummary, content: 'What should I read?' });
+  it('opens the conversation from the timeline, ready to type, and adds the reply', async () => {
+    const parent = tweetFixture({ author: brunoSummary, replyCount: 1 });
+    const earlier = replyFixture(parent, { content: 'Earlier answer' });
+    server.use(...threadOf(parent, { replies: [[earlier]] }));
     const sent = replyCreated(parent);
-    const { user, list } = await renderTimeline([parent]);
+    const { user, list, router } = await renderTimeline([parent]);
 
-    await user.click(within(list).getByRole('button', { name: 'Reply' }));
-    const dialog = screen.getByRole('dialog', { name: 'Reply' });
-    // The chirp being answered stays in view, taken from the timeline without a request.
-    expect(within(dialog).getByText('What should I read?')).toBeInTheDocument();
-    const field = within(dialog).getByRole('textbox', { name: 'Reply to @bruno' });
-    expect(field).toHaveFocus();
+    await user.click(within(list).getByRole('link', { name: 'Reply, 1 reply' }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(pathOf(parent));
+    });
+    // The thread is in view, and the cursor waits in the reply box.
+    const replies = await screen.findByRole('list', { name: 'Replies to Bruno Silva' });
+    expect(await within(replies).findByText('Earlier answer')).toBeInTheDocument();
+    const field = screen.getByRole('textbox', { name: 'Reply to @bruno' });
+    await waitFor(() => {
+      expect(field).toHaveFocus();
+    });
 
     await user.type(field, '  Start with the classics  ');
-    await user.click(within(dialog).getByRole('button', { name: 'Reply' }));
+    await user.click(within(replyFormOf(field)).getByRole('button', { name: 'Reply' }));
 
     expect(await screen.findByText('Your reply is posted')).toBeInTheDocument();
     expect(sent).toEqual([{ content: 'Start with the classics' }]);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(within(list).getByText('1 reply')).toBeInTheDocument();
-    // The timeline lists top-level chirps only.
-    expect(within(list).queryByText('Start with the classics')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        within(replies)
+          .getAllByRole('article')
+          .map((row) => row.textContent),
+      ).toEqual([
+        expect.stringContaining('Earlier answer'),
+        expect.stringContaining('Start with the classics'),
+      ]);
+    });
+    expect(field).toHaveValue('');
+    const focused = screen.getByRole('article', { name: 'Chirp by Bruno Silva' });
+    expect(within(focused).getByText('2 replies')).toBeInTheDocument();
   });
 
-  it('keeps a new chirp’s draft while a reply is written', async () => {
+  it('counts the reply on the timeline once the reader goes back', async () => {
+    const parent = tweetFixture({ author: brunoSummary, content: 'Ask me anything' });
+    server.use(...threadOf(parent));
+    replyCreated(parent);
+    const { user, list, router } = await renderTimeline([parent]);
+
+    await user.click(within(list).getByRole('link', { name: 'Reply, 0 replies' }));
+    const field = await screen.findByRole('textbox', { name: 'Reply to @bruno' });
+    await user.type(field, 'Why chirps?');
+    await user.click(within(replyFormOf(field)).getByRole('button', { name: 'Reply' }));
+    await screen.findByText('Your reply is posted');
+    await router.navigate(-1);
+
+    const timeline = await screen.findByRole('list', { name: 'Home timeline' });
+    expect(within(timeline).getByRole('link', { name: 'Reply, 1 reply' })).toBeInTheDocument();
+    // The timeline lists top-level chirps only.
+    expect(within(timeline).queryByText('Why chirps?')).not.toBeInTheDocument();
+  });
+
+  it('does not take focus when the conversation opens from the postmark', async () => {
     const parent = tweetFixture({ author: brunoSummary });
+    server.use(...threadOf(parent));
     const { user, list } = await renderTimeline([parent]);
 
-    await user.click(screen.getAllByRole('button', { name: 'New chirp' })[0] as HTMLElement);
-    const dialog = screen.getByRole('dialog', { name: 'New chirp' });
-    await user.type(within(dialog).getByRole('textbox', { name: 'What’s happening?' }), 'Draft');
-    await user.keyboard('{Escape}');
-    await user.click(within(list).getByRole('button', { name: 'Reply' }));
-    await user.keyboard('{Escape}');
-    await user.click(screen.getAllByRole('button', { name: 'New chirp' })[0] as HTMLElement);
+    await user.click(within(list).getByRole('link', { name: /open chirp/i }));
 
-    expect(
-      within(screen.getByRole('dialog', { name: 'New chirp' })).getByRole('textbox', {
-        name: 'What’s happening?',
-      }),
-    ).toHaveValue('Draft');
+    const field = await screen.findByRole('textbox', { name: 'Reply to @bruno' });
+    expect(field).not.toHaveFocus();
+  });
+
+  it('moves to the reply box from the conversation’s own Reply button', async () => {
+    const parent = tweetFixture({ author: brunoSummary });
+    const { user, field } = await renderConversation(parent);
+    expect(field).not.toHaveFocus();
+
+    const focused = screen.getByRole('article', { name: 'Chirp by Bruno Silva' });
+    await user.click(within(focused).getByRole('button', { name: 'Reply' }));
+
+    expect(field).toHaveFocus();
+  });
+
+  it('opens a reply’s own conversation from its reply action', async () => {
+    const parent = tweetFixture({ author: brunoSummary });
+    const reply = replyFixture(parent, { content: 'Answer me back' });
+    const { user, router } = await renderConversation(parent, [reply]);
+    server.use(...threadOf(reply, { ancestors: [parent] }));
+
+    const replies = screen.getByRole('list', { name: 'Replies to Bruno Silva' });
+    await user.click(await within(replies).findByRole('link', { name: 'Reply, 0 replies' }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(pathOf(reply));
+    });
+    expect(await screen.findByRole('textbox', { name: 'Reply to @ana_codes' })).toBeInTheDocument();
   });
 
   it('says what went wrong when the chirp was deleted meanwhile, and keeps the draft', async () => {
@@ -97,83 +177,33 @@ describe('replying', () => {
         apiError(404, 'NOT_FOUND', 'Tweet not found'),
       ),
     );
-    const { user, list } = await renderTimeline([parent]);
+    const { user, field, submit } = await renderConversation(parent);
 
-    await user.click(within(list).getByRole('button', { name: 'Reply' }));
-    const dialog = screen.getByRole('dialog', { name: 'Reply' });
-    await user.type(within(dialog).getByRole('textbox'), 'Too late');
-    await user.click(within(dialog).getByRole('button', { name: 'Reply' }));
+    await user.type(field, 'Too late');
+    await user.click(submit);
 
-    expect(await within(dialog).findByRole('alert')).toBeInTheDocument();
-    expect(within(dialog).getByRole('textbox')).toHaveValue('Too late');
-    expect(within(list).getByText('0 replies')).toBeInTheDocument();
+    expect(await within(replyFormOf(field)).findByRole('alert')).toBeInTheDocument();
+    expect(field).toHaveValue('Too late');
   });
 
   it('keeps Reply disabled until the text fits the limit', async () => {
-    const { user, list } = await renderTimeline([tweetFixture({ author: brunoSummary })]);
-
-    await user.click(within(list).getByRole('button', { name: 'Reply' }));
-    const dialog = screen.getByRole('dialog', { name: 'Reply' });
-    const submit = within(dialog).getByRole('button', { name: 'Reply' });
+    const { user, field, submit } = await renderConversation(
+      tweetFixture({ author: brunoSummary }),
+    );
     expect(submit).toBeDisabled();
 
-    await user.click(within(dialog).getByRole('textbox'));
+    await user.click(field);
     await user.paste('a'.repeat(281));
 
-    expect(within(dialog).getByText('1 over the limit')).toBeInTheDocument();
+    expect(screen.getByText('1 over the limit')).toBeInTheDocument();
     expect(submit).toBeDisabled();
-  });
-
-  it('fetches the chirp to answer when no list on screen has it', async () => {
-    const parent = tweetFixture({ author: brunoSummary, content: 'Fetched for the modal' });
-    server.use(...threadOf(parent));
-    renderRoute('/home');
-    await screen.findByRole('heading', { level: 1, name: 'Home' });
-
-    // A reply button elsewhere (a notification, later) may name a chirp nobody has loaded.
-    act(() => {
-      useComposerStore.getState().openReply(parent.id);
-    });
-
-    const dialog = await screen.findByRole('dialog', { name: 'Reply' });
-    expect(await within(dialog).findByText('Fetched for the modal')).toBeInTheDocument();
-  });
-
-  it('replies inline on a chirp’s page and adds the reply to its thread', async () => {
-    const parent = tweetFixture({ author: brunoSummary, content: 'Thread starter', replyCount: 1 });
-    const earlier = replyFixture(parent, { content: 'Earlier reply' });
-    server.use(...threadOf(parent, { replies: [[earlier]] }));
-    replyCreated(parent);
-    const user = userEvent.setup();
-    renderRoute(`/bruno/status/${parent.id}`);
-
-    const replies = await screen.findByRole('list', { name: 'Replies to Bruno Silva' });
-    const field = screen.getByRole('textbox', { name: 'Reply to @bruno' });
-    await user.type(field, 'Inline answer');
-    const form = field.closest('form');
-    if (!form) throw new Error('the reply box has no form');
-    await user.click(within(form).getByRole('button', { name: 'Reply' }));
-
-    await waitFor(() => {
-      expect(
-        within(replies)
-          .getAllByRole('article')
-          .map((row) => row.textContent),
-      ).toEqual([
-        expect.stringContaining('Earlier reply'),
-        expect.stringContaining('Inline answer'),
-      ]);
-    });
-    const focused = screen.getAllByRole('article', { name: 'Chirp by Bruno Silva' })[0];
-    expect(within(focused as HTMLElement).getByText('2 replies')).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: 'Reply to @bruno' })).toHaveValue('');
   });
 
   it('lowers the parent’s count when one of its replies is deleted', async () => {
     const parent = tweetFixture({ author: brunoSummary, replyCount: 1 });
     const mine = replyFixture(parent, { content: 'My reply' });
     let deleted = false;
-    server.use(
+    const overrides = [
       http.delete(`/api/tweets/${mine.id}`, () => {
         deleted = true;
         return new HttpResponse(null, { status: 204 });
@@ -182,17 +212,18 @@ describe('replying', () => {
       http.get(`/api/tweets/${parent.id}`, () =>
         HttpResponse.json({ ...parent, replyCount: deleted ? 0 : 1 }),
       ),
-      ...threadOf(parent, { replies: [[mine]] }),
-    );
-    const user = userEvent.setup();
-    renderRoute(`/bruno/status/${parent.id}`);
+    ];
+    const { user } = await renderConversation(parent, [mine], overrides);
 
     const replies = await screen.findByRole('list', { name: 'Replies to Bruno Silva' });
-    await user.click(within(replies).getByRole('button', { name: 'Delete chirp' }));
+    await user.click(await within(replies).findByRole('button', { name: 'Delete chirp' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(await screen.findByText('Your chirp was deleted')).toBeInTheDocument();
     expect(within(replies).queryByText('My reply')).not.toBeInTheDocument();
-    expect(screen.getByText('0 replies')).toBeInTheDocument();
+    const focused = screen.getByRole('article', { name: 'Chirp by Bruno Silva' });
+    await waitFor(() => {
+      expect(within(focused).getByText('0 replies')).toBeInTheDocument();
+    });
   });
 });
