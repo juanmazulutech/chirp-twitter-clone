@@ -4,6 +4,7 @@ import {
   type QueryClient,
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useRef } from 'react';
@@ -12,9 +13,23 @@ import { profileKeys } from '@/features/profile/keys';
 import { isApiError } from '@/lib/api-client';
 import { notify } from '@/lib/notify';
 
-import { createTweet, deleteTweet, getTimeline, setLike } from './api';
+import {
+  createTweet,
+  deleteTweet,
+  getAncestors,
+  getReplies,
+  getTimeline,
+  getTweet,
+  setLike,
+} from './api';
 import { tweetKeys } from './keys';
-import { isTweetPages, removeTweetFromPages, updateTweetInPages, withLike } from './tweet-cache';
+import {
+  isTweetAncestors,
+  isTweetPages,
+  removeTweetFromPages,
+  updateTweetInCache,
+  withLike,
+} from './tweet-cache';
 
 /** The cached home timeline: pages in order, each keyed by the cursor that fetched it. */
 export type TimelineData = InfiniteData<Page<Tweet>, string | undefined>;
@@ -30,6 +45,40 @@ export function useTimeline() {
   >({
     queryKey: tweetKeys.timeline,
     queryFn: ({ pageParam, signal }) => getTimeline(pageParam, signal),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+}
+
+/** One chirp for its own page; likes elsewhere reach it through `updateCachedTweet`. */
+export function useTweet(tweetId: string) {
+  return useQuery({
+    queryKey: tweetKeys.detail(tweetId),
+    queryFn: ({ signal }) => getTweet(tweetId, signal),
+  });
+}
+
+/** The chirps above `tweetId`, root first; empty for a top-level chirp. */
+export function useAncestors(tweetId: string) {
+  return useQuery({
+    queryKey: tweetKeys.ancestors(tweetId),
+    queryFn: ({ signal }) => getAncestors(tweetId, signal),
+  });
+}
+
+export type RepliesData = InfiniteData<Page<Tweet>, string | undefined>;
+
+/** A chirp's direct replies, oldest first, a page at a time. */
+export function useReplies(tweetId: string) {
+  return useInfiniteQuery<
+    Page<Tweet>,
+    Error,
+    RepliesData,
+    ReturnType<typeof tweetKeys.replies>,
+    string | undefined
+  >({
+    queryKey: tweetKeys.replies(tweetId),
+    queryFn: ({ pageParam, signal }) => getReplies(tweetId, pageParam, signal),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
@@ -62,14 +111,17 @@ export function useCreateTweet() {
   });
 }
 
-/** Rewrites chirp `tweetId` in every cached list of chirps (the timeline now, profiles later). */
+/**
+ * Rewrites chirp `tweetId` wherever it is cached: every list, every ancestor chain and its
+ * own page.
+ */
 function updateCachedTweet(
   queryClient: QueryClient,
   tweetId: string,
   update: (tweet: Tweet) => Tweet,
 ): void {
   queryClient.setQueriesData({ queryKey: tweetKeys.all }, (data: unknown) =>
-    isTweetPages(data) ? updateTweetInPages(data, tweetId, update) : data,
+    updateTweetInCache(data, tweetId, update),
   );
 }
 
@@ -125,9 +177,18 @@ export function useDeleteTweet() {
       }
     },
     onSuccess: (_result, tweetId) => {
-      queryClient.setQueriesData({ queryKey: tweetKeys.all }, (data: unknown) =>
-        isTweetPages(data) ? removeTweetFromPages(data, tweetId) : data,
-      );
+      queryClient.setQueriesData({ queryKey: tweetKeys.all }, (data: unknown) => {
+        if (isTweetPages(data)) return removeTweetFromPages(data, tweetId);
+        if (isTweetAncestors(data)) {
+          return { items: data.items.filter((tweet) => tweet.id !== tweetId) };
+        }
+        return data;
+      });
+      // Its replies went with it (ADR-24): a thread page below it no longer exists.
+      queryClient.removeQueries({ queryKey: tweetKeys.detail(tweetId) });
+      queryClient.removeQueries({ queryKey: tweetKeys.replies(tweetId) });
+      void queryClient.invalidateQueries({ queryKey: tweetKeys.details });
+      void queryClient.invalidateQueries({ queryKey: tweetKeys.allAncestors });
       // Only the author can delete, so only their profile's chirp count changed.
       void queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },

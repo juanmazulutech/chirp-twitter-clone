@@ -40,6 +40,19 @@ export function tweetFixture(overrides: Partial<Tweet> = {}): Tweet {
   };
 }
 
+/** Bruno as he appears on his chirps. */
+export const brunoSummary = {
+  id: '019a0000-0000-7000-8000-0000000000b0',
+  username: 'bruno',
+  displayName: 'Bruno Silva',
+  avatarUrl: null,
+};
+
+/** A reply by `sessionUser` to `parent`; any field can be overridden. */
+export function replyFixture(parent: Tweet, overrides: Partial<Tweet> = {}): Tweet {
+  return tweetFixture({ replyTo: { id: parent.id, author: parent.author }, ...overrides });
+}
+
 /** Bruno's public profile, as another user sees it; any field can be overridden. */
 export function profileFixture(overrides: Partial<UserProfile> = {}): UserProfile {
   return {
