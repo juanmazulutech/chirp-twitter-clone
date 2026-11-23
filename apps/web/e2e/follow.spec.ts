@@ -24,6 +24,16 @@ test('following someone brings their chirps to home, unfollowing takes them away
     .click();
   await expect(anasChirps.first()).toBeVisible();
 
+  // Who liked one of her chirps opens from the feed itself, and Back returns home.
+  const likeCount = anasChirps.getByRole('link', { name: /^\d+ likes?$/ }).first();
+  const likersUrl = await likeCount.getAttribute('href');
+  await likeCount.click();
+  await expect(page).toHaveURL(likersUrl ?? '');
+  await expect(page.getByRole('heading', { name: 'Liked by', level: 1 })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'People who liked this chirp' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL('/home');
+
   await page.goto(`/${ANA.username}`);
   await following.click();
   await expect(follow).toHaveAttribute('aria-pressed', 'false');

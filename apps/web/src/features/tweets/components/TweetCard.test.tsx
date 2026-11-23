@@ -51,6 +51,21 @@ describe('TweetCard', () => {
     expect(within(card).getByText(label)).toBeInTheDocument();
   });
 
+  it('links the like count to the people who liked the chirp', () => {
+    const { card, tweet } = renderCard({ likeCount: 2 });
+
+    expect(within(card).getByRole('link', { name: '2 likes' })).toHaveAttribute(
+      'href',
+      `/ana_codes/status/${tweet.id}/likes`,
+    );
+  });
+
+  it('leaves a count of zero as text: there is nobody to list', () => {
+    const { card } = renderCard({ likeCount: 0 });
+
+    expect(within(card).queryByRole('link', { name: '0 likes' })).not.toBeInTheDocument();
+  });
+
   it('shows the like toggle, pressed when the viewer liked the chirp', () => {
     const { card } = renderCard({ likedByMe: true });
 

@@ -3,22 +3,22 @@ import { Heart } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { useLikeTweet } from '../hooks';
+import { tweetPath } from '../tweet-path';
 
 function likesLabel(count: number): string {
   return count === 1 ? '1 like' : `${count.toLocaleString('en')} likes`;
 }
 
 interface LikeButtonProps {
-  tweet: Pick<Tweet, 'id' | 'likeCount' | 'likedByMe'>;
-  /** Where the count leads: the people who liked it. Without it the count is plain text. */
-  likersPath?: string;
+  tweet: Pick<Tweet, 'id' | 'author' | 'likeCount' | 'likedByMe'>;
 }
 
 /**
  * The like toggle with the chirp's like count. Liked is marked three ways, never by colour
  * alone: `aria-pressed`, a filled heart and airmail red (DESIGN.md, the Red Letter Rule).
+ * Wherever the chirp appears, a non-zero count leads to the people who liked it.
  */
-export function LikeButton({ tweet, likersPath }: LikeButtonProps) {
+export function LikeButton({ tweet }: LikeButtonProps) {
   const likeTweet = useLikeTweet(tweet.id);
   const liked = tweet.likedByMe;
   const countClasses = `text-sm tabular-nums ${liked ? 'font-semibold text-ink' : 'text-ink-muted'}`;
@@ -42,9 +42,9 @@ export function LikeButton({ tweet, likersPath }: LikeButtonProps) {
           strokeWidth={1.75}
         />
       </button>
-      {likersPath && tweet.likeCount > 0 ? (
+      {tweet.likeCount > 0 ? (
         <Link
-          to={likersPath}
+          to={`${tweetPath(tweet)}/likes`}
           className={`${countClasses} underline-offset-2 hover:text-ink hover:underline`}
         >
           {likesLabel(tweet.likeCount)}

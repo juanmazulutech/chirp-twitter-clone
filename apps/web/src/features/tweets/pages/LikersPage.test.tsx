@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { brunoSummary, followListUserFixture, tweetFixture } from '@/test/fixtures';
 import { scrollToEnd } from '@/test/intersection-observer';
 import { apiError } from '@/test/msw/errors';
-import { likersPages, threadOf } from '@/test/msw/handlers';
+import { likersPages, threadOf, timelinePages } from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
@@ -33,6 +33,25 @@ describe('LikersPage', () => {
     const list = await screen.findByRole('list', { name: 'People who liked this chirp' });
     expect(within(list).getByRole('article', { name: 'Carla' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(likersPath);
+  });
+
+  it('opens from the like count in the home timeline, then goes back home', async () => {
+    const carla = followListUserFixture({ username: 'carla', displayName: 'Carla' });
+    server.use(timelinePages([[chirp]]), ...threadOf(chirp), likersPages(chirp.id, [[carla]]));
+    const user = userEvent.setup();
+    const { router } = renderRoute('/home');
+    const row = await screen.findByRole('article', { name: 'Chirp by Bruno Silva' });
+
+    // The count is the row's own link: it opens the likes, not the conversation.
+    await user.click(within(row).getByRole('link', { name: '2 likes' }));
+
+    const list = await screen.findByRole('list', { name: 'People who liked this chirp' });
+    expect(within(list).getByRole('article', { name: 'Carla' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(likersPath);
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(router.state.location.pathname).toBe('/home');
   });
 
   it('keeps the like count as text when nobody liked the chirp yet', async () => {

@@ -500,7 +500,7 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **States:** the shared infinite list; "That’s every notification." under the last one; empty: "Nothing here yet" and what will appear. No grouping of likes (ADR-15).
 
 ### Liked by
-- `/:username/status/:id/likes`, opened from the like count on the conversation page: the page heading "Liked by" with the conversation's Back button (back where the reader came from, or to the chirp on a direct visit), then the shared person rows of the follow lists, most recent like first, each with its Follow button. "That’s everyone." under the last; empty: "No likes yet"; a missing chirp: "This chirp doesn’t exist".
+- `/:username/status/:id/likes`, opened from a chirp's like count wherever it appears (feeds, profiles, the conversation; a count of zero stays text): the page heading "Liked by" with the conversation's Back button (back where the reader came from, or to the chirp on a direct visit), then the shared person rows of the follow lists, most recent like first, each with its Follow button. "That’s everyone." under the last; empty: "No likes yet"; a missing chirp: "This chirp doesn’t exist".
 
 ### Avatar
 - A circle in three sizes: small 32px, default 44px, large 80px (profile header). It shows the user's picture, or, without one (or if it fails to load), white initials at 600 on one of the six avatar hues, derived from the user id. Up to two initials from the display name; "?" when there are none.
