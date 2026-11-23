@@ -39,7 +39,7 @@ describe('likes service', () => {
       },
     }) as unknown as PrismaClient;
 
-    const likes = createLikesService({ prisma: racingPrisma });
+    const likes = createLikesService({ prisma: racingPrisma, storage: app.storage });
 
     await expect(likes.like(ana.id, tweet.id)).rejects.toBeInstanceOf(NotFoundError);
     expect(await app.prisma.like.count()).toBe(0);

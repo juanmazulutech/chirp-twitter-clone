@@ -104,9 +104,10 @@ model Like {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   tweet Tweet @relation(fields: [tweetId], references: [id], onDelete: Cascade)
 
-  // The primary key serves "did the viewer like this" (likedByMe); this index serves like counts (ADR-13).
+  // The primary key serves "did the viewer like this" (likedByMe); this index serves like counts
+  // (ADR-13) and a chirp's likers, newest first, with their keyset pagination.
   @@id([userId, tweetId])
-  @@index([tweetId])
+  @@index([tweetId, createdAt(sort: Desc), userId(sort: Desc)])
   @@map("likes")
 }
 
