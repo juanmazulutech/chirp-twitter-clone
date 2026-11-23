@@ -4,9 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { profileFixture, sessionUser, tweetFixture } from '@/test/fixtures';
+import { profileFixture, replyFixture, sessionUser, tweetFixture } from '@/test/fixtures';
 import { apiError } from '@/test/msw/errors';
-import { profileFound, timelinePages, userTweetsPages } from '@/test/msw/handlers';
+import {
+  profileFound,
+  timelinePages,
+  userRepliesPages,
+  userTweetsPages,
+} from '@/test/msw/handlers';
 import { server } from '@/test/msw/server';
 import { renderRoute } from '@/test/render';
 
@@ -99,6 +104,68 @@ describe('ProfilePage', () => {
       await screen.findByRole('heading', { level: 2, name: 'No chirps yet' }),
     ).toBeInTheDocument();
     expect(screen.getByText('When @bruno posts, it will appear here.')).toBeInTheDocument();
+  });
+
+  it('opens on the Chirps tab, with Replies one link away', async () => {
+    server.use(profileFound(bruno), userTweetsPages('bruno'));
+    await renderProfile();
+
+    const tabs = screen.getByRole('navigation', { name: 'Chirps and replies' });
+    expect(within(tabs).getByRole('link', { name: 'Chirps' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(tabs).getByRole('link', { name: 'Replies' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('lists the person’s replies under Replies, each saying who it answers', async () => {
+    const ana = {
+      id: '019a0000-0000-7000-8000-0000000000a1',
+      username: 'ana',
+      displayName: 'Ana Torres',
+      avatarUrl: null,
+    };
+    const parent = tweetFixture({ id: '019a0000-0000-7000-8000-0000000000c1', author: ana });
+    server.use(
+      profileFound(bruno),
+      userTweetsPages('bruno', [[tweetFixture({ content: 'Fresh bread', author: brunoAsAuthor })]]),
+      userRepliesPages('bruno', [
+        [replyFixture(parent, { content: 'Same here', author: brunoAsAuthor })],
+      ]),
+    );
+    const { user, router } = await renderProfile();
+    await screen.findByRole('list', { name: 'Chirps by Bruno Silva' });
+
+    await user.click(screen.getByRole('link', { name: 'Replies' }));
+
+    const list = await screen.findByRole('list', { name: 'Replies by Bruno Silva' });
+    const reply = within(list).getByRole('article', { name: 'Chirp by Bruno Silva' });
+    expect(reply).toHaveTextContent('Same here');
+    expect(within(reply).getByRole('link', { name: '@ana' })).toHaveAttribute('href', '/ana');
+    expect(within(list).queryByText('Fresh bread')).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/bruno/replies');
+    expect(screen.getByRole('link', { name: 'Replies' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('says so when the person has not replied to anyone', async () => {
+    server.use(profileFound(bruno), userRepliesPages('bruno'));
+    await renderProfile('/bruno/replies');
+
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'No replies yet' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('When @bruno replies to a chirp, it will appear here.'),
+    ).toBeInTheDocument();
+  });
+
+  it('speaks to you on your own empty Replies tab', async () => {
+    server.use(profileFound(profileFixture({ isMe: true })), userRepliesPages('bruno'));
+    await renderProfile('/bruno/replies');
+
+    expect(
+      await screen.findByText('When you reply to a chirp, your reply will appear here.'),
+    ).toBeInTheDocument();
   });
 
   it('offers no follow button on your own profile', async () => {

@@ -42,6 +42,14 @@ describe('users routes', () => {
       headers: headers(cookie),
     });
 
+  const getReplies = (username: string, cookie?: string, query: Record<string, string> = {}) =>
+    app.inject({
+      method: 'GET',
+      url: `/api/users/${username}/replies`,
+      query,
+      headers: headers(cookie),
+    });
+
   const errorCode = (body: unknown) => (body as { error: { code: string } }).error.code;
   const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
   const tweetAt = (author: Pick<User, 'id'>, minutes: number) =>
@@ -326,6 +334,117 @@ describe('users routes', () => {
       await createUser(app.prisma, { username: 'ana' });
 
       expect((await getTweets('ana')).statusCode).toBe(401);
+    });
+  });
+
+  describe('GET /api/users/:username/replies', () => {
+    const replyAt = (author: Pick<User, 'id'>, parent: { id: string }, minutes: number) =>
+      createTweet(app.prisma, author, { parentId: parent.id, createdAt: minutesAgo(minutes) });
+
+    it('returns only that user’s replies, newest first, each with who it answers', async () => {
+      const viewer = await createUser(app.prisma);
+      const ana = await createUser(app.prisma, { username: 'ana' });
+      const bruno = await createUser(app.prisma, { username: 'bruno' });
+      const anaChirp = await tweetAt(ana, 60);
+      const brunoChirp = await tweetAt(bruno, 50);
+      const toBruno = await replyAt(ana, brunoChirp, 30);
+      const toSelf = await replyAt(ana, anaChirp, 10);
+      await replyAt(bruno, anaChirp, 5);
+      await createLike(app.prisma, viewer, toBruno);
+
+      const response = await getReplies('ana', await loginAs(app, viewer));
+
+      expect(response.statusCode).toBe(200);
+      const page = tweetPage.parse(response.json());
+      expect(
+        page.items.map(({ id, replyTo, likedByMe }) => ({
+          id,
+          answers: replyTo?.author.username,
+          likedByMe,
+        })),
+      ).toEqual([
+        { id: toSelf.id, answers: 'ana', likedByMe: false },
+        { id: toBruno.id, answers: 'bruno', likedByMe: true },
+      ]);
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it('walks every page without duplicates or gaps', async () => {
+      const ana = await createUser(app.prisma, { username: 'ana' });
+      const parent = await tweetAt(await createUser(app.prisma), 100);
+      const created = [];
+      for (let minutes = 1; minutes <= 5; minutes += 1) {
+        created.push(await replyAt(ana, parent, minutes));
+      }
+      const cookie = await loginAs(app, ana);
+
+      const first = tweetPage.parse((await getReplies('ana', cookie, { limit: '2' })).json());
+      const second = tweetPage.parse(
+        (await getReplies('ana', cookie, { limit: '2', cursor: first.nextCursor ?? '' })).json(),
+      );
+      const third = tweetPage.parse(
+        (await getReplies('ana', cookie, { limit: '2', cursor: second.nextCursor ?? '' })).json(),
+      );
+
+      expect([...first.items, ...second.items, ...third.items].map((tweet) => tweet.id)).toEqual(
+        created.map((tweet) => tweet.id),
+      );
+      expect(third.nextCursor).toBeNull();
+    });
+
+    it('breaks ties on the same instant by id', async () => {
+      const ana = await createUser(app.prisma, { username: 'ana' });
+      const parent = await tweetAt(await createUser(app.prisma), 100);
+      const instant = minutesAgo(1);
+      const tied = [];
+      for (let index = 0; index < 3; index += 1) {
+        tied.push(await createTweet(app.prisma, ana, { parentId: parent.id, createdAt: instant }));
+      }
+      const cookie = await loginAs(app, ana);
+
+      const first = tweetPage.parse((await getReplies('ana', cookie, { limit: '2' })).json());
+      const second = tweetPage.parse(
+        (await getReplies('ana', cookie, { limit: '2', cursor: first.nextCursor ?? '' })).json(),
+      );
+
+      expect([...first.items, ...second.items].map((tweet) => tweet.id)).toEqual(
+        tied
+          .map((tweet) => tweet.id)
+          .sort()
+          .reverse(),
+      );
+    });
+
+    it('returns an empty page for a user who has only posted chirps', async () => {
+      const ana = await createUser(app.prisma, { username: 'ana' });
+      await tweetAt(ana, 1);
+
+      const response = await getReplies('ana', await loginAs(app, ana));
+
+      expect(response.json()).toEqual({ items: [], nextCursor: null });
+    });
+
+    it('returns 404 for an unknown user', async () => {
+      const response = await getReplies('ghost', await loginAs(app, await createUser(app.prisma)));
+
+      expect(response.statusCode).toBe(404);
+      expect(errorCode(response.json())).toBe('NOT_FOUND');
+    });
+
+    it('returns 400 for a malformed cursor, whether or not the user exists', async () => {
+      const cookie = await loginAs(app, await createUser(app.prisma));
+      await createUser(app.prisma, { username: 'ana' });
+
+      for (const username of ['ana', 'ghost']) {
+        const response = await getReplies(username, cookie, { cursor: 'not-a-cursor' });
+        expect(response.statusCode).toBe(400);
+      }
+    });
+
+    it('returns 401 without a session', async () => {
+      await createUser(app.prisma, { username: 'ana' });
+
+      expect((await getReplies('ana')).statusCode).toBe(401);
     });
   });
 });

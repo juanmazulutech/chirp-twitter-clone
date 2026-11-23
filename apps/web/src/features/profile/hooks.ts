@@ -15,7 +15,14 @@ import { searchKeys } from '@/features/search/keys';
 import { likerKeys, tweetKeys } from '@/features/tweets/keys';
 import { notify } from '@/lib/notify';
 
-import { getFollowList, getProfile, getUserTweets, setFollow, updateProfile } from './api';
+import {
+  getFollowList,
+  getProfile,
+  getUserReplies,
+  getUserTweets,
+  setFollow,
+  updateProfile,
+} from './api';
 import { isFollowListPages, withFollow, withFollowInPages } from './follow-cache';
 import { type FollowList, profileKeys } from './keys';
 
@@ -42,6 +49,22 @@ export function useUserTweets(username: string) {
   >({
     queryKey: tweetKeys.byUser(username),
     queryFn: ({ pageParam, signal }) => getUserTweets(username, pageParam, signal),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+}
+
+/** A user's replies, a page at a time; under `tweetKeys` like their chirps. */
+export function useUserReplies(username: string) {
+  return useInfiniteQuery<
+    Page<Tweet>,
+    Error,
+    UserTweetsData,
+    ReturnType<typeof tweetKeys.repliesByUser>,
+    string | undefined
+  >({
+    queryKey: tweetKeys.repliesByUser(username),
+    queryFn: ({ pageParam, signal }) => getUserReplies(username, pageParam, signal),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });

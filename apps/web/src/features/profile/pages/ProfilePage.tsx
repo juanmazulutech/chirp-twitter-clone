@@ -1,42 +1,64 @@
 import { CircleAlert } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { useParams } from 'react-router';
 
 import { PageHeading } from '@/app/layout/PageHeading';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { NavTab, NavTabs } from '@/components/ui/NavTabs';
 import { Spinner } from '@/components/ui/Spinner';
 import { TweetList } from '@/features/tweets/components/TweetList';
 import { isApiError } from '@/lib/api-client';
 
 import { ProfileHeader } from '../components/ProfileHeader';
-import { useProfile, useUserTweets } from '../hooks';
+import { useProfile, useUserReplies, useUserTweets } from '../hooks';
 
-export function ProfilePage() {
-  const username = (useParams().username ?? '').toLowerCase();
-  // Both start at once: the chirps do not wait for the header.
+type ProfileList = 'chirps' | 'replies';
+
+function emptyCopy(list: ProfileList, username: string, isMe: boolean) {
+  if (list === 'chirps') {
+    return {
+      title: 'No chirps yet',
+      description: isMe
+        ? 'What you post will appear here.'
+        : `When @${username} posts, it will appear here.`,
+    };
+  }
+  return {
+    title: 'No replies yet',
+    description: isMe
+      ? 'When you reply to a chirp, your reply will appear here.'
+      : `When @${username} replies to a chirp, it will appear here.`,
+  };
+}
+
+interface ProfileViewProps {
+  username: string;
+  list: ProfileList;
+  /** The list under the header, started by the page so it loads alongside the profile. */
+  query: ComponentProps<typeof TweetList>['query'];
+}
+
+function ProfileView({ username, list, query }: ProfileViewProps) {
   const profile = useProfile(username);
-  const tweets = useUserTweets(username);
 
   if (profile.data) {
     const { displayName } = profile.data;
+    const empty = emptyCopy(list, profile.data.username, profile.data.isMe);
+    const heading = list === 'chirps' ? 'Chirps' : 'Replies';
     return (
       <>
         <PageHeading title={displayName} />
         <ProfileHeader profile={profile.data} />
-        <h2 className="sr-only">Chirps</h2>
+        <NavTabs label="Chirps and replies">
+          <NavTab to={`/${profile.data.username}`}>Chirps</NavTab>
+          <NavTab to={`/${profile.data.username}/replies`}>Replies</NavTab>
+        </NavTabs>
+        <h2 className="sr-only">{heading}</h2>
         <TweetList
-          query={tweets}
-          label={`Chirps by ${displayName}`}
-          empty={
-            <EmptyState
-              title="No chirps yet"
-              description={
-                profile.data.isMe
-                  ? 'What you post will appear here.'
-                  : `When @${profile.data.username} posts, it will appear here.`
-              }
-            />
-          }
+          query={query}
+          label={`${heading} by ${displayName}`}
+          empty={<EmptyState title={empty.title} description={empty.description} />}
         />
       </>
     );
@@ -81,4 +103,20 @@ export function ProfilePage() {
       )}
     </>
   );
+}
+
+function useProfileUsername() {
+  return (useParams().username ?? '').toLowerCase();
+}
+
+export function ProfilePage() {
+  const username = useProfileUsername();
+  const chirps = useUserTweets(username);
+  return <ProfileView username={username} list="chirps" query={chirps} />;
+}
+
+export function ProfileRepliesPage() {
+  const username = useProfileUsername();
+  const replies = useUserReplies(username);
+  return <ProfileView username={username} list="replies" query={replies} />;
 }

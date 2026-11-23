@@ -140,6 +140,10 @@ export function useReplyToTweet(parentId: string) {
       queryClient.setQueryData<RepliesData>(tweetKeys.replies(parentId), (data) =>
         data ? appendReply(data, reply) : data,
       );
+      // The author's Replies tab starts with it.
+      void queryClient.invalidateQueries({
+        queryKey: tweetKeys.repliesByUser(reply.author.username),
+      });
     },
   });
 }
@@ -230,6 +234,8 @@ export function useDeleteTweet() {
       queryClient.removeQueries({ queryKey: tweetKeys.replies(tweetId) });
       void queryClient.invalidateQueries({ queryKey: tweetKeys.details });
       void queryClient.invalidateQueries({ queryKey: tweetKeys.allAncestors });
+      // Other people's replies under it went too, and they may sit in their Replies tabs.
+      void queryClient.invalidateQueries({ queryKey: tweetKeys.allRepliesByUser });
       // Only the author can delete, so only their profile's chirp count changed.
       void queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },

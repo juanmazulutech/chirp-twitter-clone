@@ -34,4 +34,15 @@ test('a reply appears in the conversation and raises the reply count', async ({
 
   await page.goBack();
   await expect(chirp.getByRole('link', { name: 'Reply, 1 reply' })).toBeVisible();
+
+  // The profile keeps chirps and replies apart.
+  await page.goto(`/${account.username}/replies`);
+  const replies = page.getByRole('list', { name: `Replies by ${account.displayName}` });
+  await expect(replies.getByRole('article').filter({ hasText: answer })).toBeVisible();
+  await expect(replies.getByRole('article').filter({ hasText: original })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Chirps', exact: true }).click();
+  await expect(page).toHaveURL(`/${account.username}`);
+  const chirps = page.getByRole('list', { name: `Chirps by ${account.displayName}` });
+  await expect(chirps.getByRole('article').filter({ hasText: original })).toBeVisible();
+  await expect(chirps.getByRole('article').filter({ hasText: answer })).toHaveCount(0);
 });

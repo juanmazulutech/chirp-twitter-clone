@@ -32,6 +32,14 @@ export function getUserTweets(username: string, cursor: string | undefined, sign
   });
 }
 
+/** One page of a user's replies, newest first; without a cursor, the first page. */
+export function getUserReplies(username: string, cursor: string | undefined, signal?: AbortSignal) {
+  return apiRequest(`${userPath(username)}/replies${pageQuery(cursor)}`, {
+    schema: tweetPageSchema,
+    signal,
+  });
+}
+
 /** Follows or unfollows a user as the signed-in user; both are idempotent on the server. */
 export function setFollow(username: string, following: boolean): Promise<FollowState> {
   return apiRequest(`${userPath(username)}/follow`, {

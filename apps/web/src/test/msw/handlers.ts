@@ -72,6 +72,13 @@ export function userTweetsPages(
   );
 }
 
+/** `GET /api/users/:username/replies` serving `pages` like `timelinePages`. */
+export function userRepliesPages(username: string, pages: Tweet[][] = [[]]) {
+  return http.get(`/api/users/${username}/replies`, ({ request }) =>
+    pagesFrom(pages, request, () => {}),
+  );
+}
+
 /** `GET /api/users/:username/followers` or `/following` serving `pages` like `timelinePages`. */
 export function followListPages(
   username: string,

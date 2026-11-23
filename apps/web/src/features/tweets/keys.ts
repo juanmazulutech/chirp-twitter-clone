@@ -5,6 +5,10 @@ export const tweetKeys = {
   timeline: ['tweets', 'timeline'] as const,
   /** One user's chirps (lowercase username): an infinite query of `Page<Tweet>`, newest first. */
   byUser: (username: string) => ['tweets', 'user', username] as const,
+  /** One user's replies (lowercase username): an infinite query of `Page<Tweet>`, newest first. */
+  repliesByUser: (username: string) => ['tweets', 'user-replies', username] as const,
+  /** Every cached list of a user's replies (prefix only). */
+  allRepliesByUser: ['tweets', 'user-replies'] as const,
   /** One chirp, for its own page: a `Tweet`. */
   detail: (tweetId: string) => ['tweets', 'detail', tweetId] as const,
   /** Every cached chirp page, ancestors and replies included (prefix only). */

@@ -72,10 +72,14 @@ export function createUsersService({ prisma, storage, log }: UsersServiceDepende
     return toUserProfile(user, userId, publicUrl);
   }
 
-  /** One user's top-level chirps, newest first, with the viewer's likes (ADR-11, ADR-13, ADR-24). */
-  async function tweets(
+  /**
+   * One user's chirps of one kind, newest first, with the viewer's likes (ADR-11, ADR-13):
+   * top-level chirps or replies (ADR-24). Each reply carries `replyTo`.
+   */
+  async function authoredPage(
     viewerId: string,
     username: string,
+    kind: 'chirps' | 'replies',
     { cursor, limit }: PageQuery,
   ): Promise<Page<Tweet>> {
     // Decoded first, so a bad cursor is a 400 whether or not the user exists.
@@ -83,8 +87,9 @@ export function createUsersService({ prisma, storage, log }: UsersServiceDepende
     const author = await prisma.user.findUnique({ where: { username }, select: { id: true } });
     if (!author) throw new NotFoundError('User');
 
+    const parentId = kind === 'chirps' ? null : { not: null };
     const rows = await prisma.tweet.findMany({
-      where: { AND: [{ authorId: author.id, parentId: null }, keysetAfter(after)] },
+      where: { AND: [{ authorId: author.id, parentId }, keysetAfter(after)] },
       orderBy: newestFirst,
       take: limit + 1,
       select: tweetRowSelect(viewerId),
@@ -92,5 +97,10 @@ export function createUsersService({ prisma, storage, log }: UsersServiceDepende
     return toPage(rows, limit, (row) => toTweet(row, publicUrl));
   }
 
-  return { profile, updateProfile, tweets };
+  const tweets = (viewerId: string, username: string, page: PageQuery) =>
+    authoredPage(viewerId, username, 'chirps', page);
+  const replies = (viewerId: string, username: string, page: PageQuery) =>
+    authoredPage(viewerId, username, 'replies', page);
+
+  return { profile, updateProfile, tweets, replies };
 }

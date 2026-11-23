@@ -45,6 +45,20 @@ const usersRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) =>
       users.tweets(currentUser(request).id, request.params.username, request.query),
   );
+
+  app.get(
+    '/users/:username/replies',
+    {
+      onRequest: app.requireAuth,
+      schema: {
+        params: usernameParamsSchema,
+        querystring: pageQuerySchema,
+        response: { 200: pageSchema(tweetSchema) },
+      },
+    },
+    async (request) =>
+      users.replies(currentUser(request).id, request.params.username, request.query),
+  );
 };
 
 export default usersRoutes;

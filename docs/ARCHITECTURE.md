@@ -328,6 +328,7 @@ Page<T>      = { items: T[], nextCursor: string | null }
 | GET | `/users/:username` | 🔒 | — | `200 UserProfile` | 404 |
 | PATCH | `/users/me` | 🔒 | `{ displayName?, bio?, avatarKey?: string \| null }` | `200 UserProfile` | `avatarKey` ownership verified |
 | GET | `/users/:username/tweets` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | top-level chirps only (ADR-24) |
+| GET | `/users/:username/replies` | 🔒 | `?cursor=&limit=` | `200 Page<Tweet>` | the user's replies, newest first, each with `replyTo` |
 | GET | `/users/:username/followers` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | cursor on `(follow.createdAt, userId)` |
 | GET | `/users/:username/following` | 🔒 | `?cursor=&limit=` | `200 Page<UserSummary & { isFollowing }>` | |
 | POST | `/users/:username/follow` | 🔒 | — | `200 { isFollowing: true, followersCount }` | idempotent; 400 on self-follow; notifies |
@@ -361,6 +362,7 @@ Pagination: `limit` defaults to 20, maximum 50; `cursor` is opaque (ADR-11).
 | `/search` | user search | signed in |
 | `/notifications` | notifications | signed in |
 | `/:username` | profile + tweets | signed in |
+| `/:username/replies` | profile + replies (tab beside the chirps) | signed in |
 | `/:username/followers`, `/:username/following` | follow lists | signed in |
 | `/:username/status/:tweetId` | chirp detail: ancestors, the chirp, its replies and a reply composer (C57) | signed in |
 | `*` (any other path) | not found, inside the shell | signed in |

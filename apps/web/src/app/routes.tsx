@@ -89,6 +89,13 @@ export const routes: RouteObject[] = [
                     }),
                   },
                   {
+                    path: '/:username/replies',
+                    lazy: async () => ({
+                      Component: (await import('@/features/profile/pages/ProfilePage'))
+                        .ProfileRepliesPage,
+                    }),
+                  },
+                  {
                     path: '/:username/followers',
                     lazy: async () => ({
                       Component: (await import('@/features/profile/pages/FollowListPage'))
