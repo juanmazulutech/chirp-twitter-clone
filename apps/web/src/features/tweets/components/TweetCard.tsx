@@ -1,10 +1,11 @@
 import type { Tweet } from '@chirp/shared';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { Postmark } from '@/components/ui/Postmark';
 import { useSession } from '@/features/auth/hooks';
 
+import { opensFromRowClick } from '../row-click';
 import { tweetPath } from '../tweet-path';
 import { DeleteTweetButton } from './DeleteTweetButton';
 import { LikeButton } from './LikeButton';
@@ -12,17 +13,22 @@ import { ReplyLink } from './ReplyButton';
 import { ReplyingTo } from './ReplyingTo';
 
 /**
- * One chirp in a feed: who sent it, what it says, and the postmark of when. The postmark
- * opens the chirp's own page, with its thread.
+ * One chirp in a feed: who sent it, what it says, and the postmark of when. A click anywhere
+ * on the row opens the chirp's conversation; keyboards and screen readers get there through
+ * the postmark's link, so no link wraps the row's own links and buttons.
  */
 export function TweetCard({ tweet }: { tweet: Tweet }) {
   const { author } = tweet;
   const { user } = useSession();
+  const navigate = useNavigate();
 
   return (
     <article
       aria-label={`Chirp by ${author.displayName}`}
-      className="relative grid grid-cols-[2.75rem_1fr] gap-3 px-4 py-3"
+      onClick={(event) => {
+        if (opensFromRowClick(event.nativeEvent)) void navigate(tweetPath(tweet));
+      }}
+      className="relative grid cursor-pointer grid-cols-[2.75rem_1fr] gap-3 px-4 py-3 transition-colors duration-150 hover:bg-paper"
     >
       <Avatar name={author.displayName} userId={author.id} src={author.avatarUrl} />
       {/* The right padding keeps the text clear of the postmark. */}

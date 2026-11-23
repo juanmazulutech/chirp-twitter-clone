@@ -23,6 +23,10 @@ if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
 
 installIntersectionObserver();
 
+// jsdom has no layout, so it does not implement scrolling; the shell's ScrollRestoration
+// calls it on every navigation. Nothing scrolls in a test, so there is nothing to do.
+window.scrollTo = () => {};
+
 // jsdom has no object URLs; previews only need a stable, unique string per file.
 if (typeof URL.createObjectURL !== 'function') {
   let objectUrls = 0;
