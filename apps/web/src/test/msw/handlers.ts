@@ -108,6 +108,41 @@ export function timelinePages(
   return http.get('/api/timeline', ({ request }) => pagesFrom(pages, request, onCursor));
 }
 
+/** `GET /api/tweets/:id` answering with `tweet`. */
+export function tweetFound(tweet: Tweet) {
+  return http.get(`/api/tweets/${tweet.id}`, () => HttpResponse.json(tweet));
+}
+
+/** `GET /api/tweets/:id/ancestors` answering with `ancestors`, root first. */
+export function tweetAncestors(tweetId: string, ancestors: Tweet[] = []) {
+  return http.get(`/api/tweets/${tweetId}/ancestors`, () =>
+    HttpResponse.json({ items: ancestors }),
+  );
+}
+
+/** `GET /api/tweets/:id/replies` serving `pages` like `timelinePages`. */
+export function tweetRepliesPages(
+  tweetId: string,
+  pages: Tweet[][] = [[]],
+  onCursor: (cursor: string | null) => void = () => {},
+) {
+  return http.get(`/api/tweets/${tweetId}/replies`, ({ request }) =>
+    pagesFrom(pages, request, onCursor),
+  );
+}
+
+/** Everything a chirp's page asks for: the chirp, what it answers and its replies. */
+export function threadOf(
+  tweet: Tweet,
+  { ancestors = [] as Tweet[], replies = [[]] as Tweet[][] } = {},
+) {
+  return [
+    tweetFound(tweet),
+    tweetAncestors(tweet.id, ancestors),
+    tweetRepliesPages(tweet.id, replies),
+  ];
+}
+
 /**
  * Handlers every test starts with: the app shell asks for the session on every screen,
  * and the home page for a timeline (empty unless a test serves one).

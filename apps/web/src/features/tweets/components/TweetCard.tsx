@@ -5,10 +5,16 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Postmark } from '@/components/ui/Postmark';
 import { useSession } from '@/features/auth/hooks';
 
+import { tweetPath } from '../tweet-path';
 import { DeleteTweetButton } from './DeleteTweetButton';
 import { LikeButton } from './LikeButton';
+import { ReplyButton } from './ReplyButton';
+import { ReplyingTo } from './ReplyingTo';
 
-/** One chirp in a feed: who sent it, what it says, and the postmark of when. */
+/**
+ * One chirp in a feed: who sent it, what it says, and the postmark of when. The postmark
+ * opens the chirp's own page, with its thread.
+ */
 export function TweetCard({ tweet }: { tweet: Tweet }) {
   const { author } = tweet;
   const { user } = useSession();
@@ -30,6 +36,7 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
           </Link>
           <span className="truncate text-ink-muted">@{author.username}</span>
         </p>
+        {tweet.replyTo ? <ReplyingTo username={tweet.replyTo.author.username} /> : null}
         <p className="mt-1 text-[0.9375rem] leading-5 wrap-anywhere whitespace-pre-wrap text-ink">
           {tweet.content}
         </p>
@@ -44,11 +51,20 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
           />
         ) : null}
         <div className="mt-1 flex items-center justify-between">
-          <LikeButton tweet={tweet} />
-          {user?.id === author.id ? <DeleteTweetButton tweetId={tweet.id} /> : null}
+          <div className="flex items-center gap-4">
+            <ReplyButton tweet={tweet} />
+            <LikeButton tweet={tweet} />
+          </div>
+          {user?.id === author.id ? <DeleteTweetButton tweet={tweet} /> : null}
         </div>
       </div>
-      <Postmark dateTime={tweet.createdAt} className="absolute top-2.5 right-3.5" />
+      <Link
+        to={tweetPath(tweet)}
+        className="absolute top-2.5 right-3.5 rounded-full transition-opacity duration-150 hover:opacity-80"
+      >
+        <span className="sr-only">Open chirp, </span>
+        <Postmark dateTime={tweet.createdAt} />
+      </Link>
     </article>
   );
 }

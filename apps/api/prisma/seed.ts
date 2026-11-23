@@ -14,6 +14,7 @@ import type { StorageService } from '../src/lib/storage';
 import { readSeedAvatar, seedAvatarKey } from './seed-data/avatars';
 import { seedFollows } from './seed-data/follows';
 import { pickSeedLikes, seedLikeDate } from './seed-data/likes';
+import { flattenSeedThreads, seedReplyDate, seedThreads } from './seed-data/replies';
 import { seedTweetDate, seedTweets } from './seed-data/tweets';
 import { SEED_EMAIL_DOMAIN, SEED_PASSWORD, seedPersonas } from './seed-data/users';
 
@@ -66,7 +67,9 @@ const seedEmail = (username: string) => `${username}@${SEED_EMAIL_DOMAIN}`;
 export interface SeedResult {
   seeded: boolean;
   users: number;
+  /** Top-level chirps; replies are counted apart. */
   tweets: number;
+  replies: number;
   follows: number;
   likes: number;
 }
@@ -77,7 +80,7 @@ export async function seedDatabase(
   { mode = 'reset', now = new Date(), allowNonSeedData = false }: SeedOptions = {},
 ): Promise<SeedResult> {
   if (mode === 'if-empty' && (await prisma.user.count()) > 0) {
-    return { seeded: false, users: 0, tweets: 0, follows: 0, likes: 0 };
+    return { seeded: false, users: 0, tweets: 0, replies: 0, follows: 0, likes: 0 };
   }
   // Before the database changes: without storage there is nothing to show the avatars from.
   await uploadSeedAvatars(storage);
@@ -154,14 +157,43 @@ export async function seedDatabase(
         tweet.id,
       ]),
     );
+    const chirpAt = ({ author, index }: { author: string; index: number }) => {
+      const chirp = seedTweets[author]?.[index];
+      if (!chirp) throw new Error(`Seed data references an unknown chirp by ${author}`);
+      const postedAt = seedTweetDate(now, chirp);
+      const tweetId = tweetIds.get(tweetKey(idOf(author), postedAt, chirp.content));
+      if (!tweetId) throw new Error(`Seed data references an unknown chirp by ${author}`);
+      return { tweetId, postedAt };
+    };
+
+    // One by one, in thread order: each reply needs the id of the one it answers.
+    const inserted: Array<{ id: string; createdAt: Date }> = [];
+    for (const { reply, thread, parent } of flattenSeedThreads(seedThreads)) {
+      const root = chirpAt(thread.to);
+      const answered = parent === null ? undefined : inserted[parent];
+      const createdAt = seedReplyDate(
+        now,
+        answered?.createdAt ?? root.postedAt,
+        reply.minutesAfter,
+      );
+      inserted.push(
+        await tx.tweet.create({
+          data: {
+            authorId: idOf(reply.author),
+            parentId: answered?.id ?? root.tweetId,
+            content: reply.content,
+            createdAt,
+          },
+          select: { id: true, createdAt: true },
+        }),
+      );
+    }
+
     const likes = Object.entries(pickSeedLikes(seedFollows, seedTweets)).flatMap(([liker, refs]) =>
       refs.map(({ author, index }, position) => {
-        const chirp = seedTweets[author]?.[index];
         const joined = joinedAt.get(liker);
-        if (!chirp || !joined) throw new Error(`Seed like references unknown data: ${liker}`);
-        const postedAt = seedTweetDate(now, chirp);
-        const tweetId = tweetIds.get(tweetKey(idOf(author), postedAt, chirp.content));
-        if (!tweetId) throw new Error(`Seed like references an unknown chirp by ${author}`);
+        if (!joined) throw new Error(`Seed like references an unknown user: ${liker}`);
+        const { tweetId, postedAt } = chirpAt({ author, index });
         // Spread over the first hours after posting, so likes do not all share a timestamp.
         const delayMinutes = 5 + ((position * 37) % 240);
         return {
@@ -177,6 +209,7 @@ export async function seedDatabase(
       seeded: true,
       users: created.length,
       tweets: tweets.length,
+      replies: inserted.length,
       follows: follows.length,
       likes: likes.length,
     };
@@ -222,7 +255,8 @@ export async function runSeedCli(
     });
     write(
       result.seeded
-        ? `Seeded ${result.users} users, ${result.tweets} chirps, ${result.follows} follows ` +
+        ? `Seeded ${result.users} users, ${result.tweets} chirps, ${result.replies} replies, ` +
+            `${result.follows} follows ` +
             `and ${result.likes} likes. ` +
             `Sign in as demo@${SEED_EMAIL_DOMAIN} / ${SEED_PASSWORD}\n`
         : 'Database already has data; skipping seed (--if-empty).\n',

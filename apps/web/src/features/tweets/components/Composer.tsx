@@ -2,10 +2,12 @@ import {
   type CreateTweetBody,
   createTweetBodySchema,
   IMAGE_CONTENT_TYPES,
+  type Tweet,
   TWEET_MAX_LENGTH,
   tweetContentSchema,
 } from '@chirp/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { ImagePlus } from 'lucide-react';
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -19,11 +21,10 @@ import { useImageUpload } from '@/features/uploads/use-image-upload';
 import { applyServerError } from '@/lib/form-errors';
 import { notify } from '@/lib/notify';
 
-import { useCreateTweet } from '../hooks';
+import { useCreateTweet, useReplyToTweet } from '../hooks';
 import { AttachedImage } from './AttachedImage';
 
 const fields = ['content'] as const;
-const PROMPT = 'What’s happening?';
 
 interface ComposerProps {
   /** Runs once a chirp is posted, before the confirmation toast (a modal closes here). */
@@ -32,10 +33,51 @@ interface ComposerProps {
   focusOnOpen?: boolean;
 }
 
-/** Writes and posts a chirp; the limit is shown while typing, before it is hit. */
-export function Composer({ onPosted, focusOnOpen = false }: ComposerProps) {
-  const { user } = useSession();
+interface ComposerFormProps extends ComposerProps {
+  post: UseMutationResult<Tweet, Error, CreateTweetBody>;
+  prompt: string;
+  submitLabel: string;
+  posted: string;
+}
+
+/** Writes and posts a new top-level chirp. */
+export function Composer(props: ComposerProps) {
   const createTweet = useCreateTweet();
+  return (
+    <ComposerForm
+      {...props}
+      post={createTweet}
+      prompt="What’s happening?"
+      submitLabel="Chirp"
+      posted="Your chirp is posted"
+    />
+  );
+}
+
+/** Writes and posts a reply to `replyTo`; the same rules as a chirp, image included. */
+export function ReplyComposer({ replyTo, ...props }: ComposerProps & { replyTo: Tweet }) {
+  const reply = useReplyToTweet(replyTo.id);
+  return (
+    <ComposerForm
+      {...props}
+      post={reply}
+      prompt={`Reply to @${replyTo.author.username}`}
+      submitLabel="Reply"
+      posted="Your reply is posted"
+    />
+  );
+}
+
+/** The form both composers share; the limit is shown while typing, before it is hit. */
+function ComposerForm({
+  onPosted,
+  focusOnOpen = false,
+  post,
+  prompt,
+  submitLabel,
+  posted,
+}: ComposerFormProps) {
+  const { user } = useSession();
   const image = useImageUpload('tweet');
   const fileInput = useRef<HTMLInputElement>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -55,13 +97,13 @@ export function Composer({ onPosted, focusOnOpen = false }: ComposerProps) {
   // An image still uploading, or one that failed, would be lost: it must be ready or removed.
   const imageSettled = image.upload.status === 'idle' || image.upload.status === 'ready';
   const canSubmit =
-    tweetContentSchema.safeParse(content).success && imageSettled && !createTweet.isPending;
+    tweetContentSchema.safeParse(content).success && imageSettled && !post.isPending;
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     const imageKey = image.upload.status === 'ready' ? image.upload.key : undefined;
     try {
-      await createTweet.mutateAsync({ ...values, imageKey });
+      await post.mutateAsync({ ...values, imageKey });
     } catch (error) {
       setFormError(applyServerError(error, setError, { fields }));
       return;
@@ -69,7 +111,7 @@ export function Composer({ onPosted, focusOnOpen = false }: ComposerProps) {
     reset();
     image.remove();
     onPosted?.();
-    notify.success('Your chirp is posted');
+    notify.success(posted);
   });
 
   function submitOnShortcut(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -91,8 +133,8 @@ export function Composer({ onPosted, focusOnOpen = false }: ComposerProps) {
         {formError ? <FormAlert>{formError}</FormAlert> : null}
         <Field error={errors.content?.message}>
           <FieldTextarea
-            aria-label={PROMPT}
-            placeholder={PROMPT}
+            aria-label={prompt}
+            placeholder={prompt}
             maxCharacters={TWEET_MAX_LENGTH}
             rows={3}
             data-autofocus={focusOnOpen || undefined}
@@ -131,13 +173,8 @@ export function Composer({ onPosted, focusOnOpen = false }: ComposerProps) {
               if (file) void image.select(file);
             }}
           />
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={!canSubmit}
-            loading={createTweet.isPending}
-          >
-            Chirp
+          <Button type="submit" variant="primary" disabled={!canSubmit} loading={post.isPending}>
+            {submitLabel}
           </Button>
         </div>
       </div>

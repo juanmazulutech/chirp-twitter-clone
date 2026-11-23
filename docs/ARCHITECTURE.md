@@ -476,7 +476,7 @@ Target state once every feature is in place; each phase extends the seed with th
 - 8–15 tweets per user, written to match the persona, spread over the last 30 days.
 - Follow graph: `demo` follows 8 users; every user follows 4–9 others; no self-follows.
 - Cross-likes: each user likes 10–30 tweets from people they follow, timed after both the chirp and the liker's join date.
-- Reply threads: hand-written replies between personas who follow each other, two to four levels deep, including self-threads and replies on `demo`'s chirps, each timed after the chirp it answers.
+- Reply threads (`seed-data/replies.ts`): 9 hand-written conversations (31 replies) under recent chirps, up to three replies deep, including self-threads and replies on `demo`'s chirps; whoever replies is connected to the person answered by a follow in at least one direction; each reply is timed some minutes after the chirp it answers, clamped to `now`.
 - Notifications consistent with the generated follows, likes and replies (never self-notifications), with some unread for `demo`.
 - Two modes: `npm run db:seed` **replaces** application data (idempotent: every table cascades from `users`), but refuses when the database holds accounts the seed did not create unless `SEED_CONFIRM_RESET=<database name>` is set (ADR-23); `tsx prisma/seed.ts --if-empty` seeds only an empty database and is what the Docker entrypoint runs, so restarting a container never wipes data. There is no `db:reset`: schema resets (`prisma migrate reset`) are destructive, blocked for AI agents, and left to deliberate human use.
 - Every account gets its own argon2 hash; a test signs in with the documented demo credentials so documentation and data cannot drift.

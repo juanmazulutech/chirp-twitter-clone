@@ -1,6 +1,9 @@
 import {
   createReplyBodySchema,
   createTweetBodySchema,
+  pageQuerySchema,
+  pageSchema,
+  tweetAncestorsSchema,
   tweetParamsSchema,
   tweetSchema,
 } from '@chirp/shared';
@@ -36,6 +39,28 @@ const tweetsRoutes: FastifyPluginAsyncZod = async (app) => {
       reply
         .code(201)
         .send(await tweets.reply(currentUser(request).id, request.params.id, request.body)),
+  );
+
+  app.get(
+    '/tweets/:id/replies',
+    {
+      onRequest: app.requireAuth,
+      schema: {
+        params: tweetParamsSchema,
+        querystring: pageQuerySchema,
+        response: { 200: pageSchema(tweetSchema) },
+      },
+    },
+    async (request) => tweets.replies(request.params.id, currentUser(request).id, request.query),
+  );
+
+  app.get(
+    '/tweets/:id/ancestors',
+    {
+      onRequest: app.requireAuth,
+      schema: { params: tweetParamsSchema, response: { 200: tweetAncestorsSchema } },
+    },
+    async (request) => tweets.ancestors(request.params.id, currentUser(request).id),
   );
 
   app.get(

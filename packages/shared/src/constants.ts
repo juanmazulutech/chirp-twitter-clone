@@ -43,3 +43,6 @@ export const PAGE_SIZE_MAX = 50;
 export const IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
 /** Largest accepted image (ADR-14); the API may lower it with `UPLOAD_MAX_BYTES`. */
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+/** How many chirps above a reply its thread page shows at most (ADR-24). */
+export const THREAD_ANCESTORS_MAX = 20;

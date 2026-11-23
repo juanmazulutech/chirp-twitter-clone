@@ -449,10 +449,22 @@ What a list shows when there is nothing in it yet, and what to do about it.
 - **Background:** the sheet, full bleed, 1px hairline below each row (none after the last).
 - **Grid:** a 44px avatar column and a content column, 12px gap, 12px × 16px padding.
 - **Content:** display name (600) and @handle (faded ink) on one meta line, body text below, counts in faded tabular meta.
+- **Replies:** under the name line, "Replying to @handle" in faded meta with the handle as an airmail-blue link to that profile.
 - **Postmark:** absolutely placed top right (10px from the top, 14px from the right).
 - **Action row:** 4px under the body text, the like toggle at the start and, on your own chirps only, the delete action at the end (kept clear of the postmark by the content column's right padding).
 - **Like toggle:** a 36px round icon button (20px Heart) pulled 8px left so the heart lines up with the text, then the count ("12 likes") in meta. At rest faded ink, the heart turning airmail red on hover with the paper wash. Liked: the heart **filled** in airmail red and the count in ink at 600, with `aria-pressed="true"`, so the state never lives in colour alone. Named "Like" in both states. It changes at once and rolls back with an error toast if the server refuses.
+- **Reply action:** first in the action row, built like the like toggle: a 36px round icon button (20px MessageCircle) pulled 8px left, then the count ("3 replies") in faded meta; hover turns the icon airmail blue with the paper wash (red stays for liking). Named "Reply". It opens the compose modal titled "Reply", which quotes the chirp being answered (name, @handle and up to three lines of its text behind a 2px hairline rule) above the same composer, prompting "Reply to @handle" with a red "Reply" button; the toast says "Your reply is posted". A new chirp's draft and a reply's draft are kept apart, so neither is lost to the other.
 - **Delete action:** a ghost `icon-sm` (36px) button with an 18px Trash icon, named "Delete chirp". It opens a confirmation modal ("Delete chirp?", what will happen, then Cancel as ghost and Delete as the outlined danger button, which takes focus). Delete shows its loading state; a failure keeps the dialog open with a form alert; success closes the dialog and then shows the "Your chirp was deleted" toast.
+
+### Conversation page
+- **Address:** `/:username/status/:id`, opened from any chirp's postmark (a link named "Open chirp, …" with a light fade on hover). A wrong username in the address is corrected in place.
+- **Heading:** "Conversation", since the header already carries the wordmark.
+- **Above:** the chirps a reply answers, root first, as ordinary chirp rows with no hairlines between them, joined by a 2px hairline-coloured thread line that runs from under each avatar into the next row's avatar. When the API stops at 20, an airmail-blue "Show earlier chirps" link (ArrowUp icon) leads to the next chirp up.
+- **The chirp:** the same parts as a row, laid out to be read: avatar beside the name over the @handle, "Replying to @…" if it answers someone, the text a step larger (1.125rem / 1.75rem), the image unframed by the row's padding, the full date in faded meta ("November 20, 2026 at 8:25 PM"), then the action row above a hairline. The postmark stays top right but is not a link here.
+- **Reply box:** from 640px, the composer sits between the chirp and its replies (as on Home), prompting "Reply to @handle"; a posted reply joins the end of the list and the count rises. Phones answer through the Reply button and the modal.
+- **Deleting it:** the confirmation says the replies under it go too; afterwards the page returns to where the reader came from (home on a direct visit).
+- **Below:** its direct replies, oldest first, through the shared infinite list ("No replies yet" when empty).
+- **States:** a spinner while the chirp loads; "This chirp doesn’t exist" (it may have been deleted with its conversation) with a "Back to home" button link; an alert with "Try again" if the chirp or the conversation above fails.
 
 ### Profile header
 - A section named "Profile" on the sheet under the page heading (which carries the display name), 16px padding, 12px gaps, hairline below.
